@@ -15,6 +15,10 @@ export interface Food {
   iron_mg?: number;
   omega3_g?: number;
   omega6_g?: number;
+  // Sistema de Intercambios Dinámicos
+  exchange_group?: ExchangeGroupType;
+  pivot_nutrient?: PivotNutrientType;
+  serving_default_g?: number;
 }
 
 export interface DietItem {
@@ -113,4 +117,50 @@ export interface ClinicalAuditState {
   criticalViolationsCount: number;
   hasCriticalBlocker: boolean;
   suggestedFoods: SuggestedSupplement[];
+}
+
+// ==============================================================================
+// FOOD SWAPS (Sistema de Intercambios Dinámicos y Equivalencias Matemáticas)
+// ==============================================================================
+
+export type ExchangeGroupType =
+  | 'proteina_magra'
+  | 'proteina_grasa'
+  | 'carbohidrato_complejo'
+  | 'fruta'
+  | 'grasa_saludable'
+  | 'lacteo_proteico'
+  | 'verdura_libre'
+  | 'general';
+
+export type PivotNutrientType = 'protein' | 'carbs' | 'fat' | 'kcal';
+
+export interface FoodSwapAlternative {
+  foodId: string;
+  foodName: string;
+  category: string;
+  exchangeGroup: ExchangeGroupType;
+  pivotNutrient: PivotNutrientType;
+  calculatedGrams: number;
+  unit: string;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fiberG?: number;
+  deltaKcal: number;
+  deltaPivot: number;
+  similarityScore: number; // 0 a 100%
+  description?: string;
+}
+
+export interface FoodSwapResult {
+  originalFoodName: string;
+  originalQuantity: number;
+  originalUnit: string;
+  originalKcal: number;
+  originalPivotValue: number;
+  exchangeGroup: ExchangeGroupType;
+  pivotNutrient: PivotNutrientType;
+  alternatives: FoodSwapAlternative[];
 }

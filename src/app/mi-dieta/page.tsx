@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Flame, Activity, Clock, ShieldCheck, ChevronRight, Apple, Calendar, ArrowLeft } from 'lucide-react';
+import { PatientDietView } from '@/components/patient/PatientDietView';
 
 const DAYS = [
   { index: 1, label: 'L', name: 'Lunes' },
@@ -156,158 +157,23 @@ async function MiDietaContent({ searchParams }: MiDietaProps) {
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 antialiased pb-12">
-      {/* Contenedor mobile-first estricto: probado para soportar 320px sin desbordamiento horizontal */}
-      <div className="w-full max-w-md mx-auto px-3 sm:px-4 py-4 space-y-4">
-        
-        {/* Cabecera superior compacta */}
-        <header className="flex items-center justify-between border-b border-slate-900 pb-3">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-emerald-400 transition-colors"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Inicio
-          </Link>
-          <div className="flex items-center gap-1 text-[11px] font-mono text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-500/30">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Plan Activo
-          </div>
-        </header>
+      <PatientDietView
+        initialItems={itemsData}
+        dietData={dietData}
+        initialDayIndex={activeDayIndex}
+      />
 
-        {/* Tarjeta del Plan del Cliente */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-xl backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <Apple className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-base font-bold text-white truncate">{dietData.name}</h1>
-              <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                <Calendar className="h-3 w-3 text-slate-500" /> Válido hasta: {dietData.valid_to || 'Próxima revisión'}
-              </p>
-            </div>
-          </div>
-
-          {/* Resumen de Macros del Día */}
-          <div className="mt-4 grid grid-cols-4 gap-1.5 rounded-xl bg-slate-950/80 p-2.5 border border-slate-800/80 text-center">
-            <div>
-              <span className="block text-[10px] text-slate-500 uppercase tracking-wider">Kcal</span>
-              <span className="font-mono text-sm font-bold text-amber-400">{Math.round(dayTotals.kcal)}</span>
-            </div>
-            <div>
-              <span className="block text-[10px] text-slate-500 uppercase tracking-wider">Prot</span>
-              <span className="font-mono text-sm font-bold text-emerald-400">{Math.round(dayTotals.protein)}g</span>
-            </div>
-            <div>
-              <span className="block text-[10px] text-slate-500 uppercase tracking-wider">Carb</span>
-              <span className="font-mono text-sm font-bold text-sky-400">{Math.round(dayTotals.carbs)}g</span>
-            </div>
-            <div>
-              <span className="block text-[10px] text-slate-500 uppercase tracking-wider">Grasa</span>
-              <span className="font-mono text-sm font-bold text-rose-400">{Math.round(dayTotals.fat)}g</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Selector de Días: 7 botones compactos que caben a 320px de ancho */}
-        <nav aria-label="Días de la semana" className="grid grid-cols-7 gap-1">
-          {DAYS.map((d) => {
-            const isSelected = d.index === activeDayIndex;
-            return (
-              <Link
-                key={d.index}
-                href={`/mi-dieta?dia=${d.index}`}
-                className={`flex flex-col items-center justify-center py-2 rounded-xl text-xs font-semibold transition-all ${
-                  isSelected
-                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-950/50 scale-[1.03]'
-                    : 'bg-slate-900/60 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800/60'
-                }`}
-              >
-                <span className="text-[11px] leading-none">{d.label}</span>
-                <span className="text-[9px] opacity-75 mt-0.5 leading-none">D{d.index}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Listado de Ingestas del Día */}
-        <div className="space-y-3 pt-1">
-          <div className="flex items-center justify-between text-xs px-1 text-slate-400">
-            <span className="font-medium text-slate-300">
-              Menú de {DAYS.find((d) => d.index === activeDayIndex)?.name}
-            </span>
-            <span className="text-[11px] text-slate-500">{dayItems.length} alimentos</span>
-          </div>
-
-          {Object.entries(MEAL_CONFIG).map(([slotKey, config]) => {
-            const items = groupedMeals[slotKey] || [];
-            const mealKcal = items.reduce((acc, it) => acc + (it.kcal || 0), 0);
-
-            return (
-              <section
-                key={slotKey}
-                className="rounded-2xl border border-slate-800/90 bg-slate-900/40 p-3.5 shadow-sm space-y-2.5 transition-all"
-              >
-                {/* Cabecera de la comida */}
-                <div className="flex items-center justify-between border-b border-slate-800/70 pb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">{config.icon}</span>
-                    <div>
-                      <h2 className="text-xs font-bold text-slate-200">{config.label}</h2>
-                      <span className="text-[10px] text-slate-500 flex items-center gap-1">
-                        <Clock className="h-2.5 w-2.5" /> {config.time}
-                      </span>
-                    </div>
-                  </div>
-                  {mealKcal > 0 && (
-                    <span className="font-mono text-xs font-bold text-amber-400 bg-amber-950/40 px-2 py-0.5 rounded-lg border border-amber-500/20">
-                      {Math.round(mealKcal)} kcal
-                    </span>
-                  )}
-                </div>
-
-                {/* Lista de alimentos */}
-                {items.length === 0 ? (
-                  <p className="text-[11px] text-slate-600 italic py-1">Sin alimentos asignados para esta ingesta.</p>
-                ) : (
-                  <ul className="space-y-1.5">
-                    {items.map((it, idx) => (
-                      <li
-                        key={it.id || idx}
-                        className="flex items-center justify-between rounded-xl bg-slate-950/60 p-2 text-xs border border-white/5"
-                      >
-                        <div className="min-w-0 pr-2">
-                          <span className="font-medium text-slate-200 block truncate text-[11px]">
-                            {it.free_text || 'Alimento'}
-                          </span>
-                          <span className="text-[10px] text-slate-500 font-mono">
-                            {it.kcal ? `${Math.round(it.kcal)} kcal` : ''}
-                            {it.protein_g ? ` · P: ${it.protein_g}g` : ''}
-                          </span>
-                        </div>
-                        <div className="shrink-0 rounded-lg bg-slate-900 px-2 py-1 font-mono text-[11px] font-semibold text-emerald-400 border border-slate-800">
-                          {it.quantity} {it.unit || 'g'}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            );
-          })}
-        </div>
-
-        {/* Botón de Test de Aislamiento RLS en el pie */}
-        <div className="pt-4 border-t border-slate-900 text-center space-y-2">
-          <Link
-            href="/mi-dieta?dietId=unauthorized-client-b"
-            className="inline-block text-[11px] text-rose-400 hover:text-rose-300 underline"
-          >
-            [Test RLS] Intentar forzar acceso a dieta de Cliente B
-          </Link>
-          <p className="text-[10px] text-slate-600">
-            Vista optimizada 100% para dispositivos móviles (ancho mínimo 320px).
-          </p>
-        </div>
+      {/* Botón de Test de Aislamiento RLS en el pie */}
+      <div className="max-w-md mx-auto px-4 pt-4 border-t border-slate-900 text-center space-y-2">
+        <Link
+          href="/mi-dieta?dietId=unauthorized-client-b"
+          className="inline-block text-[11px] text-rose-400 hover:text-rose-300 underline"
+        >
+          [Test RLS] Intentar forzar acceso a dieta de Cliente B
+        </Link>
+        <p className="text-[10px] text-slate-600">
+          Vista optimizada 100% para dispositivos móviles (ancho mínimo 320px) con motor de intercambios dinámicos.
+        </p>
       </div>
     </main>
   );
