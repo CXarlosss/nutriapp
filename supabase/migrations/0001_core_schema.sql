@@ -179,3 +179,19 @@ having now()::date - coalesce(max(a.starts_at)::date, s.starts_on) >= p.review_i
 -- para la "prueba de fuego" (eliminar en 0002):
 alter table profiles enable row level security;
 create policy "tmp_read_profiles" on profiles for select using (true);
+
+-- Permisos explícitos para la Data API (exposición automática desactivada).
+-- RLS activa en todas: sin políticas, nadie lee nada aunque tenga el grant.
+do $$
+declare t text;
+begin
+  foreach t in array array['profiles','nutritionists','clients','plans','subscriptions',
+    'appointments','booking_tokens','foods','diet_templates','template_items',
+    'assigned_diets','assigned_diet_items']
+  loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+  end loop;
+end $$;
+grant select on public.profiles to anon;   -- temporal (prueba de fuego)
+grant execute on function assign_template(uuid, uuid) to authenticated;
