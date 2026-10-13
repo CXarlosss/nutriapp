@@ -10,6 +10,10 @@ import {
   IconFileDownload,
   IconChevronDown,
   IconChevronUp,
+  IconAlertTriangle,
+  IconX,
+  IconExternalLink,
+  IconShieldCheck,
 } from '@tabler/icons-react';
 import { Button, Badge } from '@/components/ui/nutri-ui';
 
@@ -19,11 +23,32 @@ export const DietHeader: React.FC = () => {
     clientName,
     saveStatus,
     flushPendingMutations,
+    getClinicalAudit,
+    clientWeightKg,
+    clientProfileType,
   } = useDietStore();
 
   const [localDietName, setLocalDietName] = useState(dietName);
   const [isClientSummaryOpen, setIsClientSummaryOpen] = useState(true);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [showBlockerModal, setShowBlockerModal] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState(false);
+
+  // Auditoría clínica en tiempo real (CDSS)
+  const audit = getClinicalAudit();
+
+  const handlePublishClick = () => {
+    if (audit.hasCriticalBlocker) {
+      // Bloqueo clínico: abre el modal con la justificación del estudio y DOI
+      setShowBlockerModal(true);
+      return;
+    }
+    flushPendingMutations();
+    setPublishSuccess(true);
+    setTimeout(() => setPublishSuccess(false), 4000);
+  };
+
+  const criticalIssues = audit.evaluations.filter((e) => e.status === 'critical' && !e.passed);
 
   return (
     <div className="w-full shrink-0">
@@ -63,8 +88,21 @@ export const DietHeader: React.FC = () => {
             )}
 
             <span className="hidden sm:inline-flex px-2 py-0.5 rounded-[6px] bg-[var(--card-subtle)] border border-[var(--border)] text-[12px] font-[400] text-[var(--text-secondary)] truncate">
-              {clientName}
+              {clientName} ({clientWeightKg} kg)
             </span>
+
+            {/* Badge de conformidad CDSS */}
+            {audit.hasCriticalBlocker ? (
+              <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-[6px] bg-[var(--danger-bg)] text-[var(--danger-text)] text-[11px] font-[500]">
+                <IconAlertTriangle size={12} />
+                <span>CDSS: Bloqueo activo</span>
+              </span>
+            ) : (
+              <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-[6px] bg-[var(--success-bg)] text-[var(--success-text)] text-[11px] font-[500]">
+                <IconShieldCheck size={12} />
+                <span>CDSS: Conforme</span>
+              </span>
+            )}
           </div>
         </div>
 
@@ -113,15 +151,25 @@ export const DietHeader: React.FC = () => {
             <IconArrowForwardUp size={16} stroke={1.5} />
           </button>
 
-          <Button variant="secondary" className="h-[32px] px-2.5 text-[12px]">
-            <IconFileDownload size={14} stroke={1.5} />
-            <span className="hidden sm:inline">Descargar PDF</span>
-          </Button>
+          <a
+            href={`/api/export-pdf?client=${encodeURIComponent(clientName)}&diet=${encodeURIComponent(
+              localDietName
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button variant="secondary" className="h-[32px] px-2.5 text-[12px]">
+              <IconFileDownload size={14} stroke={1.5} />
+              <span className="hidden sm:inline">Descargar PDF</span>
+            </Button>
+          </a>
 
           <Button
             variant="primary"
-            className="h-[32px] px-3 text-[12px]"
-            onClick={() => flushPendingMutations()}
+            className={`h-[32px] px-3 text-[12px] ${
+              audit.hasCriticalBlocker ? 'opacity-90 ring-2 ring-[var(--danger-text)]' : ''
+            }`}
+            onClick={handlePublishClick}
           >
             Publicar
           </Button>
@@ -135,23 +183,33 @@ export const DietHeader: React.FC = () => {
         <div className="flex items-center justify-between text-[12px]">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span className="text-[var(--text-secondary)]">
-              Objetivo: <strong className="text-[var(--text)] font-[500]">Recomposición corporal</strong>
+              Perfil: <strong className="text-[var(--text)] font-[500] capitalize">{clientProfileType}</strong>
             </span>
             <span className="text-[var(--text-secondary)]">
-              Kcal objetivo: <strong className="text-[var(--brand-solid)] font-[500]">2.200 kcal</strong>
+              Proteína actual:{' '}
+              <strong
+                className={`font-[500] ${
+                  audit.proteinPerKg < (clientProfileType === 'deportista' ? 1.4 : 0.8)
+                    ? 'text-[var(--danger-text)]'
+                    : 'text-[var(--brand-solid)]'
+                }`}
+              >
+                {audit.proteinPerKg} g/kg
+              </strong>
             </span>
-            <div className="flex items-center gap-1">
-              <span className="text-[var(--text-secondary)]">Alergias:</span>
-              <span className="px-1.5 py-0.2 rounded bg-[var(--danger-bg)] text-[var(--danger-text)] text-[11px] font-[500]">
-                Gluten
-              </span>
-              <span className="px-1.5 py-0.2 rounded bg-[var(--danger-bg)] text-[var(--danger-text)] text-[11px] font-[500]">
-                Lactosa
-              </span>
-            </div>
+            <span className="text-[var(--text-secondary)]">
+              Fibra:{' '}
+              <strong
+                className={`font-[500] ${
+                  audit.totalFiberAvg < 25 ? 'text-[var(--warning-text)]' : 'text-[var(--text)]'
+                }`}
+              >
+                {audit.totalFiberAvg} g/día
+              </strong>
+            </span>
             {isClientSummaryOpen && (
               <span className="text-[var(--text-secondary)] truncate hidden md:inline">
-                Notas: Alta adherencia; evitar lácteos en cena.
+                Alergias: Gluten, Lactosa · Peso: {clientWeightKg} kg
               </span>
             )}
           </div>
@@ -166,6 +224,84 @@ export const DietHeader: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Toast de confirmación de publicación */}
+      {publishSuccess && (
+        <div className="fixed bottom-4 right-4 z-50 bg-[var(--card)] border border-[var(--brand-solid)] rounded-[8px] p-3 shadow-xl text-[13px] text-[var(--brand-text)] flex items-center gap-2 animate-fadeIn">
+          <IconShieldCheck size={18} className="text-[var(--brand-solid)]" />
+          <span>Dieta validada clínicamente y publicada con éxito</span>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          MODAL DE BLOQUEO POR RIGOR CIENTÍFICO (CDSS)
+          ───────────────────────────────────────────────────────────── */}
+      {showBlockerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fadeIn">
+          <div className="w-full max-w-[520px] bg-[var(--card)] border border-[var(--danger-text)]/40 rounded-[12px] p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5 text-[var(--danger-text)]">
+                <IconAlertTriangle size={24} className="shrink-0" />
+                <h3 className="text-[16px] font-[500]">Bloqueo de Seguridad Clínica</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBlockerModal(false)}
+                className="text-[var(--text-secondary)] hover:text-[var(--text)]"
+              >
+                <IconX size={18} />
+              </button>
+            </div>
+
+            <p className="text-[13px] text-[var(--text)] leading-relaxed">
+              El motor de soporte a la decisión clínica (CDSS) ha bloqueado la publicación de la dieta porque
+              incumple los estándares fisiológicos mínimos para un paciente con perfil <strong>{clientProfileType}</strong>.
+            </p>
+
+            <div className="space-y-3 bg-[var(--danger-bg)] p-3.5 rounded-[8px] border border-[var(--danger-text)]/20 text-[12px] text-[var(--danger-text)]">
+              {criticalIssues.map((issue, idx) => (
+                <div key={idx} className="space-y-1">
+                  <div className="font-[500] text-[13px]">{issue.guideline.title}</div>
+                  <p className="text-[12px] opacity-90">{issue.guideline.warning_message}</p>
+                  <div className="pt-1 flex items-center justify-between text-[11px]">
+                    <span className="font-mono">
+                      Aporte actual: {issue.currentValue} {issue.guideline.unit} (Mínimo exigido:{' '}
+                      {issue.guideline.min_value} {issue.guideline.unit})
+                    </span>
+                    <a
+                      href={issue.guideline.doi_reference}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 underline font-[500]"
+                    >
+                      <span>Ver paper (DOI)</span>
+                      <IconExternalLink size={12} />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2">
+              <Button variant="secondary" onClick={() => setShowBlockerModal(false)}>
+                Modificar en el Editor
+              </Button>
+              <Button
+                variant="primary"
+                className="bg-[var(--danger-text)] text-white hover:opacity-90"
+                onClick={() => {
+                  setShowBlockerModal(false);
+                  flushPendingMutations();
+                  setPublishSuccess(true);
+                  setTimeout(() => setPublishSuccess(false), 4000);
+                }}
+              >
+                Forzar Publicación (Excepción Clínica)
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

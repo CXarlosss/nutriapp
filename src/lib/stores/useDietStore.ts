@@ -1,11 +1,20 @@
 import { create } from 'zustand';
-import { DietItem, MealSlotType, MacroTotals, CellCoordinate, SaveStatus, Food } from '@/types/diet';
+import {
+  DietItem,
+  MealSlotType,
+  MacroTotals,
+  CellCoordinate,
+  SaveStatus,
+  Food,
+  ClinicalAuditState,
+} from '@/types/diet';
 import { persistDietItemsBatch } from '@/lib/services/dietService';
+import { evaluateClinicalRules } from '@/lib/clinical/clinicalDecisionEngine';
 
 const DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const MEAL_SLOTS: MealSlotType[] = ['desayuno', 'media_manana', 'comida', 'merienda', 'cena'];
 
-// Datos iniciales de demostración
+// Datos iniciales de demostración con micronutrientes
 const INITIAL_ITEMS: DietItem[] = [
   {
     id: 'item-1',
@@ -21,6 +30,11 @@ const INITIAL_ITEMS: DietItem[] = [
     proteinG: 8.1,
     carbsG: 40.8,
     fatG: 3.9,
+    fiberG: 6.4,
+    calciumMg: 32,
+    ironMg: 2.8,
+    omega3G: 0.1,
+    omega6G: 1.4,
   },
   {
     id: 'item-2',
@@ -36,6 +50,11 @@ const INITIAL_ITEMS: DietItem[] = [
     proteinG: 15.0,
     carbsG: 5.4,
     fatG: 0.0,
+    fiberG: 0.0,
+    calciumMg: 165,
+    ironMg: 0.1,
+    omega3G: 0.0,
+    omega6G: 0.05,
   },
   {
     id: 'item-3',
@@ -51,6 +70,11 @@ const INITIAL_ITEMS: DietItem[] = [
     proteinG: 55.8,
     carbsG: 0.0,
     fatG: 6.5,
+    fiberG: 0.0,
+    calciumMg: 27,
+    ironMg: 1.8,
+    omega3G: 0.1,
+    omega6G: 0.5,
   },
   {
     id: 'item-4',
@@ -58,14 +82,19 @@ const INITIAL_ITEMS: DietItem[] = [
     dayIndex: 1,
     mealSlot: 'comida',
     position: 1,
-    foodId: 'f-10',
-    foodName: 'Arroz blanco basmati (crudo)',
-    quantity: 80,
+    foodId: 'f-12',
+    foodName: 'Arroz blanco basmati',
+    quantity: 70,
     unit: 'g',
-    kcal: 284,
-    proteinG: 6.0,
-    carbsG: 63.2,
-    fatG: 0.5,
+    kcal: 248,
+    proteinG: 5.2,
+    carbsG: 55.3,
+    fatG: 0.4,
+    fiberG: 0.8,
+    calciumMg: 10,
+    ironMg: 0.6,
+    omega3G: 0.0,
+    omega6G: 0.15,
   },
   {
     id: 'item-5',
@@ -81,6 +110,11 @@ const INITIAL_ITEMS: DietItem[] = [
     proteinG: 32.0,
     carbsG: 0.0,
     fatG: 20.8,
+    fiberG: 0.0,
+    calciumMg: 20,
+    ironMg: 1.3,
+    omega3G: 3.5,
+    omega6G: 1.0,
   },
 ];
 
@@ -88,6 +122,8 @@ interface DietStoreState {
   dietId: string;
   dietName: string;
   clientName: string;
+  clientWeightKg: number;
+  clientProfileType: 'deportista' | 'sedentario' | 'general';
   items: DietItem[];
   targetKcal: number;
   
@@ -109,6 +145,8 @@ interface DietStoreState {
   startEditing: () => void;
   stopEditing: () => void;
   moveFocus: (direction: 'up' | 'down' | 'left' | 'right' | 'tab' | 'shift-tab') => void;
+  setClientWeightKg: (weight: number) => void;
+  setClientProfileType: (profile: 'deportista' | 'sedentario' | 'general') => void;
   
   // Mutaciones optimistas de ítems
   updateItemQuantity: (id: string, quantity: number) => void;
@@ -117,11 +155,12 @@ interface DietStoreState {
   removeItem: (id: string) => void;
   copyDayToAllDays: (sourceDayIndex: number) => void;
   
-  // Selectores y cálculos
+  // Selectores y cálculos CDSS
   getItemsForSlot: (dayIndex: number, mealSlot: MealSlotType) => DietItem[];
   getDayTotals: (dayIndex: number) => MacroTotals;
   getSlotTotals: (dayIndex: number, mealSlot: MealSlotType) => MacroTotals;
   getWeekAverageKcal: () => number;
+  getClinicalAudit: () => ClinicalAuditState;
 
   // Motor interno de guardado
   enqueueSaveMutation: (item: DietItem) => void;
@@ -131,7 +170,9 @@ interface DietStoreState {
 export const useDietStore = create<DietStoreState>((set, get) => ({
   dietId: 'diet-demo-1',
   dietName: 'Definición Muscular 1900 kcal',
-  clientName: 'Carlos Pérez',
+  clientName: 'Carlos Gómez Pardo',
+  clientWeightKg: 76.4,
+  clientProfileType: 'deportista',
   items: INITIAL_ITEMS,
   targetKcal: 1900,
 
@@ -150,6 +191,9 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
   startEditing: () => set({ isEditingCell: true }),
   stopEditing: () => set({ isEditingCell: false }),
 
+  setClientWeightKg: (weight) => set({ clientWeightKg: weight }),
+  setClientProfileType: (profile) => set({ clientProfileType: profile }),
+
   moveFocus: (direction) => {
     const current = get().focusedCell;
     if (!current) {
@@ -161,32 +205,27 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
     let nextSlotIndex = MEAL_SLOTS.indexOf(current.mealSlot);
 
     switch (direction) {
-      case 'left':
-        nextDay = current.dayIndex > 1 ? current.dayIndex - 1 : 7;
-        break;
       case 'right':
-        nextDay = current.dayIndex < 7 ? current.dayIndex + 1 : 1;
+        nextDay = nextDay >= 7 ? 1 : nextDay + 1;
         break;
-      case 'up':
-        nextSlotIndex = nextSlotIndex > 0 ? nextSlotIndex - 1 : MEAL_SLOTS.length - 1;
+      case 'left':
+        nextDay = nextDay <= 1 ? 7 : nextDay - 1;
         break;
       case 'down':
-        nextSlotIndex = nextSlotIndex < MEAL_SLOTS.length - 1 ? nextSlotIndex + 1 : 0;
+        nextSlotIndex = (nextSlotIndex + 1) % MEAL_SLOTS.length;
+        break;
+      case 'up':
+        nextSlotIndex = (nextSlotIndex - 1 + MEAL_SLOTS.length) % MEAL_SLOTS.length;
         break;
       case 'tab':
-        // Tab avanza secuencialmente: siguiente día, y al terminar la fila de días baja a la siguiente comida
-        if (nextDay < 7) {
-          nextDay += 1;
-        } else {
-          nextDay = 1;
+        nextDay = nextDay >= 7 ? 1 : nextDay + 1;
+        if (nextDay === 1) {
           nextSlotIndex = (nextSlotIndex + 1) % MEAL_SLOTS.length;
         }
         break;
       case 'shift-tab':
-        if (nextDay > 1) {
-          nextDay -= 1;
-        } else {
-          nextDay = 7;
+        nextDay = nextDay <= 1 ? 7 : nextDay - 1;
+        if (nextDay === 7) {
           nextSlotIndex = (nextSlotIndex - 1 + MEAL_SLOTS.length) % MEAL_SLOTS.length;
         }
         break;
@@ -211,7 +250,7 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
     const safeQty = Math.max(1, quantity);
     const ratio = safeQty / (target.quantity || 1);
     
-    // Recálculo dinámico de macros proporcional
+    // Recálculo dinámico proporcional de macronutrientes y micronutrientes
     const updated: DietItem = {
       ...target,
       quantity: safeQty,
@@ -219,15 +258,20 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
       proteinG: Number((target.proteinG * ratio).toFixed(1)),
       carbsG: Number((target.carbsG * ratio).toFixed(1)),
       fatG: Number((target.fatG * ratio).toFixed(1)),
+      fiberG: target.fiberG !== undefined ? Number((target.fiberG * ratio).toFixed(1)) : undefined,
+      calciumMg: target.calciumMg !== undefined ? Number((target.calciumMg * ratio).toFixed(1)) : undefined,
+      ironMg: target.ironMg !== undefined ? Number((target.ironMg * ratio).toFixed(1)) : undefined,
+      omega3G: target.omega3G !== undefined ? Number((target.omega3G * ratio).toFixed(2)) : undefined,
+      omega6G: target.omega6G !== undefined ? Number((target.omega6G * ratio).toFixed(2)) : undefined,
       isModified: true,
     };
 
-    // Actualización visual optimista instantánea
+    // Actualización visual optimista instantánea (60 FPS)
     set((state) => ({
       items: state.items.map((i) => (i.id === id ? updated : i)),
     }));
 
-    // Encolar en el motor de autoguardado
+    // Encolar en el motor de autoguardado con mutex
     get().enqueueSaveMutation(updated);
   },
 
@@ -247,6 +291,11 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
       proteinG: Number((food.protein_g * ratio).toFixed(1)),
       carbsG: Number((food.carbs_g * ratio).toFixed(1)),
       fatG: Number((food.fat_g * ratio).toFixed(1)),
+      fiberG: Number(((food.fiber_g || 0) * ratio).toFixed(1)),
+      calciumMg: Number(((food.calcium_mg || 0) * ratio).toFixed(1)),
+      ironMg: Number(((food.iron_mg || 0) * ratio).toFixed(1)),
+      omega3G: Number(((food.omega3_g || 0) * ratio).toFixed(2)),
+      omega6G: Number(((food.omega6_g || 0) * ratio).toFixed(2)),
       isModified: true,
     };
 
@@ -278,6 +327,11 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
       proteinG: Number((food.protein_g * ratio).toFixed(1)),
       carbsG: Number((food.carbs_g * ratio).toFixed(1)),
       fatG: Number((food.fat_g * ratio).toFixed(1)),
+      fiberG: Number(((food.fiber_g || 0) * ratio).toFixed(1)),
+      calciumMg: Number(((food.calcium_mg || 0) * ratio).toFixed(1)),
+      ironMg: Number(((food.iron_mg || 0) * ratio).toFixed(1)),
+      omega3G: Number(((food.omega3_g || 0) * ratio).toFixed(2)),
+      omega6G: Number(((food.omega6_g || 0) * ratio).toFixed(2)),
       isModified: true,
     };
 
@@ -292,7 +346,6 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
     set((state) => ({
       items: state.items.filter((i) => i.id !== id),
     }));
-    // Se registra como guardado o se sincroniza en batch
   },
 
   copyDayToAllDays: (sourceDayIndex) => {
@@ -335,8 +388,13 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
         protein: Number((acc.protein + (item.proteinG || 0)).toFixed(1)),
         carbs: Number((acc.carbs + (item.carbsG || 0)).toFixed(1)),
         fat: Number((acc.fat + (item.fatG || 0)).toFixed(1)),
+        fiber: Number((acc.fiber + (item.fiberG || 0)).toFixed(1)),
+        calcium: Number((acc.calcium + (item.calciumMg || 0)).toFixed(1)),
+        iron: Number((acc.iron + (item.ironMg || 0)).toFixed(1)),
+        omega3: Number((acc.omega3 + (item.omega3G || 0)).toFixed(2)),
+        omega6: Number((acc.omega6 + (item.omega6G || 0)).toFixed(2)),
       }),
-      { kcal: 0, protein: 0, carbs: 0, fat: 0 }
+      { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, calcium: 0, iron: 0, omega3: 0, omega6: 0 }
     );
   },
 
@@ -350,8 +408,13 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
         protein: Number((acc.protein + (item.proteinG || 0)).toFixed(1)),
         carbs: Number((acc.carbs + (item.carbsG || 0)).toFixed(1)),
         fat: Number((acc.fat + (item.fatG || 0)).toFixed(1)),
+        fiber: Number((acc.fiber + (item.fiberG || 0)).toFixed(1)),
+        calcium: Number((acc.calcium + (item.calciumMg || 0)).toFixed(1)),
+        iron: Number((acc.iron + (item.ironMg || 0)).toFixed(1)),
+        omega3: Number((acc.omega3 + (item.omega3G || 0)).toFixed(2)),
+        omega6: Number((acc.omega6 + (item.omega6G || 0)).toFixed(2)),
       }),
-      { kcal: 0, protein: 0, carbs: 0, fat: 0 }
+      { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, calcium: 0, iron: 0, omega3: 0, omega6: 0 }
     );
   },
 
@@ -362,14 +425,21 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
   },
 
   /**
+   * Selector Puro del Motor CDSS:
+   * Calcula ratios clínicos y audita contra guías de evidencia en tiempo real (60 FPS)
+   */
+  getClinicalAudit: () => {
+    const state = get();
+    return evaluateClinicalRules(state.items, state.clientWeightKg, state.clientProfileType);
+  },
+
+  /**
    * Encola una modificación en el Map de mutaciones pendientes y reinicia el debounce de 500ms.
    */
   enqueueSaveMutation: (item) => {
     const state = get();
-    // Guardamos siempre la versión más reciente del ítem en el mapa (clave: item.id)
     state.pendingMutations.set(item.id, item);
 
-    // Cancelamos timer previo para aplicar el debounce de 500ms
     if (state.saveTimerId) {
       clearTimeout(state.saveTimerId);
     }
@@ -379,20 +449,14 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
     }, 500);
 
     set({
-      saveStatus: 'unsaved',
       saveTimerId: timerId,
+      saveStatus: 'unsaved',
     });
   },
 
-  /**
-   * Ejecuta el guardado en bloque protegiendo contra Race Conditions mediante Mutex y Re-triggering.
-   */
   flushPendingMutations: async () => {
     const { isSavingMutex, pendingMutations } = get();
 
-    // PREVENCIÓN DE RACE CONDITION:
-    // Si ya hay una petición HTTP en vuelo, no disparamos otra en paralelo para no generar colisiones.
-    // Dejamos los ítems en pendingMutations; cuando la petición activa termine, procesará la cola acumulada.
     if (isSavingMutex) {
       if (process.env.NODE_ENV === 'development') {
         console.log('[Autosave] Petición en curso. Cambios encolados a la espera de finalizar.');
@@ -405,9 +469,7 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
       return;
     }
 
-    // Tomamos snapshot atómico de todos los ítems pendientes acumulados
     const batchToPersist = Array.from(pendingMutations.values());
-    // Vaciamos la cola de mutaciones tomada
     pendingMutations.clear();
 
     const currentRevision = get().saveRevision + 1;
@@ -424,7 +486,7 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
     }
 
     try {
-      const result = await persistDietItemsBatch(batchToPersist);
+      await persistDietItemsBatch(batchToPersist);
       
       set({
         isSavingMutex: false,
@@ -432,8 +494,6 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
         saveStatus: 'saved',
       });
 
-      // Si el usuario modificó más celdas mientras la petición estaba en tránsito,
-      // pendingMutations tendrá nuevos elementos. Disparamos de inmediato el siguiente batch.
       if (get().pendingMutations.size > 0) {
         if (process.env.NODE_ENV === 'development') {
           console.log(`[Autosave Chain] Detectadas ${get().pendingMutations.size} modificaciones posteriores durante el vuelo. Procesando nuevo lote.`);
@@ -441,8 +501,9 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
         get().flushPendingMutations();
       }
     } catch (error) {
-      console.error('[Autosave Error] Error en persistencia:', error);
-      // En caso de fallo de red, reinsertamos los ítems fallidos en la cola si no fueron sobreescritos
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[Autosave Error] Error en persistencia:', error);
+      }
       batchToPersist.forEach((item) => {
         if (!get().pendingMutations.has(item.id)) {
           get().pendingMutations.set(item.id, item);

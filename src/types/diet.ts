@@ -9,6 +9,12 @@ export interface Food {
   carbs_g: number;
   fat_g: number;
   default_unit: string;
+  // Micronutrientes y ácidos grasos críticos (CDSS)
+  fiber_g?: number;
+  calcium_mg?: number;
+  iron_mg?: number;
+  omega3_g?: number;
+  omega6_g?: number;
 }
 
 export interface DietItem {
@@ -25,6 +31,12 @@ export interface DietItem {
   proteinG: number;
   carbsG: number;
   fatG: number;
+  // Micronutrientes calculados proporcionales a quantity
+  fiberG?: number;
+  calciumMg?: number;
+  ironMg?: number;
+  omega3G?: number;
+  omega6G?: number;
   notes?: string;
   isModified?: boolean;
 }
@@ -34,6 +46,11 @@ export interface MacroTotals {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number;
+  calcium: number;
+  iron: number;
+  omega3: number;
+  omega6: number;
 }
 
 export interface DaySchedule {
@@ -51,3 +68,49 @@ export interface CellCoordinate {
 }
 
 export type SaveStatus = 'idle' | 'unsaved' | 'saving' | 'saved' | 'error';
+
+// ==============================================================================
+// CDSS (Clinical Decision Support System) - Tipos de Soporte Clínico y Evidencia
+// ==============================================================================
+
+export interface ScientificGuideline {
+  id: string;
+  target_profile: string; // 'deportista' | 'sedentario' | 'general'
+  nutrient_or_ratio: string; // 'proteina_kg' | 'fibra_total' | 'omega3_omega6_ratio' | 'calcio_mg' | 'hierro_mg'
+  min_value: number | null;
+  max_value: number | null;
+  unit: string;
+  title: string;
+  doi_reference: string;
+  warning_message: string;
+  severity: 'critical' | 'warning' | 'info';
+}
+
+export interface ClinicalValidationResult {
+  guideline: ScientificGuideline;
+  currentValue: number;
+  passed: boolean;
+  status: 'optimal' | 'warning' | 'critical';
+  difference: number;
+  deficientNutrient?: string;
+}
+
+export interface SuggestedSupplement {
+  nutrient: string;
+  foodName: string;
+  category: string;
+  richnessLabel: string;
+  defaultGrams: number;
+}
+
+export interface ClinicalAuditState {
+  proteinPerKg: number;
+  totalFiberAvg: number;
+  omega3_6_ratio: number;
+  totalCalciumAvg: number;
+  totalIronAvg: number;
+  evaluations: ClinicalValidationResult[];
+  criticalViolationsCount: number;
+  hasCriticalBlocker: boolean;
+  suggestedFoods: SuggestedSupplement[];
+}
