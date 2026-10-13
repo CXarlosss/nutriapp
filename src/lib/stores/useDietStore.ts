@@ -512,7 +512,26 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
       set({
         isSavingMutex: false,
         saveStatus: 'error',
-      });
-    }
-  },
 }));
+
+/**
+ * Selector puro de Zustand:
+ * Cruza los datos de la cuadrícula semanal con el peso del perfil del cliente
+ * para calcular los gramos de proteína por kilogramo de peso corporal (g/kg/día).
+ */
+export const selectProteinPerKg = (state: DietState): number => {
+  const safeWeight = Math.max(30, state.clientWeightKg || 70);
+  let totalProteinWeekly = 0;
+  for (let i = 0; i < state.items.length; i++) {
+    totalProteinWeekly += state.items[i].proteinG || 0;
+  }
+  const proteinDailyAvg = totalProteinWeekly / 7;
+  return Number((proteinDailyAvg / safeWeight).toFixed(2));
+};
+
+/**
+ * Selector puro para la auditoría clínica completa (CDSS)
+ */
+export const selectClinicalAudit = (state: DietState): ClinicalAuditState => {
+  return evaluateClinicalRules(state.items, state.clientWeightKg, state.clientProfileType);
+};
