@@ -167,6 +167,8 @@ interface DietStoreState {
   flushPendingMutations: () => Promise<void>;
 }
 
+export type DietState = DietStoreState;
+
 export const useDietStore = create<DietStoreState>((set, get) => ({
   dietId: 'diet-demo-1',
   dietName: 'Definición Muscular 1900 kcal',
@@ -512,6 +514,9 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
       set({
         isSavingMutex: false,
         saveStatus: 'error',
+      });
+    }
+  },
 }));
 
 /**
