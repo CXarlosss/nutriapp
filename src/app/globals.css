@@ -1,26 +1,103 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Fondos y Superficies */
+  --bg: #F5F4EF;
+  --card: #FFFFFF;
+  --card-subtle: #FAFAF7;
+
+  /* Bordes */
+  --border: rgba(0, 0, 0, 0.10);
+  --border-strong: rgba(0, 0, 0, 0.20);
+
+  /* Textos */
+  --text: #1F1F1D;
+  --text-secondary: #5F5E5A;
+  --text-muted: #888780;
+
+  /* Marca / Acento */
+  --brand-bg: #E1F5EE;
+  --brand-border: #5DCAA5;
+  --brand-text: #085041;
+  --brand-solid: #0F6E56;
+  --brand-solid-text: #FFFFFF;
+
+  /* Estados */
+  --success-bg: #EAF3DE;
+  --success-text: #3B6D11;
+
+  --warning-bg: #FAEEDA;
+  --warning-text: #854F0B;
+
+  --danger-bg: #FCEBEB;
+  --danger-text: #A32D2D;
+
+  --info-bg: #E6F1FB;
+  --info-text: #185FA5;
+
+  --neutral-bg: #F1EFE8;
+  --neutral-text: #5F5E5A;
+
+  /* Foco */
+  --focus-ring: 0 0 0 3px rgba(15, 110, 86, 0.25);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+.dark {
+  --bg: #1A1A18;
+  --card: #242422;
+  --card-subtle: #2C2C2A;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.20);
+
+  --text: #EDECE8;
+  --text-secondary: #A6A59E;
+  --text-muted: #73726C;
+
+  --brand-bg: #0C382C;
+  --brand-border: #166B54;
+  --brand-text: #7CE0BF;
+  --brand-solid: #128266;
+  --brand-solid-text: #FFFFFF;
+
+  --success-bg: #1C3312;
+  --success-text: #A8E084;
+
+  --warning-bg: #382408;
+  --warning-text: #F7C686;
+
+  --danger-bg: #3B1414;
+  --danger-text: #F29494;
+
+  --info-bg: #0D2847;
+  --info-text: #8EC2F5;
+
+  --neutral-bg: #2B2A27;
+  --neutral-text: #BDBBB3;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Reglas estrictas de diseño NutriApp: */
+/* Sin sombras decorativas excepto focus ring */
+* {
+  box-shadow: none !important;
+}
+
+*:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring) !important;
+}
+
+/* Transiciones táctiles suaves */
+button:active:not(:disabled) {
+  transform: scale(0.98);
 }
