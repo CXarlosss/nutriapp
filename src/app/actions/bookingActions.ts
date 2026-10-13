@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { dispatchN8nWebhook, N8nAppointmentPayload } from '@/lib/n8n/webhook';
 
@@ -161,6 +162,10 @@ export async function bookAppointmentAction(input: BookingInput): Promise<Bookin
   };
 
   const webhookResult = await dispatchN8nWebhook(webhookPayload);
+
+  // Invalida la caché de Server Components para actualizar el Dashboard y la Agenda de Citas
+  revalidatePath('/dashboard');
+  revalidatePath('/appointments');
 
   return {
     success: true,

@@ -105,6 +105,8 @@ export async function assignTemplateToClient(
       await supabase.from('assigned_diet_items').insert(clonedItems);
     }
 
+    revalidatePath('/dashboard');
+    revalidatePath('/clients');
     revalidatePath('/mi-dieta');
     revalidatePath('/dietas/creador');
     return { success: true, dietId: newDiet.id, itemsCount: items?.length || 0 };
