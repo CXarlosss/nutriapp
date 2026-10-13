@@ -35,6 +35,15 @@ export default function Home() {
         <Suspense fallback={<p className="animate-pulse text-slate-500">Consultando Supabase…</p>}>
           <ProfilesResult />
         </Suspense>
+
+        <div className="pt-6 border-t border-white/10">
+          <a
+            href="/dietas/creador"
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 font-semibold text-slate-950 transition hover:bg-emerald-400 shadow-lg shadow-emerald-950/60"
+          >
+            Abrir Creador de Dietas (Bloque 2 · Estilo Excel) →
+          </a>
+        </div>
       </div>
     </main>
   );
