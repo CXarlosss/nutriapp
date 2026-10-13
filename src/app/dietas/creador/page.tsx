@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { DietHeader } from '@/components/diet-editor/DietHeader';
+import { NutrientCyclingBar } from '@/components/diet-editor/NutrientCyclingBar';
 import { DietGrid } from '@/components/diet-editor/DietGrid';
 import { ClinicalAuditScorecard } from '@/components/diet-editor/ClinicalAuditScorecard';
 
@@ -15,6 +16,7 @@ export default function DietCreatorPage() {
       <div className="flex-1 flex overflow-hidden">
         {/* Hoja de cálculo limpia */}
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4">
+          <NutrientCyclingBar />
           <DietGrid />
         </main>
 

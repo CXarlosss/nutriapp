@@ -5,14 +5,16 @@ import { useDietStore } from '@/lib/stores/useDietStore';
 import { Flame, Activity, Zap, ShieldCheck } from 'lucide-react';
 
 export const MacroSummary: React.FC = () => {
-  const { targetKcal, getWeekAverageKcal, getDayTotals, focusedCell } = useDietStore();
+  const { getWeekAverageKcal, getDayTotals, focusedCell, getDayCyclingConfig, getDayCompliance } = useDietStore();
 
-  const avgKcal = getWeekAverageKcal();
   const activeDay = focusedCell ? focusedCell.dayIndex : 1;
   const activeDayTotals = getDayTotals(activeDay);
+  const activeDayConfig = getDayCyclingConfig(activeDay);
+  const compliance = getDayCompliance(activeDay);
 
-  const kcalDiff = activeDayTotals.kcal - targetKcal;
-  const isCloseToTarget = Math.abs(kcalDiff) <= 100;
+  const targetKcal = activeDayConfig.targetKcal;
+  const kcalDiff = compliance.kcalDiff;
+  const isCloseToTarget = compliance.isKcalCompliant;
 
   // Porcentaje estimado de macros sobre calorías (P: 4 kcal/g, C: 4 kcal/g, G: 9 kcal/g)
   const totalCalFromMacros =
@@ -27,10 +29,10 @@ export const MacroSummary: React.FC = () => {
         <div>
           <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
             <Activity className="h-4 w-4 text-emerald-400" />
-            Balance Nutricional en Tiempo Real (Día #{activeDay})
+            Balance Nutricional en Tiempo Real (Día #{activeDay} · {activeDayConfig.icon} {activeDayConfig.label})
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Recálculo reactivo con 0ms de latencia vía Zustand Store
+            Target dinámico de ciclado: {activeDayConfig.targetKcal} kcal | Obj Carbos: {activeDayConfig.targetCarbsG}g
           </p>
         </div>
 
@@ -54,11 +56,7 @@ export const MacroSummary: React.FC = () => {
             }`}
           >
             <ShieldCheck className="h-3.5 w-3.5" />
-            {isCloseToTarget
-              ? 'En Objetivo (±100 kcal)'
-              : kcalDiff > 0
-              ? `+${kcalDiff} kcal sobre objetivo`
-              : `${kcalDiff} kcal bajo objetivo`}
+            {compliance.message}
           </div>
         </div>
       </div>

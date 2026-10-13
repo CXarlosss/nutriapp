@@ -7,9 +7,19 @@ import {
   SaveStatus,
   Food,
   ClinicalAuditState,
+  DayDemandType,
+  DayCyclingConfig,
+  CyclingPreset,
 } from '@/types/diet';
 import { persistDietItemsBatch } from '@/lib/services/dietService';
 import { evaluateClinicalRules } from '@/lib/clinical/clinicalDecisionEngine';
+import {
+  getDefaultDayConfigs,
+  evaluateDayCompliance,
+  CYCLING_PRESETS,
+  DayComplianceResult,
+  DEMAND_CONFIGS,
+} from '@/lib/clinical/nutrientCyclingEngine';
 
 const DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const MEAL_SLOTS: MealSlotType[] = ['desayuno', 'media_manana', 'comida', 'merienda', 'cena'];
@@ -162,6 +172,15 @@ interface DietStoreState {
   getWeekAverageKcal: () => number;
   getClinicalAudit: () => ClinicalAuditState;
 
+  // Ciclado Estratégico de Nutrientes
+  dayCyclingConfigs: Record<number, DayCyclingConfig>;
+  activeCyclingPresetId: string | null;
+  setDayDemandType: (dayIndex: number, demandType: DayDemandType) => void;
+  updateDayCyclingTarget: (dayIndex: number, targets: Partial<DayCyclingConfig>) => void;
+  applyCyclingPreset: (presetId: string) => void;
+  getDayCyclingConfig: (dayIndex: number) => DayCyclingConfig;
+  getDayCompliance: (dayIndex: number) => DayComplianceResult;
+
   // Motor interno de guardado
   enqueueSaveMutation: (item: DietItem) => void;
   flushPendingMutations: () => Promise<void>;
@@ -177,6 +196,10 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
   clientProfileType: 'deportista',
   items: INITIAL_ITEMS,
   targetKcal: 1900,
+
+  // Ciclado Estratégico de Nutrientes Inicial (Hipertrofia 4:3)
+  dayCyclingConfigs: getDefaultDayConfigs(),
+  activeCyclingPresetId: 'hipertrofia_4_3',
 
   focusedCell: { dayIndex: 1, mealSlot: 'desayuno', itemIndex: 0, field: 'quantity' },
   isEditingCell: false,
@@ -433,6 +456,107 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
   getClinicalAudit: () => {
     const state = get();
     return evaluateClinicalRules(state.items, state.clientWeightKg, state.clientProfileType);
+  },
+
+  /**
+   * Ciclado Estratégico de Nutrientes:
+   * Ajusta reactivamente la demanda energética y de carbos por día.
+   */
+  setDayDemandType: (dayIndex, demandType) => {
+    set((state) => {
+      const current = state.dayCyclingConfigs[dayIndex];
+      if (!current) return state;
+
+      const demandMeta = DEMAND_CONFIGS[demandType];
+      let targetKcal = current.targetKcal;
+      let targetCarbsG = current.targetCarbsG;
+      let targetFatG = current.targetFatG;
+
+      if (demandType === 'entrenamiento_pesado') {
+        targetKcal = 2250;
+        targetCarbsG = 260;
+        targetFatG = 60;
+      } else if (demandType === 'descanso') {
+        targetKcal = 1700;
+        targetCarbsG = 120;
+        targetFatG = 65;
+      } else if (demandType === 'refeed') {
+        targetKcal = 2450;
+        targetCarbsG = 360;
+        targetFatG = 40;
+      } else {
+        targetKcal = 1900;
+        targetCarbsG = 190;
+        targetFatG = 50;
+      }
+
+      return {
+        dayCyclingConfigs: {
+          ...state.dayCyclingConfigs,
+          [dayIndex]: {
+            ...current,
+            demandType,
+            targetKcal,
+            targetCarbsG,
+            targetFatG,
+            icon: demandMeta.icon,
+          },
+        },
+      };
+    });
+  },
+
+  updateDayCyclingTarget: (dayIndex, targets) => {
+    set((state) => {
+      const current = state.dayCyclingConfigs[dayIndex];
+      if (!current) return state;
+      return {
+        dayCyclingConfigs: {
+          ...state.dayCyclingConfigs,
+          [dayIndex]: {
+            ...current,
+            ...targets,
+          },
+        },
+      };
+    });
+  },
+
+  applyCyclingPreset: (presetId) => {
+    const preset = CYCLING_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+
+    const newConfigs: Record<number, DayCyclingConfig> = {};
+    for (let d = 1; d <= 7; d++) {
+      const pDay = preset.days[d];
+      newConfigs[d] = {
+        dayIndex: d,
+        demandType: pDay.demandType,
+        label: pDay.label,
+        targetKcal: pDay.targetKcal,
+        targetProteinG: pDay.targetProteinG,
+        targetCarbsG: pDay.targetCarbsG,
+        targetFatG: pDay.targetFatG,
+        trainingFocus: pDay.trainingFocus,
+        icon: DEMAND_CONFIGS[pDay.demandType].icon,
+      };
+    }
+
+    set({
+      dayCyclingConfigs: newConfigs,
+      activeCyclingPresetId: presetId,
+    });
+  },
+
+  getDayCyclingConfig: (dayIndex) => {
+    const configs = get().dayCyclingConfigs;
+    return configs[dayIndex] || getDefaultDayConfigs()[dayIndex];
+  },
+
+  getDayCompliance: (dayIndex) => {
+    const totals = get().getDayTotals(dayIndex);
+    const config = get().getDayCyclingConfig(dayIndex);
+    return evaluateDayCompliance(totals, config);
   },
 
   /**

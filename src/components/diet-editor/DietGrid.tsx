@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useDietStore } from '@/lib/stores/useDietStore';
-import { MealSlotType, DietItem } from '@/types/diet';
+import { MealSlotType, DietItem, DayDemandType } from '@/types/diet';
 import { FoodFuzzySearch } from './FoodFuzzySearch';
 import {
   IconSun,
@@ -49,10 +49,14 @@ export const DietGrid: React.FC = () => {
     addItemToSlot,
     removeItem,
     copyDayToAllDays,
+    getDayCyclingConfig,
+    setDayDemandType,
+    getDayCompliance,
   } = useDietStore();
 
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const [dayMenuOpen, setDayMenuOpen] = useState<number | null>(null);
+  const [demandMenuOpen, setDemandMenuOpen] = useState<number | null>(null);
 
   // Manejo de atajos de teclado
   useEffect(() => {
@@ -108,45 +112,128 @@ export const DietGrid: React.FC = () => {
               Comida
             </div>
 
-            {DAYS.map((day) => (
-              <div
-                key={day.index}
-                className="p-[8px_12px] border-r border-[var(--border)] last:border-r-0 flex items-center justify-between relative"
-              >
-                <span className="text-[12px] font-[500] text-[var(--text)]">{day.name}</span>
-                <button
-                  type="button"
-                  onClick={() => setDayMenuOpen(dayMenuOpen === day.index ? null : day.index)}
-                  className="p-1 rounded text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card)] transition-colors cursor-pointer"
-                  title="Acciones del día"
-                >
-                  <IconCopy size={13} stroke={1.5} />
-                </button>
+            {DAYS.map((day) => {
+              const dayConfig = getDayCyclingConfig(day.index);
+              const isHeavy = dayConfig.demandType === 'entrenamiento_pesado';
+              const isRest = dayConfig.demandType === 'descanso';
+              const isRefeed = dayConfig.demandType === 'refeed';
 
-                {/* Menú de acciones del día */}
-                {dayMenuOpen === day.index && (
-                  <div className="absolute right-2 top-8 z-40 bg-[var(--card)] border border-[var(--border)] rounded-[8px] p-1 text-[12px] space-y-0.5 shadow-lg">
+              return (
+                <div
+                  key={day.index}
+                  className="p-[8px_10px] border-r border-[var(--border)] last:border-r-0 flex flex-col justify-between gap-1.5 relative"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] font-[600] text-[var(--text)]">{day.name}</span>
                     <button
                       type="button"
-                      onClick={() => {
-                        copyDayToAllDays(day.index);
-                        setDayMenuOpen(null);
-                      }}
-                      className="w-full text-left px-2 py-1 rounded hover:bg-[var(--card-subtle)] text-[var(--text)]"
+                      onClick={() => setDayMenuOpen(dayMenuOpen === day.index ? null : day.index)}
+                      className="p-1 rounded text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card)] transition-colors cursor-pointer"
+                      title="Acciones del día"
                     >
-                      Copiar a toda la semana
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDayMenuOpen(null)}
-                      className="w-full text-left px-2 py-1 rounded hover:bg-[var(--card-subtle)] text-[var(--danger-text)]"
-                    >
-                      Vaciar día
+                      <IconCopy size={13} stroke={1.5} />
                     </button>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {/* Badge de Demanda de Ciclado interactivo */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setDemandMenuOpen(demandMenuOpen === day.index ? null : day.index)}
+                      className={`w-full flex items-center justify-between px-2 py-0.5 rounded-[6px] text-[10px] font-mono font-medium border transition-colors ${
+                        isHeavy
+                          ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30 hover:border-emerald-500/50'
+                          : isRest
+                          ? 'bg-slate-900/60 text-slate-400 border-slate-700/50 hover:border-slate-600'
+                          : isRefeed
+                          ? 'bg-amber-950/40 text-amber-300 border-amber-500/30 hover:border-amber-500/50'
+                          : 'bg-teal-950/40 text-teal-300 border-teal-500/30 hover:border-teal-500/50'
+                      }`}
+                      title="Cambiar tipo de demanda para este día"
+                    >
+                      <span className="flex items-center gap-1 truncate">
+                        <span>{dayConfig.icon || (isHeavy ? '🏋️' : isRest ? '🛌' : '⚡')}</span>
+                        <span className="truncate">{dayConfig.targetKcal} kcal</span>
+                      </span>
+                      <span className="text-[9px] opacity-70 ml-1">▼</span>
+                    </button>
+
+                    {/* Menú de selección de demanda */}
+                    {demandMenuOpen === day.index && (
+                      <div className="absolute left-0 top-6 z-50 w-44 rounded-lg border border-[var(--border)] bg-[var(--card)] p-1 text-[11px] shadow-xl space-y-0.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDayDemandType(day.index, 'entrenamiento_pesado');
+                            setDemandMenuOpen(null);
+                          }}
+                          className="w-full text-left px-2 py-1 rounded hover:bg-[var(--card-subtle)] text-[var(--text)] flex items-center gap-1.5"
+                        >
+                          <span>🏋️‍♂️</span>
+                          <span>Fuerza (2.250 kcal)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDayDemandType(day.index, 'entrenamiento_moderado');
+                            setDemandMenuOpen(null);
+                          }}
+                          className="w-full text-left px-2 py-1 rounded hover:bg-[var(--card-subtle)] text-[var(--text)] flex items-center gap-1.5"
+                        >
+                          <span>⚡</span>
+                          <span>Moderado (1.900 kcal)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDayDemandType(day.index, 'descanso');
+                            setDemandMenuOpen(null);
+                          }}
+                          className="w-full text-left px-2 py-1 rounded hover:bg-[var(--card-subtle)] text-[var(--text)] flex items-center gap-1.5"
+                        >
+                          <span>🛌</span>
+                          <span>Descanso (1.700 kcal)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDayDemandType(day.index, 'refeed');
+                            setDemandMenuOpen(null);
+                          }}
+                          className="w-full text-left px-2 py-1 rounded hover:bg-[var(--card-subtle)] text-[var(--text)] flex items-center gap-1.5"
+                        >
+                          <span>🔄</span>
+                          <span>Refeed (2.450 kcal)</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Menú de acciones del día */}
+                  {dayMenuOpen === day.index && (
+                    <div className="absolute right-2 top-8 z-40 bg-[var(--card)] border border-[var(--border)] rounded-[8px] p-1 text-[12px] space-y-0.5 shadow-lg">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          copyDayToAllDays(day.index);
+                          setDayMenuOpen(null);
+                        }}
+                        className="w-full text-left px-2 py-1 rounded hover:bg-[var(--card-subtle)] text-[var(--text)]"
+                      >
+                        Copiar a toda la semana
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDayMenuOpen(null)}
+                        className="w-full text-left px-2 py-1 rounded hover:bg-[var(--card-subtle)] text-[var(--danger-text)]"
+                      >
+                        Vaciar día
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* ─────────────────────────────────────────────────────────────
@@ -273,24 +360,46 @@ export const DietGrid: React.FC = () => {
 
             {DAYS.map((day) => {
               const totals = getDayTotals(day.index);
-              const target = targetKcal || 2200;
-              const deviation = Math.abs(totals.kcal - target) / target;
-              const isDeviated = deviation > 0.10 && totals.kcal > 0;
+              const compliance = getDayCompliance(day.index);
+              const dayConfig = getDayCyclingConfig(day.index);
 
               return (
                 <div
                   key={day.index}
-                  className="p-[8px_12px] border-r border-[var(--border)] last:border-r-0 text-[12px]"
+                  className="p-[8px_10px] border-r border-[var(--border)] last:border-r-0 text-[12px]"
                 >
-                  <div
-                    className={`font-[500] leading-none mb-0.5 ${
-                      isDeviated ? 'text-[var(--warning-text)]' : 'text-[var(--text)]'
-                    }`}
-                  >
-                    {Math.round(totals.kcal)} kcal
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span
+                      className={`font-[600] font-mono leading-none ${
+                        compliance.status === 'optimal'
+                          ? 'text-emerald-400'
+                          : compliance.status === 'warning'
+                          ? 'text-amber-400'
+                          : 'text-rose-400'
+                      }`}
+                    >
+                      {Math.round(totals.kcal)} kcal
+                    </span>
+                    <span
+                      className={`text-[9px] font-mono px-1 py-0.2 rounded border ${
+                        compliance.status === 'optimal'
+                          ? 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30'
+                          : compliance.status === 'warning'
+                          ? 'text-amber-400 bg-amber-950/40 border-amber-500/30'
+                          : 'text-rose-400 bg-rose-950/40 border-rose-500/30'
+                      }`}
+                      title={compliance.message}
+                    >
+                      {compliance.status === 'optimal'
+                        ? 'En target'
+                        : `${compliance.kcalDiff > 0 ? `+${compliance.kcalDiff}` : compliance.kcalDiff}k`}
+                    </span>
                   </div>
-                  <div className="text-[11px] text-[var(--text-secondary)] font-[400]">
-                    P:{Math.round(totals.protein)}g · C:{Math.round(totals.carbs)}g · G:{Math.round(totals.fat)}g
+                  <div className="text-[10px] text-[var(--text-secondary)] font-mono">
+                    P:{Math.round(totals.protein)} · C:{Math.round(totals.carbs)} · G:{Math.round(totals.fat)}
+                  </div>
+                  <div className="text-[9px] text-[var(--text-muted)] font-mono truncate mt-0.5">
+                    Obj: {dayConfig.targetCarbsG}g carb
                   </div>
                 </div>
               );

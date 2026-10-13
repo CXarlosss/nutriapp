@@ -164,3 +164,43 @@ export interface FoodSwapResult {
   pivotNutrient: PivotNutrientType;
   alternatives: FoodSwapAlternative[];
 }
+
+// ==============================================================================
+// STRATEGIC NUTRIENT CYCLING (Ciclado Estratégico de Nutrientes y Días Ondulantes)
+// ==============================================================================
+
+export type DayDemandType =
+  | 'entrenamiento_pesado'
+  | 'entrenamiento_moderado'
+  | 'descanso'
+  | 'refeed';
+
+export interface DayCyclingConfig {
+  dayIndex: number;
+  demandType: DayDemandType;
+  label: string;
+  targetKcal: number;
+  targetProteinG: number;
+  targetCarbsG: number;
+  targetFatG: number;
+  trainingFocus?: string;
+  icon?: string;
+}
+
+export interface CyclingPreset {
+  id: string;
+  name: string;
+  description: string;
+  trainingDaysCount: number;
+  restDaysCount: number;
+  days: Record<number, {
+    demandType: DayDemandType;
+    label: string;
+    targetKcal: number;
+    targetProteinG: number;
+    targetCarbsG: number;
+    targetFatG: number;
+    trainingFocus?: string;
+  }>;
+}
+

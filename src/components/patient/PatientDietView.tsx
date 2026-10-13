@@ -202,6 +202,8 @@ export function PatientDietView({
       <nav aria-label="Días de la semana" className="grid grid-cols-7 gap-1">
         {DAYS.map((d) => {
           const isSelected = d.index === activeDayIndex;
+          const isTraining = [1, 2, 4, 5].includes(d.index);
+
           return (
             <button
               key={d.index}
@@ -213,7 +215,9 @@ export function PatientDietView({
               }`}
             >
               <span className="text-[11px] leading-none">{d.label}</span>
-              <span className="text-[9px] opacity-75 mt-0.5 leading-none">D{d.index}</span>
+              <span className="text-[9px] mt-0.5 leading-none">
+                {isTraining ? '🏋️' : '🛌'}
+              </span>
             </button>
           );
         })}
@@ -222,11 +226,24 @@ export function PatientDietView({
       {/* Listado de Ingestas del Día con soporte para intercambios */}
       <div className="space-y-3 pt-1">
         <div className="flex items-center justify-between text-xs px-1 text-slate-400">
-          <span className="font-medium text-slate-300">
-            Menú de {DAYS.find((d) => d.index === activeDayIndex)?.name}
-          </span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-medium text-slate-300">
+              Menú de {DAYS.find((d) => d.index === activeDayIndex)?.name}
+            </span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded border font-mono ${
+                [1, 2, 4, 5].includes(activeDayIndex)
+                  ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30'
+                  : 'bg-slate-900 text-slate-400 border-slate-700'
+              }`}
+            >
+              {[1, 2, 4, 5].includes(activeDayIndex)
+                ? '🏋️ Entrenamiento Pesado'
+                : '🛌 Descanso y Recuperación'}
+            </span>
+          </div>
           <span className="text-[11px] text-slate-500 flex items-center gap-1">
-            <ArrowLeftRight className="h-3 w-3 text-emerald-400" /> Intercambios activos
+            <ArrowLeftRight className="h-3 w-3 text-emerald-400" /> Intercambios
           </span>
         </div>
 
