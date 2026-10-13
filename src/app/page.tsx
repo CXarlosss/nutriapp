@@ -36,12 +36,18 @@ export default function Home() {
           <ProfilesResult />
         </Suspense>
 
-        <div className="pt-6 border-t border-white/10">
+        <div className="pt-6 border-t border-white/10 flex flex-wrap gap-3">
           <a
             href="/dietas/creador"
             className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 font-semibold text-slate-950 transition hover:bg-emerald-400 shadow-lg shadow-emerald-950/60"
           >
-            Abrir Creador de Dietas (Bloque 2 · Estilo Excel) →
+            Abrir Creador de Dietas (Bloque 2) →
+          </a>
+          <a
+            href="/mi-dieta"
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-5 py-3 font-semibold text-white transition hover:bg-slate-700 border border-slate-700"
+          >
+            Portal Paciente (/mi-dieta · Bloque 3) →
           </a>
         </div>
       </div>
