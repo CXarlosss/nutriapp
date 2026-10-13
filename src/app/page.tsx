@@ -49,6 +49,12 @@ export default function Home() {
           >
             Portal Paciente (/mi-dieta · Bloque 3) →
           </a>
+          <a
+            href="/reservas"
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white transition hover:bg-indigo-500 border border-indigo-500 shadow-lg shadow-indigo-950/60"
+          >
+            Reservas & GiST (/reservas · Bloque 4) →
+          </a>
         </div>
       </div>
     </main>
