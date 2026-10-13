@@ -181,6 +181,10 @@ interface DietStoreState {
   getDayCyclingConfig: (dayIndex: number) => DayCyclingConfig;
   getDayCompliance: (dayIndex: number) => DayComplianceResult;
 
+  // Generador de Variantes Asistido por IA (CDSS)
+  aiGeneratingDay: number | null; // Bloqueo de concurrencia y rastreo del día en generación
+  generateAIVariantForDay: (dayIndex: number) => Promise<boolean>;
+
   // Motor interno de guardado
   enqueueSaveMutation: (item: DietItem) => void;
   flushPendingMutations: () => Promise<void>;
@@ -200,6 +204,9 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
   // Ciclado Estratégico de Nutrientes Inicial (Hipertrofia 4:3)
   dayCyclingConfigs: getDefaultDayConfigs(),
   activeCyclingPresetId: 'hipertrofia_4_3',
+
+  // Estado del Generador IA (null = inactivo)
+  aiGeneratingDay: null,
 
   focusedCell: { dayIndex: 1, mealSlot: 'desayuno', itemIndex: 0, field: 'quantity' },
   isEditingCell: false,
@@ -557,6 +564,77 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
     const totals = get().getDayTotals(dayIndex);
     const config = get().getDayCyclingConfig(dayIndex);
     return evaluateDayCompliance(totals, config);
+  },
+
+  /**
+   * Generador de Variantes Asistido por IA:
+   * Reemplaza las ingestas del día por una combinación culinaria alternativa
+   * conservando matemáticamente los macros del día según el tipo de demanda.
+   */
+  generateAIVariantForDay: async (dayIndex: number) => {
+    // Protección estricta contra doble-clic o llamadas concurrentes
+    if (get().aiGeneratingDay !== null) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`[AI Variant] Solicitud bloqueada: ya hay una generación en curso para el día ${get().aiGeneratingDay}`);
+      }
+      return false;
+    }
+
+    set({ aiGeneratingDay: dayIndex });
+
+    try {
+      const state = get();
+      const dayConfig = state.getDayCyclingConfig(dayIndex);
+      const currentDayItems = state.items.filter((i) => i.dayIndex === dayIndex);
+      const currentFoodNames = currentDayItems.map((i) => i.foodName);
+
+      const response = await fetch('/api/ai/generate-variant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dayIndex,
+          dietId: state.dietId,
+          demandType: dayConfig.demandType,
+          targetKcal: dayConfig.targetKcal,
+          targetProteinG: dayConfig.targetProteinG,
+          targetCarbsG: dayConfig.targetCarbsG,
+          targetFatG: dayConfig.targetFatG,
+          currentFoodNames,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error en API de variantes (${response.status})`);
+      }
+
+      const data = await response.json();
+      const newItems: DietItem[] = data.items || [];
+
+      // Reemplazo atómico de ítems para el día especificado
+      const otherDayItems = get().items.filter((i) => i.dayIndex !== dayIndex);
+      const updatedAllItems = [...otherDayItems, ...newItems];
+
+      // Encolar ítems para autoguardado persistente
+      newItems.forEach((item) => {
+        get().pendingMutations.set(item.id, item);
+      });
+
+      set({
+        items: updatedAllItems,
+        aiGeneratingDay: null,
+        saveStatus: 'unsaved',
+      });
+
+      if (newItems.length > 0) {
+        get().enqueueSaveMutation(newItems[0]);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('[AI Variant Error]', error);
+      set({ aiGeneratingDay: null });
+      return false;
+    }
   },
 
   /**

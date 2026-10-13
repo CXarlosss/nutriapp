@@ -13,6 +13,8 @@ import {
   IconCopy,
   IconTrash,
   IconInfoCircle,
+  IconSparkles,
+  IconLoader2,
 } from '@tabler/icons-react';
 
 const DAYS = [
@@ -52,6 +54,8 @@ export const DietGrid: React.FC = () => {
     getDayCyclingConfig,
     setDayDemandType,
     getDayCompliance,
+    aiGeneratingDay,
+    generateAIVariantForDay,
   } = useDietStore();
 
   const gridContainerRef = useRef<HTMLDivElement>(null);
@@ -205,13 +209,43 @@ export const DietGrid: React.FC = () => {
                           <span>🔄</span>
                           <span>Refeed (2.450 kcal)</span>
                         </button>
+                        <div className="pt-1 mt-1 border-t border-[var(--border)]">
+                          <button
+                            type="button"
+                            disabled={aiGeneratingDay !== null}
+                            onClick={async () => {
+                              setDemandMenuOpen(null);
+                              await generateAIVariantForDay(day.index);
+                            }}
+                            className="w-full text-left px-2 py-1 rounded bg-violet-950/60 hover:bg-violet-900/80 text-violet-300 border border-violet-500/40 flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer text-[11px]"
+                          >
+                            <IconSparkles size={12} className="text-violet-400" />
+                            <span>Generar Variante (IA)</span>
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
 
                   {/* Menú de acciones del día */}
                   {dayMenuOpen === day.index && (
-                    <div className="absolute right-2 top-8 z-40 bg-[var(--card)] border border-[var(--border)] rounded-[8px] p-1 text-[12px] space-y-0.5 shadow-lg">
+                    <div className="absolute right-2 top-8 z-40 bg-[var(--card)] border border-[var(--border)] rounded-[8px] p-1.5 text-[12px] space-y-1 shadow-xl w-48">
+                      {/* Botón Mágico Generar Variante (IA) */}
+                      <button
+                        type="button"
+                        disabled={aiGeneratingDay !== null}
+                        onClick={async () => {
+                          setDayMenuOpen(null);
+                          await generateAIVariantForDay(day.index);
+                        }}
+                        className="w-full text-left px-2 py-1.5 rounded-[6px] bg-violet-950/70 hover:bg-violet-900/90 text-violet-200 border border-violet-500/40 flex items-center gap-2 font-medium transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+                      >
+                        <IconSparkles size={14} className="text-violet-400 shrink-0" />
+                        <span>Generar Variante (IA)</span>
+                      </button>
+
+                      <div className="border-t border-[var(--border)] my-1" />
+
                       <button
                         type="button"
                         onClick={() => {
@@ -254,6 +288,7 @@ export const DietGrid: React.FC = () => {
 
               {/* 7 Celdas de días */}
               {DAYS.map((day) => {
+                const isAiLoading = aiGeneratingDay === day.index;
                 const items = getItemsForSlot(day.index, slot.key);
                 const isFocused =
                   focusedCell?.dayIndex === day.index && focusedCell?.mealSlot === slot.key;
@@ -263,6 +298,7 @@ export const DietGrid: React.FC = () => {
                   <div
                     key={`${day.index}-${slot.key}`}
                     onClick={() => {
+                      if (isAiLoading) return;
                       setFocusedCell({
                         dayIndex: day.index,
                         mealSlot: slot.key,
@@ -271,6 +307,7 @@ export const DietGrid: React.FC = () => {
                       });
                     }}
                     onDoubleClick={() => {
+                      if (isAiLoading) return;
                       setFocusedCell({
                         dayIndex: day.index,
                         mealSlot: slot.key,
@@ -280,30 +317,37 @@ export const DietGrid: React.FC = () => {
                       startEditing();
                     }}
                     className={`border-r border-[var(--border)] last:border-r-0 p-[6px_8px] relative transition-colors cursor-pointer min-h-[72px] flex flex-col justify-between ${
-                      isFocused
+                      isAiLoading
+                        ? 'bg-violet-950/20'
+                        : isFocused
                         ? 'border-[2px] border-[var(--brand-solid)] bg-white z-10'
                         : 'hover:bg-[var(--card-subtle)] bg-[var(--card)]'
                     }`}
                   >
-                    {/* Chips apilados (radio 6px, 12px) */}
-                    <div className="space-y-1">
-                      {items.map((item, idx) => {
-                        // Distinción de origen:
-                        // original = fondo blanco con borde
-                        // modificado = fondo ámbar #FAEEDA / #854F0B
-                        // añadido = fondo verde #E1F5EE / #085041
-                        const isModified = Boolean(item.isModified);
-                        const isAdded = !item.foodId;
+                    {isAiLoading ? (
+                      /* Estado Skeleton durante la generación IA (1.5s) */
+                      <div className="space-y-2 py-1.5 animate-pulse select-none">
+                        <div className="h-4 bg-violet-900/30 rounded-[6px] border border-violet-500/30 flex items-center px-1.5 gap-1.5">
+                          <IconLoader2 size={11} className="text-violet-400 animate-spin" />
+                          <span className="text-[10px] text-violet-300 font-mono">Generando IA...</span>
+                        </div>
+                        <div className="h-3 bg-slate-800/60 rounded-[4px] w-3/4" />
+                        <div className="h-2.5 bg-slate-800/40 rounded-[4px] w-1/2" />
+                      </div>
+                    ) : (
+                      /* Chips apilados (radio 6px, 12px) */
+                      <div className="space-y-1">
+                        {items.map((item, idx) => {
+                          const isModified = Boolean(item.isModified);
+                          const isAdded = !item.foodId;
 
-                        let chipStyle = 'bg-white border border-[var(--border)] text-[var(--text)]';
-                        if (isModified) {
-                          chipStyle = 'bg-[var(--warning-bg)] text-[var(--warning-text)] border border-transparent';
-                        } else if (isAdded) {
-                          chipStyle = 'bg-[var(--brand-bg)] text-[var(--brand-text)] border border-transparent';
-                        }
+                          let chipStyle = 'bg-white border border-[var(--border)] text-[var(--text)]';
+                          if (isModified || isAdded) {
+                            chipStyle = 'bg-[var(--brand-bg)] text-[var(--brand-text)] border border-[var(--brand-border)]';
+                          }
 
-                        return (
-                          <div
+                          return (
+                            <div
                             key={item.id || idx}
                             className={`group px-2 py-0.5 rounded-[6px] text-[12px] font-[400] flex items-center justify-between gap-1 transition-all ${chipStyle}`}
                           >
@@ -325,6 +369,7 @@ export const DietGrid: React.FC = () => {
                         );
                       })}
                     </div>
+                  )}
 
                     {/* Popover de edición rápida (ancho 280px) */}
                     {isEditing && (
