@@ -394,7 +394,9 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
     // Si ya hay una petición HTTP en vuelo, no disparamos otra en paralelo para no generar colisiones.
     // Dejamos los ítems en pendingMutations; cuando la petición activa termine, procesará la cola acumulada.
     if (isSavingMutex) {
-      console.log('[Autosave] Petición en curso. Cambios encolados a la espera de finalizar.');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Autosave] Petición en curso. Cambios encolados a la espera de finalizar.');
+      }
       return;
     }
 
@@ -417,7 +419,9 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
       lastNetworkBatchSize: batchToPersist.length,
     });
 
-    console.log(`[Autosave Network Call] Enviando 1 único POST/UPDATE en bloque para ${batchToPersist.length} ítems. Revisión #${currentRevision}`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Autosave Network Call] Enviando 1 único POST/UPDATE en bloque para ${batchToPersist.length} ítems. Revisión #${currentRevision}`);
+    }
 
     try {
       const result = await persistDietItemsBatch(batchToPersist);
@@ -431,7 +435,9 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
       // Si el usuario modificó más celdas mientras la petición estaba en tránsito,
       // pendingMutations tendrá nuevos elementos. Disparamos de inmediato el siguiente batch.
       if (get().pendingMutations.size > 0) {
-        console.log(`[Autosave Chain] Detectadas ${get().pendingMutations.size} modificaciones posteriores durante el vuelo. Procesando nuevo lote.`);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[Autosave Chain] Detectadas ${get().pendingMutations.size} modificaciones posteriores durante el vuelo. Procesando nuevo lote.`);
+        }
         get().flushPendingMutations();
       }
     } catch (error) {

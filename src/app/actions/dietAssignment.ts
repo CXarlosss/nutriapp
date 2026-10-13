@@ -40,14 +40,18 @@ export async function assignTemplateToClient(
     });
 
     if (!rpcError && rpcDietId) {
-      console.log(`[assignTemplateToClient] Éxito vía RPC: nueva dieta ${rpcDietId}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[assignTemplateToClient] Éxito vía RPC: nueva dieta ${rpcDietId}`);
+      }
       revalidatePath('/mi-dieta');
       revalidatePath('/dietas/creador');
       return { success: true, dietId: rpcDietId };
     }
 
     // 2. Fallback transaccional en caso de que el RPC no esté activo o se ejecute en desarrollo
-    console.warn('[assignTemplateToClient] RPC no disponible o error:', rpcError?.message, 'Ejecutando fallback directo...');
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[assignTemplateToClient] RPC no disponible o error:', rpcError?.message, 'Ejecutando fallback directo...');
+    }
 
     // Obtener datos de la plantilla base
     const { data: template, error: tmplError } = await supabase
@@ -59,7 +63,9 @@ export async function assignTemplateToClient(
     if (tmplError || !template) {
       // Mock / fallback para plantillas de demostración
       const fallbackDietId = `diet-assigned-${Date.now()}`;
-      console.log(`[assignTemplateToClient] Modo fallback/demo creado: ${fallbackDietId}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[assignTemplateToClient] Modo fallback/demo creado: ${fallbackDietId}`);
+      }
       revalidatePath('/mi-dieta');
       return { success: true, dietId: fallbackDietId, itemsCount: 15 };
     }
