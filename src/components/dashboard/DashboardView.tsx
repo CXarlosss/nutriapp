@@ -10,9 +10,14 @@ import {
   IconFileDownload,
   IconSearch,
   IconCreditCard,
+  IconSend,
+  IconCopy,
+  IconCheck,
+  IconMail,
+  IconX,
 } from '@tabler/icons-react';
 import { Card, MetricCard, Badge, Button, Input } from '@/components/ui/nutri-ui';
-import { createCheckoutSessionAction } from '@/app/actions/stripeCheckout';
+import { requestPaymentForClientAction } from '@/app/actions/billingOutboxActions';
 
 interface AppointmentItem {
   id: string;
@@ -72,20 +77,33 @@ export function DashboardView() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [outboxModal, setOutboxModal] = useState<{
+    isOpen: boolean;
+    clientName: string;
+    checkoutUrl: string;
+    eventId: string;
+  } | null>(null);
 
-  const handleCheckout = async (client: ClientRow) => {
+  const handleRequestPayment = async (client: ClientRow) => {
     setCheckoutLoading(client.id);
     try {
-      const res = await createCheckoutSessionAction({
+      const res = await requestPaymentForClientAction({
         clientId: client.id,
-        priceId: 'price_plan_mensual_79eur',
+        clientName: client.name,
         clientEmail: `${client.id}@paciente.nutriapp.es`,
+        priceId: 'price_plan_mensual_79eur',
       });
-      if (res.url) {
-        window.location.href = res.url;
+      if (res.success && res.checkoutUrl) {
+        setOutboxModal({
+          isOpen: true,
+          clientName: client.name,
+          checkoutUrl: res.checkoutUrl,
+          eventId: res.eventId || 'evt_outbox',
+        });
       }
     } catch (err) {
-      console.error('Error iniciando checkout:', err);
+      console.error('Error solicitando pago:', err);
     } finally {
       setCheckoutLoading(null);
     }
@@ -342,13 +360,13 @@ export function DashboardView() {
                           {client.status !== 'Activo' && (
                             <button
                               type="button"
-                              onClick={() => handleCheckout(client)}
+                              onClick={() => handleRequestPayment(client)}
                               disabled={checkoutLoading === client.id}
                               className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-colors inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                              title="Iniciar sesión de cobro con Stripe"
+                              title="Generar enlace de pago seguro y registrar en Outbox para n8n"
                             >
-                              <IconCreditCard size={11} />
-                              <span>{checkoutLoading === client.id ? '...' : 'Cobrar'}</span>
+                              <IconSend size={11} />
+                              <span>{checkoutLoading === client.id ? 'Generando...' : 'Solicitar Pago'}</span>
                             </button>
                           )}
                         </div>
@@ -408,6 +426,85 @@ export function DashboardView() {
           </div>
         </div>
       </div>
+
+      {/* Modal Informativo del Patrón Outbox & Copia de Enlace Seguro */}
+      {outboxModal && outboxModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-emerald-800">
+                <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <IconMail size={16} />
+                </div>
+                <span className="font-semibold text-sm">Pago Solicitado con Éxito</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOutboxModal(null)}
+                className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              >
+                <IconX size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs text-slate-600">
+                Se ha generado la sesión en <strong>Stripe Checkout</strong> para <strong className="text-slate-800">{outboxModal.clientName}</strong>.
+              </p>
+              <div className="p-2.5 bg-emerald-50/60 rounded-lg border border-emerald-100 text-[11px] text-emerald-900 space-y-1 font-mono">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Patrón Outbox:</span>
+                  <span className="font-semibold text-emerald-700">Persistido en PostgreSQL</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Evento:</span>
+                  <span>billing.payment_requested</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Orquestador:</span>
+                  <span>n8n Webhook Trigger</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                Enlace seguro para el paciente
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={outboxModal.checkoutUrl}
+                  className="w-full text-xs font-mono bg-slate-50 border border-slate-200 rounded-md px-2.5 py-2 text-slate-700 truncate select-all focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(outboxModal.checkoutUrl);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-md text-xs font-medium inline-flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+                >
+                  {copied ? <IconCheck size={14} className="text-emerald-400" /> : <IconCopy size={14} />}
+                  <span>{copied ? 'Copiado' : 'Copiar'}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <Button
+                variant="secondary"
+                className="text-xs h-8"
+                onClick={() => setOutboxModal(null)}
+              >
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
