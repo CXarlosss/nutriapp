@@ -144,8 +144,8 @@ npm run build
 
 ## 📁 Estructura del Repositorio
 
-```
 ├── scripts/                          # Suites de pruebas automatizadas y benchmarks
+│   ├── test-stripe-webhook.mjs       # Test de seguridad criptográfica y ciclo de vida Stripe
 │   ├── test-cdss-validation.mjs      # Test de motor CDSS y consultas a scientific_guidelines
 │   ├── test-food-swaps.mjs           # Test de equivalencias matemáticas y Food Swaps
 │   ├── test-nutrient-cycling.mjs     # Test de pautas de ciclado y compliance
@@ -153,22 +153,40 @@ npm run build
 │   └── test-collision-n8n.mjs        # Test de restricción GiST y webhook n8n
 ├── src/
 │   ├── app/
+│   │   ├── actions/stripeCheckout.ts # Server Action de inicialización de Stripe Checkout
+│   │   ├── api/webhooks/stripe/      # Webhook de Stripe con verificación criptográfica HMAC-SHA256
 │   │   ├── api/ai/generate-variant/  # Endpoint de generación asistida por IA
 │   │   ├── api/export-pdf/           # Generador nativo de PDF vía CSS @page
-│   │   ├── api/webhooks/n8n-mock/    # Receptor de auditoría de webhooks
+│   │   ├── pagos/simulado/           # Pasarela de pago local y testing de checkout
+│   │   ├── pagos/exito/              # Confirmación de pago y activación del expediente
 │   │   ├── dietas/creador/           # Diet Builder para nutricionista
 │   │   ├── mi-dieta/                 # Portal del paciente (mobile-first >=320px)
-│   │   └── dashboard/                # Métricas operativas de la clínica
+│   │   └── dashboard/                # Métricas operativas y cobro 1-click a pacientes
 │   ├── components/
 │   │   ├── diet-editor/              # DietGrid, MacroSummary, Scorecard, NutrientCyclingBar
 │   │   └── patient/                  # PatientDietView, FoodSwapModal
 │   ├── lib/
+│   │   ├── stripe/                   # stripe.ts y catálogo de productos (Consulta Única y Plan Mensual)
+│   │   ├── services/billingService.ts# Sincronización atómica con Supabase y fallback en memoria
 │   │   ├── clinical/                 # clinicalDecisionEngine, foodSwapEngine, nutrientCyclingEngine
 │   │   ├── stores/                   # useDietStore (Zustand State Machine)
 │   │   └── supabase/                 # Clientes Server/Client con SSR Cookies
 │   └── types/                        # Tipado estricto TypeScript de todo el dominio
-└── supabase/migrations/              # Migraciones versionadas en PostgreSQL (0001..0007)
+└── supabase/migrations/              # Migraciones versionadas en PostgreSQL (0001..0008)
 ```
+
+---
+
+### 💳 Bloque 8: Pasarela de Pagos y Webhooks Seguros (Stripe)
+- **Validación Criptográfica Estricta**: La ruta `/api/webhooks/stripe` valida byte por byte el raw body mediante HMAC-SHA256 y la cabecera `Stripe-Signature`. Rechazo rotundo con HTTP 400 ante payloads no firmados o firmas corruptas.
+- **Ciclo de Vida Automatizado**:
+  - `checkout.session.completed`: Asocia el `client_id` embebido en metadata y transiciona el paciente a estado `active`.
+  - `invoice.payment_succeeded`: Concilia renovaciones periódicas manteniendo el plan en estado `active`.
+  - `customer.subscription.deleted`: Pasa el estado a `inactive` de forma instantánea.
+- **Productos Configurados**:
+  - *Consulta Única* (50,00 €): Valoración clínica y diseño de menú inicial.
+  - *Plan Mensual* (79,00 €/mes): Suscripción recurrente con revisiones quincenales y soporte continuo.
+- **Verificación Automatizada**: `node scripts/test-stripe-webhook.mjs` valida 5 de 5 escenarios con firmas simuladas y oficiales de Stripe.
 
 ---
 

@@ -8,8 +8,10 @@ import {
   IconCalendar,
   IconChevronDown,
   IconChevronUp,
+  IconCreditCard,
 } from '@tabler/icons-react';
 import { Card, Button, Badge } from '@/components/ui/nutri-ui';
+import { createCheckoutSessionAction } from '@/app/actions/stripeCheckout';
 
 const MEALS = [
   { slot: 'Desayuno', items: ['Avena en copos suaves · 50 g', 'Yogur griego 0% grasa natural · 150 g', 'Arándanos frescos · 40 g'] },
@@ -23,6 +25,25 @@ const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', '
 
 export default function MiPlanPage() {
   const [openDay, setOpenDay] = useState<string>('Lunes');
+  const [isRenewing, setIsRenewing] = useState(false);
+
+  const handleRenewSubscription = async () => {
+    setIsRenewing(true);
+    try {
+      const res = await createCheckoutSessionAction({
+        clientId: 'a0000000-0000-0000-0000-000000000001',
+        priceId: 'price_plan_mensual_79eur',
+        clientEmail: 'carlos.gomez@ejemplo.com',
+      });
+      if (res.url) {
+        window.location.href = res.url;
+      }
+    } catch (err) {
+      console.error('Error abriendo checkout:', err);
+    } finally {
+      setIsRenewing(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[var(--bg)] p-4 sm:p-6 lg:p-10 font-sans text-[var(--text)]">
@@ -45,12 +66,24 @@ export default function MiPlanPage() {
 
         {/* Tarjeta Plan Activo con Barra de Progreso */}
         <Card className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <div className="text-[12px] text-[var(--text-secondary)]">Plan activo</div>
               <div className="text-[16px] font-[500] text-[var(--text)]">Recomposición Corporal</div>
             </div>
-            <Badge variant="success">Activo</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="success">Activo</Badge>
+              <button
+                type="button"
+                onClick={handleRenewSubscription}
+                disabled={isRenewing}
+                className="px-2 py-1 text-[11px] rounded bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-colors inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                title="Gestionar pagos y suscripción en Stripe"
+              >
+                <IconCreditCard size={12} />
+                <span>{isRenewing ? 'Conectando...' : 'Suscripción (79€/mes)'}</span>
+              </button>
+            </div>
           </div>
 
           <div>

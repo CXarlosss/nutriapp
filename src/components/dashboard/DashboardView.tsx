@@ -9,8 +9,10 @@ import {
   IconArrowsSort,
   IconFileDownload,
   IconSearch,
+  IconCreditCard,
 } from '@tabler/icons-react';
 import { Card, MetricCard, Badge, Button, Input } from '@/components/ui/nutri-ui';
+import { createCheckoutSessionAction } from '@/app/actions/stripeCheckout';
 
 interface AppointmentItem {
   id: string;
@@ -69,6 +71,25 @@ export function DashboardView() {
   const [freshnessMinutes, setFreshnessMinutes] = useState(2);
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  const handleCheckout = async (client: ClientRow) => {
+    setCheckoutLoading(client.id);
+    try {
+      const res = await createCheckoutSessionAction({
+        clientId: client.id,
+        priceId: 'price_plan_mensual_79eur',
+        clientEmail: `${client.id}@paciente.nutriapp.es`,
+      });
+      if (res.url) {
+        window.location.href = res.url;
+      }
+    } catch (err) {
+      console.error('Error iniciando checkout:', err);
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
 
   // Saludo dinámico y fecha calculados en useEffect para hidratación limpia
   const [greeting, setGreeting] = useState('Buenos días, Laura');
@@ -316,7 +337,21 @@ export function DashboardView() {
                         {client.plan}
                       </td>
                       <td className="p-[8px_12px]">
-                        <Badge variant={statusVariant}>{client.status}</Badge>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge variant={statusVariant}>{client.status}</Badge>
+                          {client.status !== 'Activo' && (
+                            <button
+                              type="button"
+                              onClick={() => handleCheckout(client)}
+                              disabled={checkoutLoading === client.id}
+                              className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-colors inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                              title="Iniciar sesión de cobro con Stripe"
+                            >
+                              <IconCreditCard size={11} />
+                              <span>{checkoutLoading === client.id ? '...' : 'Cobrar'}</span>
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td
                         className={`p-[8px_12px] truncate ${
