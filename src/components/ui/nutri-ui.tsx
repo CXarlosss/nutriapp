@@ -58,7 +58,7 @@ export function MetricCard({ label, value, isWarning = false, className = '' }: 
   );
 }
 
-export type BadgeVariant = 'brand' | 'success' | 'warning' | 'danger' | 'info' | 'neutral';
+export type BadgeVariant = 'brand' | 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'purple';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: BadgeVariant;
@@ -72,6 +72,7 @@ const BADGE_VARIANTS: Record<BadgeVariant, string> = {
   danger: 'bg-[var(--danger-bg)] text-[var(--danger-text)]',
   info: 'bg-[var(--info-bg)] text-[var(--info-text)]',
   neutral: 'bg-[var(--neutral-bg)] text-[var(--neutral-text)]',
+  purple: 'bg-purple-50 text-purple-700 border border-purple-200',
 };
 
 export function Badge({ variant = 'neutral', children, className = '', ...props }: BadgeProps) {

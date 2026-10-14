@@ -14,6 +14,7 @@ import {
   IconX,
   IconExternalLink,
   IconShieldCheck,
+  IconHistory,
 } from '@tabler/icons-react';
 import { Button, Badge } from '@/components/ui/nutri-ui';
 
@@ -150,6 +151,13 @@ export const DietHeader: React.FC = () => {
           >
             <IconArrowForwardUp size={16} stroke={1.5} />
           </button>
+
+          <Link href="/dietas/diet-demo-1">
+            <Button variant="secondary" className="h-[32px] px-2.5 text-[12px]" title="Ver historial de auditoría inmutable y Time Travel">
+              <IconHistory size={14} stroke={1.5} />
+              <span className="hidden sm:inline">Auditoría Clínica</span>
+            </Button>
+          </Link>
 
           <a
             href={`/api/export-pdf?client=${encodeURIComponent(clientName)}&diet=${encodeURIComponent(

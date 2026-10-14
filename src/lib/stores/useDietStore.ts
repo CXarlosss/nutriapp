@@ -13,6 +13,7 @@ import {
 } from '@/types/diet';
 import { persistDietItemsBatch } from '@/lib/services/dietService';
 import { evaluateClinicalRules } from '@/lib/clinical/clinicalDecisionEngine';
+import { appendDietEvent } from '@/lib/eventsourcing/eventStoreService';
 import {
   getDefaultDayConfigs,
   evaluateDayCompliance,
@@ -305,6 +306,21 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
 
     // Encolar en el motor de autoguardado con mutex
     get().enqueueSaveMutation(updated);
+
+    // Registrar evento inmutable en Event Store (Event Sourcing)
+    appendDietEvent({
+      streamId: get().dietId,
+      eventType: 'ItemQuantityUpdated',
+      payload: {
+        itemId: id,
+        oldQuantity: target.quantity,
+        newQuantity: safeQty,
+        newKcal: updated.kcal,
+        newProteinG: updated.proteinG,
+        newCarbsG: updated.carbsG,
+        newFatG: updated.fatG,
+      },
+    }).catch(() => {});
   },
 
   replaceItemFood: (id, food, quantity = 100) => {
@@ -337,6 +353,40 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
     }));
 
     get().enqueueSaveMutation(updated);
+
+    // Registrar evento inmutable FoodSwapped en Event Store
+    appendDietEvent({
+      streamId: get().dietId,
+      eventType: 'FoodSwapped',
+      payload: {
+        itemId: id,
+        dayIndex: target.dayIndex,
+        mealSlot: target.mealSlot,
+        oldFood: {
+          id: target.foodId,
+          name: target.foodName,
+          quantity: target.quantity,
+          unit: target.unit,
+          kcal: target.kcal,
+        },
+        newFood: {
+          id: food.id,
+          name: food.name,
+          quantity,
+          unit: food.default_unit || 'g',
+          kcal: updated.kcal,
+          proteinG: updated.proteinG,
+          carbsG: updated.carbsG,
+          fatG: updated.fatG,
+        },
+        reason: 'Intercambio clínico manual en Diet Builder',
+      },
+      metadata: {
+        author: 'Dra. Laura M.',
+        role: 'nutricionista',
+        reason: 'Intercambio en cuadrícula',
+      },
+    }).catch(() => {});
   },
 
   addItemToSlot: (dayIndex, mealSlot, food, quantity = 100) => {
@@ -372,9 +422,30 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
     }));
 
     get().enqueueSaveMutation(newItem);
+
+    // Registrar evento inmutable ItemAdded
+    appendDietEvent({
+      streamId: get().dietId,
+      eventType: 'ItemAdded',
+      payload: { item: newItem },
+    }).catch(() => {});
   },
 
   removeItem: (id) => {
+    const target = get().items.find((i) => i.id === id);
+    if (target) {
+      appendDietEvent({
+        streamId: get().dietId,
+        eventType: 'ItemRemoved',
+        payload: {
+          itemId: id,
+          removedItemName: target.foodName,
+          mealSlot: target.mealSlot,
+          dayIndex: target.dayIndex,
+        },
+      }).catch(() => {});
+    }
+
     set((state) => ({
       items: state.items.filter((i) => i.id !== id),
     }));
