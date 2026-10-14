@@ -160,6 +160,7 @@ export const FoodFuzzySearch: React.FC<FoodFuzzySearchProps> = ({
 
         <input
           ref={inputRef}
+          data-testid="semantic-search-input"
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -171,6 +172,7 @@ export const FoodFuzzySearch: React.FC<FoodFuzzySearchProps> = ({
         {/* Botón Switch Modo IA vs Fuzzy */}
         <button
           type="button"
+          data-testid="semantic-mode-toggle"
           onClick={() => setIsSemanticMode(!isSemanticMode)}
           className={`px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition-all shrink-0 cursor-pointer ${
             isSemanticMode
@@ -196,9 +198,10 @@ export const FoodFuzzySearch: React.FC<FoodFuzzySearchProps> = ({
             <span>Consultas Semánticas Clínicas Frecuentes:</span>
           </div>
           <div className="flex flex-wrap gap-1">
-            {CLINICAL_SUGGESTION_PRESETS.map((preset) => (
+            {CLINICAL_SUGGESTION_PRESETS.map((preset, pIdx) => (
               <button
                 key={preset.label}
+                data-testid={`semantic-preset-${pIdx}`}
                 type="button"
                 onClick={() => applyPreset(preset.query)}
                 className="px-2 py-0.5 rounded bg-slate-800/80 hover:bg-purple-950/50 text-[10px] text-slate-300 hover:text-purple-200 border border-slate-700/60 hover:border-purple-500/40 transition-colors cursor-pointer"
@@ -225,6 +228,7 @@ export const FoodFuzzySearch: React.FC<FoodFuzzySearchProps> = ({
               return (
                 <div
                   key={food.id || food.name}
+                  data-testid="semantic-food-result"
                   onMouseEnter={() => setSelectedIndex(idx)}
                   onClick={() => onSelectFood(food)}
                   className={`flex flex-col gap-1 cursor-pointer rounded-md p-2 text-xs transition-all mb-1 border ${

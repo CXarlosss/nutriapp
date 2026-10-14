@@ -297,6 +297,7 @@ export const DietGrid: React.FC = () => {
                 return (
                   <div
                     key={`${day.index}-${slot.key}`}
+                    data-testid={`slot-cell-${day.index}-${slot.key}`}
                     onClick={() => {
                       if (isAiLoading) return;
                       setFocusedCell({
@@ -305,6 +306,7 @@ export const DietGrid: React.FC = () => {
                         itemIndex: 0,
                         field: 'name',
                       });
+                      startEditing();
                     }}
                     onDoubleClick={() => {
                       if (isAiLoading) return;

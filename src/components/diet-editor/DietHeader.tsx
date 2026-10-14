@@ -153,7 +153,12 @@ export const DietHeader: React.FC = () => {
           </button>
 
           <Link href="/dietas/diet-demo-1">
-            <Button variant="secondary" className="h-[32px] px-2.5 text-[12px]" title="Ver historial de auditoría inmutable y Time Travel">
+            <Button
+              variant="secondary"
+              data-testid="audit-clinical-btn"
+              className="h-[32px] px-2.5 text-[12px]"
+              title="Ver historial de auditoría inmutable y Time Travel"
+            >
               <IconHistory size={14} stroke={1.5} />
               <span className="hidden sm:inline">Auditoría Clínica</span>
             </Button>
@@ -174,6 +179,7 @@ export const DietHeader: React.FC = () => {
 
           <Button
             variant="primary"
+            data-testid="publish-diet-btn"
             className={`h-[32px] px-3 text-[12px] ${
               audit.hasCriticalBlocker ? 'opacity-90 ring-2 ring-[var(--danger-text)]' : ''
             }`}
@@ -235,7 +241,10 @@ export const DietHeader: React.FC = () => {
 
       {/* Toast de confirmación de publicación */}
       {publishSuccess && (
-        <div className="fixed bottom-4 right-4 z-50 bg-[var(--card)] border border-[var(--brand-solid)] rounded-[8px] p-3 shadow-xl text-[13px] text-[var(--brand-text)] flex items-center gap-2 animate-fadeIn">
+        <div
+          data-testid="publish-success-banner"
+          className="fixed bottom-4 right-4 z-50 bg-[var(--card)] border border-[var(--brand-solid)] rounded-[8px] p-3 shadow-xl text-[13px] text-[var(--brand-text)] flex items-center gap-2 animate-fadeIn"
+        >
           <IconShieldCheck size={18} className="text-[var(--brand-solid)]" />
           <span>Dieta validada clínicamente y publicada con éxito</span>
         </div>
@@ -296,6 +305,7 @@ export const DietHeader: React.FC = () => {
               </Button>
               <Button
                 variant="primary"
+                data-testid="force-publish-btn"
                 className="bg-[var(--danger-text)] text-white hover:opacity-90"
                 onClick={() => {
                   setShowBlockerModal(false);

@@ -1,0 +1,84 @@
+name: NutriApp Enterprise CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  NODE_ENV: test
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://mock.supabase.co' }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'mock-anon-key-ci' }}
+  NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN || 'https://mock@o0.ingest.sentry.io/0' }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN || '' }}
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # JOB 1: VALIDACIÓN ESTÁTICA, COMPILACIÓN Y CALIDAD DE CÓDIGO
+  # ──────────────────────────────────────────────────────────────────────────
+  quality_and_build:
+    name: 🛡️ Type Check & Production Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Código Fuente
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js Runtime (v22 LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Instalar Dependencias del Proyecto
+        run: npm ci
+
+      - name: Verificación Estricta de Tipos TypeScript (tsc --noEmit)
+        run: npm run type-check
+
+      - name: Compilación de Producción Next.js (Turbopack)
+        run: npm run build
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # JOB 2: PRUEBAS END-TO-END AUTOMATIZADAS (PLAYWRIGHT)
+  # ──────────────────────────────────────────────────────────────────────────
+  e2e_testing:
+    name: 🎭 Playwright E2E Clinical Suite
+    needs: quality_and_build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Código Fuente
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js Runtime (v22 LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Instalar Dependencias del Proyecto
+        run: npm ci
+
+      - name: Instalar Binarios de Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Compilación para Entorno de Testing
+        run: npm run build
+
+      - name: Iniciar Servidor y Ejecutar Suite E2E
+        run: npm run test:e2e
+        env:
+          CI: true
+
+      - name: Publicar Reporte de Pruebas Playwright (En caso de fallo)
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-test-report
+          path: playwright-report/
+          retention-days: 14
