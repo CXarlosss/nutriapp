@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Clock, Apple, Calendar, ArrowLeftRight, Check, ArrowLeft, RotateCcw } from 'lucide-react';
+import { Clock, Apple, Calendar, ArrowLeftRight, Check, ArrowLeft, RotateCcw, ShoppingCart, Printer } from 'lucide-react';
 import { FoodSwapModal } from './FoodSwapModal';
+import { ShoppingListView } from './ShoppingListView';
+import { ConcentricMacroRings, MacroTargets } from './ConcentricMacroRings';
 import { calculateFoodSwaps } from '@/lib/clinical/foodSwapEngine';
 import { FoodSwapResult, FoodSwapAlternative } from '@/types/diet';
 
@@ -31,6 +33,8 @@ export interface PatientDietItem {
   originalFoodName?: string;
   originalQuantity?: number;
   isSwapped?: boolean;
+  notes?: string;
+  mealPrepNotes?: string;
 }
 
 interface PatientDietViewProps {
@@ -59,6 +63,7 @@ export function PatientDietView({
 }: PatientDietViewProps) {
   const [items, setItems] = useState<PatientDietItem[]>(initialItems);
   const [activeDayIndex, setActiveDayIndex] = useState<number>(initialDayIndex);
+  const [viewMode, setViewMode] = useState<'menu' | 'shopping'>('menu');
   
   // Estado del Modal de Intercambio
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -78,6 +83,11 @@ export function PatientDietView({
     }),
     { kcal: 0, protein: 0, carbs: 0, fat: 0 }
   );
+
+  const isTrainingDay = [1, 2, 4, 5].includes(activeDayIndex);
+  const dayTarget: MacroTargets = isTrainingDay
+    ? { kcal: 1900, protein: 140, carbs: 210, fat: 55 }
+    : { kcal: 1700, protein: 140, carbs: 125, fat: 60 };
 
   // Agrupar por franja de comida
   const groupedMeals: Record<string, PatientDietItem[]> = {
@@ -156,6 +166,17 @@ export function PatientDietView({
           <ArrowLeft className="h-3.5 w-3.5" /> Inicio
         </Link>
         <div className="flex items-center gap-2">
+          <a
+            href={`/api/export-pdf?client=${encodeURIComponent(dietData.client_name)}&diet=${encodeURIComponent(dietData.name)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="export-hospital-pdf-btn"
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300 hover:text-emerald-300 bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 transition-colors"
+            title="Descargar Informe Médico Hospitalario Oficial (PDF)"
+          >
+            <Printer className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="hidden xs:inline">Informe PDF</span>
+          </a>
           <div className="flex items-center gap-1 text-[11px] font-mono text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-500/30">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
             Plan Activo
@@ -163,7 +184,49 @@ export function PatientDietView({
         </div>
       </header>
 
-      {/* Tarjeta del Plan del Cliente */}
+      {/* Selector de Modo: Menú Diario vs Lista de la Compra Semanal */}
+      <div className="flex rounded-xl bg-slate-900/90 p-1 border border-slate-800 text-xs font-semibold">
+        <button
+          type="button"
+          data-testid="mode-menu-btn"
+          onClick={() => setViewMode('menu')}
+          className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            viewMode === 'menu'
+              ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Calendar className="h-3.5 w-3.5" />
+          <span>Menú Diario</span>
+        </button>
+        <button
+          type="button"
+          data-testid="mode-shopping-btn"
+          onClick={() => setViewMode('shopping')}
+          className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            viewMode === 'shopping'
+              ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <ShoppingCart className="h-3.5 w-3.5" />
+          <span>Lista de la Compra</span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-emerald-400 font-mono">
+            Semanal
+          </span>
+        </button>
+      </div>
+
+      {viewMode === 'shopping' ? (
+        <ShoppingListView
+          items={items}
+          dietName={dietData.name}
+          clientName={dietData.client_name}
+          onBackToMenu={() => setViewMode('menu')}
+        />
+      ) : (
+        <>
+          {/* Tarjeta del Plan del Cliente */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-xl backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -177,25 +240,13 @@ export function PatientDietView({
           </div>
         </div>
 
-        {/* Resumen de Macros del Día Dinámico */}
-        <div className="mt-4 grid grid-cols-4 gap-1.5 rounded-xl bg-slate-950/80 p-2.5 border border-slate-800/80 text-center">
-          <div>
-            <span className="block text-[10px] text-slate-500 uppercase tracking-wider">Kcal</span>
-            <span className="font-mono text-sm font-bold text-amber-400">{Math.round(dayTotals.kcal)}</span>
-          </div>
-          <div>
-            <span className="block text-[10px] text-slate-500 uppercase tracking-wider">Prot</span>
-            <span className="font-mono text-sm font-bold text-emerald-400">{Math.round(dayTotals.protein)}g</span>
-          </div>
-          <div>
-            <span className="block text-[10px] text-slate-500 uppercase tracking-wider">Carb</span>
-            <span className="font-mono text-sm font-bold text-sky-400">{Math.round(dayTotals.carbs)}g</span>
-          </div>
-          <div>
-            <span className="block text-[10px] text-slate-500 uppercase tracking-wider">Grasa</span>
-            <span className="font-mono text-sm font-bold text-rose-400">{Math.round(dayTotals.fat)}g</span>
-          </div>
-        </div>
+        {/* Anillos SVG Concéntricos de Macronutrientes (Apple Watch Activity Rings) */}
+        <ConcentricMacroRings
+          current={dayTotals}
+          target={dayTarget}
+          dayName={DAYS.find((d) => d.index === activeDayIndex)?.name}
+          isTrainingDay={isTrainingDay}
+        />
       </div>
 
       {/* Selector de Días: 7 botones compactos */}
@@ -334,6 +385,17 @@ export function PatientDietView({
                           )}
                         </div>
                       </div>
+
+                      {/* Instrucción crítica de Meal Prep si está definida */}
+                      {Boolean(it.notes || it.mealPrepNotes) && (
+                        <div className="mt-2 pt-1.5 border-t border-amber-500/20 text-[11px] text-amber-300 flex items-start gap-1.5 bg-amber-950/20 rounded-lg p-2">
+                          <span className="text-[13px] shrink-0">🥣</span>
+                          <div>
+                            <span className="font-semibold text-amber-200">Meal Prep:</span>{' '}
+                            <span className="text-slate-300 leading-relaxed">{it.notes || it.mealPrepNotes}</span>
+                          </div>
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -342,6 +404,8 @@ export function PatientDietView({
           );
         })}
       </div>
+      </>
+      )}
 
       {/* Modal de Intercambios Dinámicos */}
       <FoodSwapModal

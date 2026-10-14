@@ -91,7 +91,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   children: React.ReactNode;
 }
 
-export function Button({ variant = 'secondary', children, className = '', ...props }: ButtonProps) {
+export function Button({ variant = 'secondary', type = 'button', children, className = '', ...props }: ButtonProps) {
   const baseStyles =
     'h-[36px] px-3.5 rounded-[8px] text-[14px] font-[500] inline-flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] select-none';
 
@@ -106,7 +106,7 @@ export function Button({ variant = 'secondary', children, className = '', ...pro
   }
 
   return (
-    <button className={`${baseStyles} ${variantStyles} ${className}`} {...props}>
+    <button type={type} className={`${baseStyles} ${variantStyles} ${className}`} {...props}>
       {children}
     </button>
   );

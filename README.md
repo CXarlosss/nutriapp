@@ -193,13 +193,67 @@ npm run build
 
 ---
 
-### 📦 Bloque 9: Patrón Transactional Outbox y Eventos Asíncronos (CDC + n8n)
-- **Cero Bloqueo de Interfaz (<2 ms)**: Al pulsar "Solicitar Pago", el Server Action `requestPaymentForClientAction` genera el enlace seguro de Stripe y persiste el evento `billing.payment_requested` en la tabla `outbox_events` de forma atómica sin esperar respuestas de red ni servicios SMTP.
-- **Desacoplamiento Operativo y CDC**: PostgreSQL notifica mediante `pg_notify` en el canal `outbox_events_channel`. El relayer asíncrono despacha el payload estructurado al webhook de **n8n**, garantizando entrega *at-least-once* sin degradar los 60 FPS de la aplicación.
-- **Auditoría y Reintentos**: Control de estados `pending` -> `processing` -> `published` / `failed` con contador de `attempts` y retención de errores.
-- **Verificación Automatizada**: `node scripts/test-outbox-pattern.mjs` valida 5 de 5 pruebas (latencia 1.54 ms, consistencia de payload y recepción en nodo n8n).
+### 🏛️ Bloque 10: Event Sourcing y CQRS (Time Travel & Inmutabilidad Médico-Legal)
+- **Almacén Append-Only**: La tabla `diet_events` sella cada acción clínica (`DietAssigned`, `FoodSwapped`, `TargetMacrosAdjusted`) con secuencia incremental y control de concurrencia optimista (OCC).
+- **Proyecciones Desnormalizadas (Read Model)**: `diet_projections` mantiene un snapshot en tiempo real para lecturas a <1ms sin sacrificar la trazabilidad histórica forense.
+- **Time Travel**: Capacidad de reconstruir el estado exacto de la prescripción de cualquier fecha o versión previa.
 
 ---
 
-## 📜 Licencia
-Proyecto desarrollado con fines médicos y de ingeniería bajo arquitectura cerrada y modular.
+### 🧠 Bloque 11: Búsqueda Semántica Asistida por IA con pgvector (HNSW)
+- **Embeddings Clínicos de 1536 dimensiones**: Indexación con grafo HNSW (`halfvec` / `vector_cosine_ops`) sobre catálogo maestro de alimentos.
+- **Consultas Conceptuales Abstractas**: Capacidad de buscar términos médicos como *"fuente de omega 3 para recuperación articular"* o *"almidón resistente para microbiota"* con cálculo de afinidad instantáneo y fallback difuso trigram (`pg_trgm`).
+
+---
+
+### 🩺 Bloque 12: Historia Clínica, Analíticas y Alertas Fármaco-Nutriente
+- **Panel de Analíticas Sanguíneas**: Registro estructurado de marcadores clave (Ferritina, Vitamina D, HbA1c, Colesterol, TSH/T4/T3).
+- **Gestor Digestivo (Escala de Bristol)**: Seguimiento semanal de hinchazón, reflujo y deposiciones para correlación automática con la pauta.
+- **Alertas Fármaco-Nutriente (CDSS Activo)**: Detección de incompatibilidades horarias críticas, como interacción entre **Levotiroxina** y alimentos bloqueadores de absorción (soja, café, salvado).
+
+---
+
+### ⚡ Bloque 13: Automatización de Onboarding (Cero Data Entry)
+- **Formulario Pre-Consulta Sincronizado**: Inyección directa en PostgreSQL al completar el cuestionario sin transcripción manual por parte del nutricionista.
+- **Tokens de Un Solo Uso**: Acceso seguro del paciente con aislamiento estricto y generación de eventos Outbox para notificación n8n.
+
+---
+
+### 🎙️ Bloque 14: Asistente de Consulta Asistido por Voz (Whisper + SOAP)
+- **Productividad Cero Pantallas**: Dictado clínico durante la consulta presencial o telemática.
+- **Structured Outputs Clínicos**: Extracción automática de peso, escala de Bristol, síntomas reportados y generación de notas clínicas estructuradas según el estándar SOAP (*Subjetivo, Objetivo, Análisis, Plan*).
+
+---
+
+### 📈 Bloque 15: Dashboard de Retención y Negocio (Stripe Metrics + Cron)
+- **Métricas Financieras en Tiempo Real**: Cálculo y visualización de MRR (Ingreso Recurrente Mensual), Tasa de Churn y LTV (Valor del Ciclo de Vida).
+- **Cron de Detección de Abandono**: Detección de pacientes con $\ge 14$ días sin consultar el portal para emisión automática de alertas y campañas de reenganche.
+
+---
+
+### 🍎 Bloque 16 & 17: Excelencia Visual y Jerarquía Tipográfica
+- **Micro-interacciones Cinéticas**: Drag & Drop magnético con snap físico y transiciones de origen (Framer Motion).
+- **Jerarquía Numérica Tabular**: Reglas CSS `font-variant-numeric: tabular-nums` para alineación perfecta en Kcal y analíticas sin oscilaciones, combinando tipografía geométrica (Geist Sans) con monoespaciada (Geist Mono).
+- **Anillos Concéntricos SVG (Apple Watch style)**: Visualizador de cumplimiento de macronutrientes (Proteína, Carbohidratos, Grasas) en `/mi-dieta` para máxima adherencia psicológica.
+
+---
+
+### 📄 Bloque 18: Exportación PDF con Estándar Editorial Hospitalario
+- **Reglas Puras `@media print`**: Cero dependencias pesadas de servidor; renderizado instantáneo y fiel en cualquier navegador.
+- **Tipografía Serif de Alta Legibilidad**: `Playfair Display` para membretes institucionales y `Source Serif 4` para cuerpo editorial médico.
+- **Portada Automática de Hospital Privado**: Sello oficial, acreditaciones médicas (SEEN / ISSN Certified), ficha del paciente y objetivos metabólicos.
+- **Paginación Controlada**: `page-break-after: always` para la portada y `page-break-inside: avoid` en cada comida y referencias DOI.
+
+---
+
+### 🛡️ Bloque 19 & 20: Arquitectura Multi-Tenant B2B con Aislamiento RLS Imparable
+- **Aislamiento Total a Nivel de Motor**: Múltiples clínicas (*Clínica Vida*, *Centro Médico Élite*) comparten la base de datos con separación absoluta garantizada por PostgreSQL Row Level Security.
+- **Resolución Zero-Query**: `current_user_clinic_id()` resuelve el tenant directamente desde los claims JWT de Supabase (`request.jwt.claims -> 'app_metadata' ->> 'clinic_id'`), eliminando subconsultas a disco y preservando latencias submilisegundo.
+- **Trigger `inject_tenant_clinic_id`**: Inyección automática del `clinic_id` en `BEFORE INSERT` para proteger la persistencia ante descuidos en la capa de aplicación Node.js.
+- **Verificación Automatizada**: Suite de tests SQL ([0014_multi_tenant_rls_verification.sql](supabase/tests/0014_multi_tenant_rls_verification.sql)) y Playwright validando 12 de 12 pruebas E2E en verde.
+
+---
+
+## 📜 Licencia y Autoría
+Proyecto desarrollado con fines médicos y de ingeniería de software avanzada. Arquitectura de referencia para sistemas SaaS clínicos e industriales.
+

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useDietStore } from '@/lib/stores/useDietStore';
 import {
   IconShieldCheck,
@@ -13,11 +14,14 @@ import {
   IconSparkles,
   IconScale,
   IconBook,
+  IconPill,
+  IconX,
 } from '@tabler/icons-react';
 import { Badge, Button } from '@/components/ui/nutri-ui';
 
 export const ClinicalAuditScorecard: React.FC = () => {
   const [isOpen, setIsOpen] = useState(true);
+  const [selectedAlert, setSelectedAlert] = useState<any | null>(null);
   const {
     items,
     clientWeightKg,
@@ -73,7 +77,7 @@ export const ClinicalAuditScorecard: React.FC = () => {
                   type="number"
                   value={clientWeightKg}
                   onChange={(e) => setClientWeightKg(parseFloat(e.target.value) || 70)}
-                  className="w-14 px-1.5 py-0.5 rounded border border-[var(--border)] bg-[var(--card)] text-right font-[500] text-[var(--text)] text-[12px]"
+                  className="w-14 px-1.5 py-0.5 rounded border border-[var(--border)] bg-[var(--card)] text-right font-[600] text-[var(--text)] text-[12px] tabular-nums font-mono raw-metric"
                 />
                 <span className="text-[var(--text-secondary)]">kg</span>
               </div>
@@ -104,7 +108,7 @@ export const ClinicalAuditScorecard: React.FC = () => {
               <div className="p-2.5 rounded-[8px] bg-[var(--card-subtle)] border border-[var(--border)]">
                 <div className="text-[11px] text-[var(--text-secondary)]">Proteína / kg</div>
                 <div
-                  className={`text-[16px] font-[500] font-mono leading-tight mt-0.5 ${
+                  className={`text-[16px] font-[600] font-mono tabular-nums raw-metric leading-tight mt-0.5 ${
                     audit.proteinPerKg < (clientProfileType === 'deportista' ? 1.4 : 0.8)
                       ? 'text-[var(--danger-text)]'
                       : 'text-[var(--brand-solid)]'
@@ -121,7 +125,7 @@ export const ClinicalAuditScorecard: React.FC = () => {
               <div className="p-2.5 rounded-[8px] bg-[var(--card-subtle)] border border-[var(--border)]">
                 <div className="text-[11px] text-[var(--text-secondary)]">Fibra media</div>
                 <div
-                  className={`text-[16px] font-[500] font-mono leading-tight mt-0.5 ${
+                  className={`text-[16px] font-[600] font-mono tabular-nums raw-metric leading-tight mt-0.5 ${
                     audit.totalFiberAvg < 25 ? 'text-[var(--warning-text)]' : 'text-[var(--success-text)]'
                   }`}
                 >
@@ -133,7 +137,7 @@ export const ClinicalAuditScorecard: React.FC = () => {
               {/* Calcio */}
               <div className="p-2.5 rounded-[8px] bg-[var(--card-subtle)] border border-[var(--border)]">
                 <div className="text-[11px] text-[var(--text-secondary)]">Calcio medio</div>
-                <div className="text-[15px] font-[500] font-mono leading-tight mt-0.5 text-[var(--text)]">
+                <div className="text-[15px] font-[600] font-mono tabular-nums raw-metric leading-tight mt-0.5 text-[var(--text)]">
                   {audit.totalCalciumAvg} <span className="text-[11px] font-sans font-normal">mg</span>
                 </div>
                 <div className="text-[10px] text-[var(--text-muted)] mt-0.5">Ref: ≥950 mg/día</div>
@@ -142,7 +146,7 @@ export const ClinicalAuditScorecard: React.FC = () => {
               {/* Ratio Omega 6:3 */}
               <div className="p-2.5 rounded-[8px] bg-[var(--card-subtle)] border border-[var(--border)]">
                 <div className="text-[11px] text-[var(--text-secondary)]">Ratio Omega 3/6</div>
-                <div className="text-[15px] font-[500] font-mono leading-tight mt-0.5 text-[var(--text)]">
+                <div className="text-[15px] font-[600] font-mono tabular-nums raw-metric leading-tight mt-0.5 text-[var(--text)]">
                   {audit.omega3_6_ratio}
                 </div>
                 <div className="text-[10px] text-[var(--text-muted)] mt-0.5">Simopoulos 2006</div>
@@ -174,6 +178,60 @@ export const ClinicalAuditScorecard: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Alertas Fármaco-Nutriente (CDSS) */}
+          {audit.drugNutrientAlerts && audit.drugNutrientAlerts.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-[11px] font-[500] uppercase tracking-wider text-[var(--danger-text)] flex items-center justify-between">
+                <span>Alertas Fármaco-Nutriente ({audit.drugNutrientAlerts.length})</span>
+                <IconPill size={14} />
+              </div>
+
+              <div className="space-y-2">
+                {audit.drugNutrientAlerts.map((alert) => (
+                  <motion.div
+                    key={alert.id}
+                    layout
+                    whileHover={{ scale: 1.015 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setSelectedAlert(alert)}
+                    data-testid={`cdss-alert-card-${alert.id}`}
+                    className={`p-2.5 rounded-[8px] border text-[12px] space-y-1.5 transition-colors cursor-pointer select-none ${
+                      alert.severity === 'critical'
+                        ? 'bg-[var(--danger-bg)] border-[var(--danger-text)]/30 text-[var(--danger-text)]'
+                        : 'bg-[var(--warning-bg)] border-[var(--warning-text)]/30 text-[var(--warning-text)]'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-1.5">
+                      <span className="font-[500] text-[12px] leading-tight">
+                        {alert.drugName} ↔ {alert.conflictingFoodName}
+                      </span>
+                      <Badge variant={alert.severity === 'critical' ? 'danger' : 'warning'}>
+                        {alert.conflictingSlot}
+                      </Badge>
+                    </div>
+
+                    <p className="text-[11px] leading-relaxed opacity-95">
+                      {alert.biologicalMechanism}
+                    </p>
+
+                    <div className="text-[11px] font-[500] opacity-90">
+                      💡 {alert.clinicalRecommendation}
+                    </div>
+
+                    <div className="pt-1 flex items-center justify-between text-[11px]">
+                      <span className="text-[10px] font-mono opacity-80 flex items-center gap-1">
+                        🔍 Clic para ampliar evidencia
+                      </span>
+                      <span className="text-[10px] underline opacity-80">
+                        DOI: {alert.doiReference.replace('https://doi.org/', '')}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Listado de Auditorías y Papers con DOI */}
           <div className="space-y-2">
@@ -281,6 +339,106 @@ export const ClinicalAuditScorecard: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Modal de Detalle de Alerta Fármaco-Nutriente con Transición de Origen (Shared Layout) */}
+      <AnimatePresence>
+        {selectedAlert && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSelectedAlert(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.65, x: 80, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, scale: 1, x: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, scale: 0.85, x: 40, filter: 'blur(2px)' }}
+              transition={{
+                type: 'spring',
+                stiffness: 380,
+                damping: 26,
+                mass: 0.85,
+              }}
+              style={{ transformOrigin: 'center right' }}
+              onClick={(e) => e.stopPropagation()}
+              data-testid="cdss-alert-evidence-modal"
+              className="w-full max-w-lg bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-2xl p-6 space-y-4"
+            >
+              <div className="flex items-start justify-between border-b border-[var(--border)] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center">
+                    <IconPill size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm text-[var(--text)]">
+                      Interacción Fármaco-Nutriente Detectada
+                    </h3>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      {selectedAlert.drugName} ↔ {selectedAlert.conflictingFoodName}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  data-testid="close-alert-modal-btn"
+                  onClick={() => setSelectedAlert(null)}
+                  className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                >
+                  <IconX size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div className="p-3 bg-[var(--card-subtle)] rounded-xl border border-[var(--border)] space-y-1">
+                  <span className="font-mono text-[10px] uppercase text-slate-400">Franja Horaria en Conflicto</span>
+                  <div className="font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                    <Badge variant={selectedAlert.severity === 'critical' ? 'danger' : 'warning'}>
+                      {selectedAlert.conflictingSlot}
+                    </Badge>
+                    <span>Severidad: {selectedAlert.severity === 'critical' ? 'Crítica (Bloqueo de absorción)' : 'Moderada'}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="font-mono text-[10px] uppercase text-slate-400">Mecanismo Farmacocinético</span>
+                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+                    {selectedAlert.biologicalMechanism}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800 space-y-1">
+                  <span className="font-semibold text-emerald-800 dark:text-emerald-300">💡 Recomendación Clínica Accionable</span>
+                  <p className="text-emerald-700 dark:text-emerald-400">
+                    {selectedAlert.clinicalRecommendation}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-[var(--border)] text-[11px]">
+                  <a
+                    href={selectedAlert.doiReference}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[var(--brand-solid)] underline"
+                  >
+                    <span>Paper Indexado (DOI: {selectedAlert.doiReference.replace('https://doi.org/', '')})</span>
+                    <IconExternalLink size={12} />
+                  </a>
+
+                  <Button
+                    variant="secondary"
+                    className="h-7 px-3 text-xs"
+                    onClick={() => setSelectedAlert(null)}
+                  >
+                    Entendido
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </aside>
   );
 };

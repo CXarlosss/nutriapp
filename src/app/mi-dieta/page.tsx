@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Flame, Activity, Clock, ShieldCheck, ChevronRight, Apple, Calendar, ArrowLeft } from 'lucide-react';
 import { PatientDietView } from '@/components/patient/PatientDietView';
+import { recordPortalAccess } from '@/lib/services/retentionAnalyticsService';
 
 const DAYS = [
   { index: 1, label: 'L', name: 'Lunes' },
@@ -24,7 +25,7 @@ const MEAL_CONFIG: Record<string, { label: string; time: string; icon: string }>
 };
 
 interface MiDietaProps {
-  searchParams: Promise<{ dia?: string; dietId?: string; demoClient?: string }>;
+  searchParams: Promise<{ dia?: string; dietId?: string; demoClient?: string; clientId?: string }>;
 }
 
 export default function MiDietaPage({ searchParams }: MiDietaProps) {
@@ -49,6 +50,14 @@ async function MiDietaContent({ searchParams }: MiDietaProps) {
   const activeDayIndex = Math.max(1, Math.min(7, parseInt(params.dia || '1', 10)));
   const requestedDietId = params.dietId;
   const demoClient = params.demoClient;
+  const clientId = params.clientId || 'c1';
+
+  // Registrar último acceso del paciente al portal para métricas de retención y alertas cron
+  try {
+    await recordPortalAccess(clientId);
+  } catch (e) {
+    // Silently continue
+  }
 
   const supabase = await createClient();
 
@@ -114,15 +123,35 @@ async function MiDietaContent({ searchParams }: MiDietaProps) {
       valid_to: '2026-10-28',
     };
     itemsData = [
-      { id: '1', day_index: 1, meal_slot: 'desayuno', free_text: 'Avena en copos suaves', quantity: 60, unit: 'g', kcal: 227, protein_g: 8.1, carbs_g: 40.8, fat_g: 3.9 },
+      // Lunes (Día 1)
+      { id: '1', day_index: 1, meal_slot: 'desayuno', free_text: 'Avena en copos suaves', quantity: 65, unit: 'g', kcal: 245, protein_g: 8.8, carbs_g: 44.2, fat_g: 4.2, notes: 'Dejar la chía y la avena en remojo la noche anterior', mealPrepNotes: 'Dejar la chía y la avena en remojo la noche anterior' },
       { id: '2', day_index: 1, meal_slot: 'desayuno', free_text: 'Yogur griego 0% natural', quantity: 150, unit: 'g', kcal: 89, protein_g: 15.0, carbs_g: 5.4, fat_g: 0.0 },
-      { id: '3', day_index: 1, meal_slot: 'comida', free_text: 'Pechuga de pollo a la plancha', quantity: 180, unit: 'g', kcal: 297, protein_g: 55.8, carbs_g: 0.0, fat_g: 6.5 },
-      { id: '4', day_index: 1, meal_slot: 'comida', free_text: 'Arroz basmati crudo', quantity: 80, unit: 'g', kcal: 284, protein_g: 6.0, carbs_g: 63.2, fat_g: 0.5 },
-      { id: '5', day_index: 1, meal_slot: 'comida', free_text: 'Aceite de oliva virgen extra', quantity: 10, unit: 'ml', kcal: 88, protein_g: 0.0, carbs_g: 0.0, fat_g: 10.0 },
-      { id: '6', day_index: 1, meal_slot: 'merienda', free_text: 'Manzana con piel', quantity: 150, unit: 'g', kcal: 78, protein_g: 0.5, carbs_g: 21.0, fat_g: 0.3 },
-      { id: '7', day_index: 1, meal_slot: 'merienda', free_text: 'Nueces crudas', quantity: 20, unit: 'g', kcal: 131, protein_g: 3.0, carbs_g: 2.7, fat_g: 13.0 },
-      { id: '8', day_index: 1, meal_slot: 'cena', free_text: 'Salmón fresco al horno', quantity: 160, unit: 'g', kcal: 333, protein_g: 32.0, carbs_g: 0.0, fat_g: 20.8 },
-      { id: '9', day_index: 1, meal_slot: 'cena', free_text: 'Brócoli al vapor', quantity: 200, unit: 'g', kcal: 68, protein_g: 5.6, carbs_g: 13.2, fat_g: 0.8 },
+      { id: '3', day_index: 1, meal_slot: 'desayuno', free_text: 'Plátano maduro', quantity: 1, unit: 'ud', kcal: 89, protein_g: 1.1, carbs_g: 22.8, fat_g: 0.3 },
+      { id: '4', day_index: 1, meal_slot: 'comida', free_text: 'Pechuga de pollo a la plancha', quantity: 300, unit: 'g', kcal: 495, protein_g: 93.0, carbs_g: 0.0, fat_g: 10.8 },
+      { id: '5', day_index: 1, meal_slot: 'comida', free_text: 'Patata cocida al vapor', quantity: 200, unit: 'g', kcal: 154, protein_g: 4.0, carbs_g: 34.0, fat_g: 0.2, notes: 'Cocinar la patata y enfriar 24h para generar almidón resistente', mealPrepNotes: 'Cocinar la patata y enfriar 24h para generar almidón resistente' },
+      { id: '6', day_index: 1, meal_slot: 'comida', free_text: 'Aceite de oliva virgen extra', quantity: 10, unit: 'ml', kcal: 88, protein_g: 0.0, carbs_g: 0.0, fat_g: 10.0 },
+      { id: '7', day_index: 1, meal_slot: 'merienda', free_text: 'Manzana con piel', quantity: 150, unit: 'g', kcal: 78, protein_g: 0.5, carbs_g: 21.0, fat_g: 0.3 },
+      { id: '8', day_index: 1, meal_slot: 'merienda', free_text: 'Nueces crudas', quantity: 20, unit: 'g', kcal: 131, protein_g: 3.0, carbs_g: 2.7, fat_g: 13.0 },
+      { id: '9', day_index: 1, meal_slot: 'cena', free_text: 'Salmón fresco al horno', quantity: 160, unit: 'g', kcal: 333, protein_g: 32.0, carbs_g: 0.0, fat_g: 20.8 },
+      { id: '10', day_index: 1, meal_slot: 'cena', free_text: 'Brócoli al vapor', quantity: 200, unit: 'g', kcal: 68, protein_g: 5.6, carbs_g: 13.2, fat_g: 0.8 },
+
+      // Martes (Día 2)
+      { id: '11', day_index: 2, meal_slot: 'desayuno', free_text: 'Avena en copos suaves', quantity: 60, unit: 'g', kcal: 227, protein_g: 8.1, carbs_g: 40.8, fat_g: 3.9, notes: 'Dejar la chía y la avena en remojo la noche anterior', mealPrepNotes: 'Dejar la chía y la avena en remojo la noche anterior' },
+      { id: '12', day_index: 2, meal_slot: 'desayuno', free_text: 'Plátano maduro', quantity: 1, unit: 'ud', kcal: 89, protein_g: 1.1, carbs_g: 22.8, fat_g: 0.3 },
+      { id: '13', day_index: 2, meal_slot: 'comida', free_text: 'Pechuga de pollo a la plancha', quantity: 300, unit: 'g', kcal: 495, protein_g: 93.0, carbs_g: 0.0, fat_g: 10.8 },
+      { id: '14', day_index: 2, meal_slot: 'comida', free_text: 'Arroz blanco basmati', quantity: 70, unit: 'g', kcal: 248, protein_g: 5.2, carbs_g: 55.3, fat_g: 0.4 },
+
+      // Miércoles (Día 3)
+      { id: '15', day_index: 3, meal_slot: 'desayuno', free_text: 'Avena en copos suaves', quantity: 65, unit: 'g', kcal: 245, protein_g: 8.8, carbs_g: 44.2, fat_g: 4.2 },
+      { id: '16', day_index: 3, meal_slot: 'desayuno', free_text: 'Plátano maduro', quantity: 1, unit: 'ud', kcal: 89, protein_g: 1.1, carbs_g: 22.8, fat_g: 0.3 },
+      { id: '17', day_index: 3, meal_slot: 'comida', free_text: 'Pechuga de pollo a la plancha', quantity: 300, unit: 'g', kcal: 495, protein_g: 93.0, carbs_g: 0.0, fat_g: 10.8 },
+      { id: '18', day_index: 3, meal_slot: 'cena', free_text: 'Salmón fresco al horno', quantity: 160, unit: 'g', kcal: 333, protein_g: 32.0, carbs_g: 0.0, fat_g: 20.8 },
+
+      // Jueves (Día 4)
+      { id: '19', day_index: 4, meal_slot: 'desayuno', free_text: 'Avena en copos suaves', quantity: 60, unit: 'g', kcal: 227, protein_g: 8.1, carbs_g: 40.8, fat_g: 3.9 },
+      { id: '20', day_index: 4, meal_slot: 'desayuno', free_text: 'Plátano maduro', quantity: 1, unit: 'ud', kcal: 89, protein_g: 1.1, carbs_g: 22.8, fat_g: 0.3 },
+      { id: '21', day_index: 4, meal_slot: 'comida', free_text: 'Pechuga de pollo a la plancha', quantity: 300, unit: 'g', kcal: 495, protein_g: 93.0, carbs_g: 0.0, fat_g: 10.8 },
+      { id: '22', day_index: 4, meal_slot: 'comida', free_text: 'Patata cocida al vapor', quantity: 200, unit: 'g', kcal: 154, protein_g: 4.0, carbs_g: 34.0, fat_g: 0.2, notes: 'Cocinar la patata y enfriar 24h para generar almidón resistente', mealPrepNotes: 'Cocinar la patata y enfriar 24h para generar almidón resistente' },
     ];
   }
 

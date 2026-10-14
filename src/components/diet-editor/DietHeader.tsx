@@ -89,7 +89,7 @@ export const DietHeader: React.FC = () => {
             )}
 
             <span className="hidden sm:inline-flex px-2 py-0.5 rounded-[6px] bg-[var(--card-subtle)] border border-[var(--border)] text-[12px] font-[400] text-[var(--text-secondary)] truncate">
-              {clientName} ({clientWeightKg} kg)
+              {clientName} (<span className="tabular-nums font-mono font-medium">{clientWeightKg} kg</span>)
             </span>
 
             {/* Badge de conformidad CDSS */}
@@ -202,28 +202,30 @@ export const DietHeader: React.FC = () => {
             <span className="text-[var(--text-secondary)]">
               Proteína actual:{' '}
               <strong
-                className={`font-[500] ${
+                className={`font-[500] tabular-nums font-mono raw-metric ${
                   audit.proteinPerKg < (clientProfileType === 'deportista' ? 1.4 : 0.8)
                     ? 'text-[var(--danger-text)]'
                     : 'text-[var(--brand-solid)]'
                 }`}
               >
-                {audit.proteinPerKg} g/kg
+                {audit.proteinPerKg}
               </strong>
+              <span className="text-[11px] text-[var(--text-secondary)] ml-0.5">g/kg</span>
             </span>
             <span className="text-[var(--text-secondary)]">
               Fibra:{' '}
               <strong
-                className={`font-[500] ${
+                className={`font-[500] tabular-nums font-mono raw-metric ${
                   audit.totalFiberAvg < 25 ? 'text-[var(--warning-text)]' : 'text-[var(--text)]'
                 }`}
               >
-                {audit.totalFiberAvg} g/día
+                {audit.totalFiberAvg}
               </strong>
+              <span className="text-[11px] text-[var(--text-secondary)] ml-0.5">g/día</span>
             </span>
             {isClientSummaryOpen && (
               <span className="text-[var(--text-secondary)] truncate hidden md:inline">
-                Alergias: Gluten, Lactosa · Peso: {clientWeightKg} kg
+                Alergias: Gluten, Lactosa · Peso: <span className="tabular-nums font-mono">{clientWeightKg} kg</span>
               </span>
             )}
           </div>

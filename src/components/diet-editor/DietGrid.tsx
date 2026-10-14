@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useDietStore } from '@/lib/stores/useDietStore';
 import { MealSlotType, DietItem, DayDemandType } from '@/types/diet';
 import { FoodFuzzySearch } from './FoodFuzzySearch';
@@ -15,6 +16,9 @@ import {
   IconInfoCircle,
   IconSparkles,
   IconLoader2,
+  IconNote,
+  IconCheck,
+  IconX,
 } from '@tabler/icons-react';
 
 const DAYS = [
@@ -48,7 +52,9 @@ export const DietGrid: React.FC = () => {
     getDayTotals,
     targetKcal,
     updateItemQuantity,
+    updateItemNotes,
     addItemToSlot,
+    moveItemToSlot,
     removeItem,
     copyDayToAllDays,
     getDayCyclingConfig,
@@ -61,6 +67,12 @@ export const DietGrid: React.FC = () => {
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const [dayMenuOpen, setDayMenuOpen] = useState<number | null>(null);
   const [demandMenuOpen, setDemandMenuOpen] = useState<number | null>(null);
+  const [editingPrepNoteItemId, setEditingPrepNoteItemId] = useState<string | null>(null);
+  const [prepNoteInput, setPrepNoteInput] = useState<string>('');
+
+  // Estados de Drag & Drop Magnético y Snap Cinético (Framer Motion)
+  const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
+  const [dragOverCell, setDragOverCell] = useState<{ dayIndex: number; mealSlot: MealSlotType } | null>(null);
 
   // Manejo de atajos de teclado
   useEffect(() => {
@@ -294,6 +306,12 @@ export const DietGrid: React.FC = () => {
                   focusedCell?.dayIndex === day.index && focusedCell?.mealSlot === slot.key;
                 const isEditing = isFocused && isEditingCell;
 
+                const isDragTarget = Boolean(
+                  draggingItemId &&
+                  dragOverCell?.dayIndex === day.index &&
+                  dragOverCell?.mealSlot === slot.key
+                );
+
                 return (
                   <div
                     key={`${day.index}-${slot.key}`}
@@ -318,9 +336,33 @@ export const DietGrid: React.FC = () => {
                       });
                       startEditing();
                     }}
-                    className={`border-r border-[var(--border)] last:border-r-0 p-[6px_8px] relative transition-colors cursor-pointer min-h-[72px] flex flex-col justify-between ${
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      if (dragOverCell?.dayIndex !== day.index || dragOverCell?.mealSlot !== slot.key) {
+                        setDragOverCell({ dayIndex: day.index, mealSlot: slot.key });
+                      }
+                    }}
+                    onDragLeave={(e) => {
+                      if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                      if (dragOverCell?.dayIndex === day.index && dragOverCell?.mealSlot === slot.key) {
+                        setDragOverCell(null);
+                      }
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const droppedId = e.dataTransfer.getData('text/plain') || draggingItemId;
+                      if (droppedId) {
+                        moveItemToSlot(droppedId, day.index, slot.key);
+                      }
+                      setDraggingItemId(null);
+                      setDragOverCell(null);
+                    }}
+                    className={`border-r border-[var(--border)] last:border-r-0 p-[6px_8px] relative transition-all cursor-pointer min-h-[72px] flex flex-col justify-between ${
                       isAiLoading
                         ? 'bg-violet-950/20'
+                        : isDragTarget
+                        ? 'ring-2 ring-[var(--brand-solid)] ring-offset-2 ring-offset-[var(--card)] bg-emerald-50/70 dark:bg-emerald-950/40 scale-[1.01] shadow-lg z-20'
                         : isFocused
                         ? 'border-[2px] border-[var(--brand-solid)] bg-white z-10'
                         : 'hover:bg-[var(--card-subtle)] bg-[var(--card)]'
@@ -337,11 +379,28 @@ export const DietGrid: React.FC = () => {
                         <div className="h-2.5 bg-slate-800/40 rounded-[4px] w-1/2" />
                       </div>
                     ) : (
-                      /* Chips apilados (radio 6px, 12px) */
-                      <div className="space-y-1">
+                      /* Chips apilados (radio 6px, 12px) con soporte Meal Prep y Drag Magnético */
+                      <div className="space-y-1.5">
+                        <AnimatePresence>
+                          {isDragTarget && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95, height: 0 }}
+                              animate={{ opacity: 1, scale: 1, height: 'auto' }}
+                              exit={{ opacity: 0, scale: 0.95, height: 0 }}
+                              transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                              className="border-2 border-dashed border-emerald-500 rounded-[6px] py-1 px-1.5 text-center text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 mb-1.5 shadow-xs"
+                            >
+                              🧲 Soltar alimento (Snap Magnético)
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
                         {items.map((item, idx) => {
                           const isModified = Boolean(item.isModified);
                           const isAdded = !item.foodId;
+                          const hasNotes = Boolean(item.notes || item.mealPrepNotes);
+                          const isEditingNote = editingPrepNoteItemId === item.id;
+                          const isBeingDragged = draggingItemId === item.id;
 
                           let chipStyle = 'bg-white border border-[var(--border)] text-[var(--text)]';
                           if (isModified || isAdded) {
@@ -349,29 +408,164 @@ export const DietGrid: React.FC = () => {
                           }
 
                           return (
-                            <div
-                            key={item.id || idx}
-                            className={`group px-2 py-0.5 rounded-[6px] text-[12px] font-[400] flex items-center justify-between gap-1 transition-all ${chipStyle}`}
-                          >
-                            <span className="truncate">
-                              {item.foodName} · {item.quantity} {item.unit || 'g'}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeItem(item.id);
+                            <motion.div
+                              key={item.id || idx}
+                              layout
+                              layoutId={`diet-item-${item.id}`}
+                              transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+                              draggable={!isAiLoading}
+                              onDragStart={(e: any) => {
+                                e.dataTransfer.setData('text/plain', item.id);
+                                e.dataTransfer.effectAllowed = 'move';
+                                setDraggingItemId(item.id);
                               }}
-                              className="opacity-0 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--danger-text)] transition-opacity"
-                              title="Eliminar alimento"
+                              onDragEnd={() => {
+                                setDraggingItemId(null);
+                                setDragOverCell(null);
+                              }}
+                              whileHover={{ scale: 1.015 }}
+                              whileTap={{ scale: 0.98 }}
+                              className={`space-y-1 cursor-grab active:cursor-grabbing select-none ${
+                                isBeingDragged ? 'opacity-35 scale-95' : ''
+                              }`}
                             >
-                              <IconTrash size={12} />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                              <div
+                                className={`group px-2 py-1 rounded-[6px] text-[12px] font-[400] flex items-center justify-between gap-1 transition-all ${chipStyle}`}
+                              >
+                                <span className="truncate flex-1" title={`${item.foodName} (${item.quantity} ${item.unit || 'g'})`}>
+                                  <span className="clinical-reading">{item.foodName}</span> · <span className="tabular-nums font-mono font-medium">{item.quantity} {item.unit || 'g'}</span>
+                                </span>
+
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {/* Botón de Nota de Preparación (Meal Prep) */}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (isEditingNote) {
+                                        setEditingPrepNoteItemId(null);
+                                      } else {
+                                        setEditingPrepNoteItemId(item.id);
+                                        setPrepNoteInput(item.mealPrepNotes || item.notes || '');
+                                      }
+                                    }}
+                                    className={`p-0.5 rounded transition-colors ${
+                                      hasNotes
+                                        ? 'text-amber-500 hover:text-amber-600'
+                                        : 'opacity-0 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--text)]'
+                                    }`}
+                                    title={hasNotes ? `Meal Prep: ${item.mealPrepNotes || item.notes}` : 'Añadir nota de preparación (Meal Prep)'}
+                                  >
+                                    <IconNote size={13} stroke={hasNotes ? 2 : 1.5} />
+                                  </button>
+
+                                  {/* Botón Eliminar */}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeItem(item.id);
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--danger-text)] transition-opacity"
+                                    title="Eliminar alimento"
+                                  >
+                                    <IconTrash size={12} />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Badge visible de Meal Prep en la celda */}
+                              {hasNotes && !isEditingNote && (
+                                <div
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingPrepNoteItemId(item.id);
+                                    setPrepNoteInput(item.mealPrepNotes || item.notes || '');
+                                  }}
+                                  className="text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-300/60 dark:border-amber-700/50 rounded px-1.5 py-0.5 flex items-center gap-1 cursor-pointer hover:bg-amber-100/60 dark:hover:bg-amber-900/40 transition-colors"
+                                  title="Clic para editar instrucción de Meal Prep"
+                                >
+                                  <span className="shrink-0 text-[11px]">🥣</span>
+                                  <span className="truncate">{item.mealPrepNotes || item.notes}</span>
+                                </div>
+                              )}
+
+                              {/* Editor interactivo de Nota de Meal Prep */}
+                              {isEditingNote && (
+                                <div
+                                  className="p-1.5 rounded-[6px] bg-[var(--card)] border border-amber-400 shadow-md space-y-1 text-[11px] animate-fadeIn"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <div className="flex items-center justify-between text-[10px] font-[500] text-amber-600 dark:text-amber-400">
+                                    <span>Instrucción Meal Prep:</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingPrepNoteItemId(null)}
+                                      className="text-[var(--text-muted)] hover:text-[var(--text)]"
+                                    >
+                                      <IconX size={12} />
+                                    </button>
+                                  </div>
+
+                                  <input
+                                    type="text"
+                                    autoFocus
+                                    placeholder="ej. Dejar en remojo la noche anterior..."
+                                    value={prepNoteInput}
+                                    onChange={(e) => setPrepNoteInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        updateItemNotes(item.id, prepNoteInput);
+                                        setEditingPrepNoteItemId(null);
+                                      } else if (e.key === 'Escape') {
+                                        setEditingPrepNoteItemId(null);
+                                      }
+                                    }}
+                                    className="w-full px-1.5 py-1 text-[11px] rounded border border-[var(--border)] bg-[var(--card-subtle)] text-[var(--text)] focus:border-amber-500"
+                                  />
+
+                                  {/* Sugerencias clínicas rápidas */}
+                                  <div className="flex flex-wrap gap-1 pt-0.5">
+                                    {[
+                                      'Dejar en remojo 8h',
+                                      'Cocinar y enfriar 24h',
+                                      'Consumir al instante',
+                                    ].map((sug) => (
+                                      <button
+                                        key={sug}
+                                        type="button"
+                                        onClick={() => {
+                                          setPrepNoteInput(sug);
+                                          updateItemNotes(item.id, sug);
+                                          setEditingPrepNoteItemId(null);
+                                        }}
+                                        className="text-[9px] px-1 py-0.2 bg-[var(--card-subtle)] hover:bg-amber-100/50 dark:hover:bg-amber-950/60 rounded border border-[var(--border)] text-[var(--text-secondary)]"
+                                      >
+                                        +{sug}
+                                      </button>
+                                    ))}
+                                  </div>
+
+                                  <div className="flex justify-end gap-1 pt-1 border-t border-[var(--border)]">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        updateItemNotes(item.id, prepNoteInput);
+                                        setEditingPrepNoteItemId(null);
+                                      }}
+                                      className="px-2 py-0.5 text-[10px] font-[500] bg-amber-500 hover:bg-amber-600 text-slate-950 rounded flex items-center gap-0.5"
+                                    >
+                                      <IconCheck size={11} stroke={2} /> Guardar
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    )}
 
                     {/* Popover de edición rápida (ancho 280px) */}
                     {isEditing && (
@@ -417,7 +611,7 @@ export const DietGrid: React.FC = () => {
                 >
                   <div className="flex items-center justify-between mb-0.5">
                     <span
-                      className={`font-[600] font-mono leading-none ${
+                      className={`font-[600] font-mono tabular-nums raw-metric leading-none ${
                         compliance.status === 'optimal'
                           ? 'text-emerald-400'
                           : compliance.status === 'warning'
@@ -428,7 +622,7 @@ export const DietGrid: React.FC = () => {
                       {Math.round(totals.kcal)} kcal
                     </span>
                     <span
-                      className={`text-[9px] font-mono px-1 py-0.2 rounded border ${
+                      className={`text-[9px] font-mono tabular-nums px-1 py-0.2 rounded border ${
                         compliance.status === 'optimal'
                           ? 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30'
                           : compliance.status === 'warning'
@@ -442,10 +636,10 @@ export const DietGrid: React.FC = () => {
                         : `${compliance.kcalDiff > 0 ? `+${compliance.kcalDiff}` : compliance.kcalDiff}k`}
                     </span>
                   </div>
-                  <div className="text-[10px] text-[var(--text-secondary)] font-mono">
+                  <div className="text-[10px] text-[var(--text-secondary)] font-mono tabular-nums">
                     P:{Math.round(totals.protein)} · C:{Math.round(totals.carbs)} · G:{Math.round(totals.fat)}
                   </div>
-                  <div className="text-[9px] text-[var(--text-muted)] font-mono truncate mt-0.5">
+                  <div className="text-[9px] text-[var(--text-muted)] font-mono tabular-nums truncate mt-0.5">
                     Obj: {dayConfig.targetCarbsG}g carb
                   </div>
                 </div>

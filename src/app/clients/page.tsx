@@ -175,19 +175,24 @@ export default function ClientsPage() {
                       className="text-[13px] border-t border-[var(--border)] hover:bg-[var(--card-subtle)] transition-colors"
                     >
                       <td className="p-[8px_12px] text-[var(--text)] font-[400]">
-                        <Link
-                          href={`/clients/${client.id}`}
-                          className="hover:text-[var(--brand-solid)] hover:underline"
-                        >
-                          {client.name}
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <span className="patient-id font-mono text-[11px] text-[var(--text-muted)] bg-[var(--card-subtle)] px-1.5 py-0.5 rounded border border-[var(--border)] shrink-0">
+                            {client.id}
+                          </span>
+                          <Link
+                            href={`/clients/${client.id}`}
+                            className="hover:text-[var(--brand-solid)] hover:underline font-[500]"
+                          >
+                            {client.name}
+                          </Link>
+                        </div>
                       </td>
                       <td className="p-[8px_12px] text-[var(--text-secondary)]">{client.plan}</td>
                       <td className="p-[8px_12px]">
                         <Badge variant={statusVariant}>{client.status}</Badge>
                       </td>
-                      <td className="p-[8px_12px] text-[var(--text-muted)]">{client.lastAppointment}</td>
-                      <td className="p-[8px_12px] text-[var(--text)]">{client.nextAppointment}</td>
+                      <td className="p-[8px_12px] text-[var(--text-muted)] tabular-nums font-mono text-[12px]">{client.lastAppointment}</td>
+                      <td className="p-[8px_12px] text-[var(--text)] tabular-nums font-mono text-[12px] font-medium">{client.nextAppointment}</td>
                       <td className="p-[8px_12px]">
                         {client.hasDiet ? (
                           <button

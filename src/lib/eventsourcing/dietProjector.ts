@@ -242,6 +242,39 @@ function applyEvent(state: ProjectedDietState, event: DietEvent): ProjectedDietS
       };
     }
 
+    case 'ItemReassigned': {
+      const p = event.payload;
+      const updatedItems = state.items.map((item) => {
+        if (item.id === p.itemId) {
+          return {
+            ...item,
+            dayIndex: p.newDayIndex,
+            mealSlot: p.newMealSlot,
+          };
+        }
+        return item;
+      });
+
+      timelineEntry = {
+        version: event.version,
+        eventType: event.eventType,
+        badge: { label: 'Reubicado', variant: 'purple' },
+        title: `Alimento reubicado con Snap Magnético`,
+        description: `Reasignado de ${p.previousMealSlot} (Día ${p.previousDayIndex}) a ${p.newMealSlot} (Día ${p.newDayIndex}).`,
+        author,
+        role,
+        timestamp,
+      };
+
+      return {
+        ...state,
+        items: updatedItems,
+        version: event.version,
+        appliedEventsCount: state.appliedEventsCount + 1,
+        timeline: [timelineEntry, ...state.timeline],
+      };
+    }
+
     case 'TargetMacrosAdjusted': {
       const p = event.payload;
       timelineEntry = {

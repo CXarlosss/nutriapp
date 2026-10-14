@@ -79,11 +79,77 @@
 body {
   background-color: var(--bg);
   color: var(--text);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-geist-sans), 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-weight: 400;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   JERARQUÍA TIPOGRÁFICA CLÍNICA (TABULAR-NUMS & MONO CONTRAST)
+   ───────────────────────────────────────────────────────────── */
+
+/* Alineación Numérica Perfecta Global */
+html,
+body,
+table,
+th,
+td,
+input,
+select,
+textarea,
+button {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Tipografía Monoespaciada Exclusiva para Identificadores y Métricas Brutas */
+code,
+kbd,
+samp,
+pre,
+.font-mono,
+[data-mono] {
+  font-family: var(--font-geist-mono), 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Clase Universal para Forzar Ancho Numérico Idéntico en Tablas y Scorecards */
+.tabular-nums {
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" 1 !important;
+}
+
+/* Identificadores Clínicos de Pacientes, Expedientes y Prescripciones */
+.clinical-id,
+.patient-id {
+  font-family: var(--font-geist-mono), 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+/* Métricas Brutas Cuantitativas (Kcal, gramos, analíticas de tiroides, dosis) */
+.raw-metric,
+.clinical-metric {
+  font-family: var(--font-geist-mono), 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Tipografía Sans-Serif Geométrica para Lectura General, Textos y Explicaciones */
+.clinical-reading,
+.general-text {
+  font-family: var(--font-geist-sans), 'Inter', system-ui, -apple-system, sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
 }
 
 /* Reglas estrictas de diseño NutriApp: */
@@ -101,3 +167,136 @@ body {
 button:active:not(:disabled) {
   transform: scale(0.98);
 }
+
+/* ─────────────────────────────────────────────────────────────
+   ESTÁNDAR DE IMPRESIÓN MÉDICO-HOSPITALARIA (@media print)
+   Estética de Informe Clínico Editorial de Hospital Privado
+   ───────────────────────────────────────────────────────────── */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 14mm 14mm 14mm;
+  }
+
+  /* Ocultación radical de controles y elementos de navegación web */
+  header,
+  nav,
+  aside,
+  footer,
+  button,
+  .no-print,
+  .screen-actions,
+  [data-testid="mode-menu-btn"],
+  [data-testid="mode-shopping-btn"],
+  [role="tablist"],
+  input,
+  select,
+  textarea,
+  .fixed,
+  .sticky {
+    display: none !important;
+  }
+
+  /* Lienzo blanco puro y tipografía Serif de hospital privado */
+  html,
+  body {
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    color: #111827 !important;
+    font-family: var(--font-playfair), 'Playfair Display', 'Source Serif 4', Georgia, 'Times New Roman', serif !important;
+    font-size: 9pt !important;
+    line-height: 1.5 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Títulos y jerarquías médicas con serif de alta legibilidad */
+  h1, h2, h3, h4, .font-serif, .medical-heading {
+    font-family: var(--font-playfair), 'Playfair Display', Georgia, serif !important;
+    color: #0F4C3A !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  h1 {
+    font-size: 18pt !important;
+    font-weight: 700 !important;
+  }
+
+  h2 {
+    font-size: 13pt !important;
+    font-weight: 700 !important;
+  }
+
+  /* Datos numéricos estrictos en tabular-nums monoespaciada */
+  .tabular-nums,
+  .raw-metric,
+  .clinical-id,
+  .clinical-metric,
+  [data-mono] {
+    font-family: var(--font-geist-mono), 'JetBrains Mono', monospace !important;
+    font-variant-numeric: tabular-nums !important;
+    font-feature-settings: "tnum" 1 !important;
+  }
+
+  /* Prevención estricta de saltos de página huérfanos o cortados */
+  .avoid-break,
+  .page-break-avoid,
+  table,
+  tr,
+  td,
+  th,
+  .card,
+  article,
+  section,
+  [data-testid="concentric-macro-rings"],
+  .patient-clinical-card,
+  .meal-item,
+  .meal-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Portada o cortes de sección deliberados */
+  .cover-page,
+  .page-break-after {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .content-page,
+  .page-break-before {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  /* Bordes limpios de ficha hospitalaria sin sombras web */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Reemplazar fondos oscuros de tarjetas por estilo editorial clínico */
+  .bg-slate-950,
+  .bg-slate-900,
+  .bg-slate-900\/60,
+  .bg-slate-900\/90,
+  .bg-slate-800 {
+    background: #FFFFFF !important;
+    border-color: #E5E7EB !important;
+    color: #111827 !important;
+  }
+
+  .text-white,
+  .text-slate-100,
+  .text-slate-200 {
+    color: #111827 !important;
+  }
+
+  .text-slate-400,
+  .text-slate-500 {
+    color: #4B5563 !important;
+  }
+}
+

@@ -10,10 +10,12 @@ import {
   DayDemandType,
   DayCyclingConfig,
   CyclingPreset,
+  PatientMedication,
 } from '@/types/diet';
 import { persistDietItemsBatch } from '@/lib/services/dietService';
 import { evaluateClinicalRules } from '@/lib/clinical/clinicalDecisionEngine';
 import { appendDietEvent } from '@/lib/eventsourcing/eventStoreService';
+import { MOCK_MEDICATIONS } from '@/lib/services/clinicalRecordsService';
 import {
   getDefaultDayConfigs,
   evaluateDayCompliance,
@@ -41,11 +43,13 @@ const INITIAL_ITEMS: DietItem[] = [
     proteinG: 8.1,
     carbsG: 40.8,
     fatG: 3.9,
-    fiberG: 6.4,
+    fiberG: 8.5,
     calciumMg: 32,
     ironMg: 2.8,
     omega3G: 0.1,
     omega6G: 1.4,
+    notes: 'Dejar la chía y la avena en remojo la noche anterior',
+    mealPrepNotes: 'Dejar la chía y la avena en remojo la noche anterior',
   },
   {
     id: 'item-2',
@@ -106,6 +110,8 @@ const INITIAL_ITEMS: DietItem[] = [
     ironMg: 0.6,
     omega3G: 0.0,
     omega6G: 0.15,
+    notes: 'Cocinar y enfriar 24h para generar almidón resistente',
+    mealPrepNotes: 'Cocinar y enfriar 24h para generar almidón resistente',
   },
   {
     id: 'item-5',
@@ -161,8 +167,10 @@ interface DietStoreState {
   
   // Mutaciones optimistas de ítems
   updateItemQuantity: (id: string, quantity: number) => void;
+  updateItemNotes: (id: string, notes: string) => void;
   replaceItemFood: (id: string, food: Food, quantity?: number) => void;
   addItemToSlot: (dayIndex: number, mealSlot: MealSlotType, food: Food, quantity?: number) => void;
+  moveItemToSlot: (itemId: string, targetDayIndex: number, targetMealSlot: MealSlotType) => void;
   removeItem: (id: string) => void;
   copyDayToAllDays: (sourceDayIndex: number) => void;
   
@@ -172,6 +180,8 @@ interface DietStoreState {
   getSlotTotals: (dayIndex: number, mealSlot: MealSlotType) => MacroTotals;
   getWeekAverageKcal: () => number;
   getClinicalAudit: () => ClinicalAuditState;
+  clientMedications: PatientMedication[];
+  setClientMedications: (meds: PatientMedication[]) => void;
 
   // Ciclado Estratégico de Nutrientes
   dayCyclingConfigs: Record<number, DayCyclingConfig>;
@@ -201,6 +211,10 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
   clientProfileType: 'deportista',
   items: INITIAL_ITEMS,
   targetKcal: 1900,
+
+  // Farmacoterapia y Alertas Fármaco-Nutriente
+  clientMedications: MOCK_MEDICATIONS,
+  setClientMedications: (meds) => set({ clientMedications: meds }),
 
   // Ciclado Estratégico de Nutrientes Inicial (Hipertrofia 4:3)
   dayCyclingConfigs: getDefaultDayConfigs(),
@@ -323,6 +337,25 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
     }).catch(() => {});
   },
 
+  updateItemNotes: (id, notes) => {
+    const items = get().items;
+    const target = items.find((i) => i.id === id);
+    if (!target) return;
+
+    const updated: DietItem = {
+      ...target,
+      notes: notes.trim(),
+      mealPrepNotes: notes.trim(),
+      isModified: true,
+    };
+
+    set((state) => ({
+      items: state.items.map((i) => (i.id === id ? updated : i)),
+    }));
+
+    get().enqueueSaveMutation(updated);
+  },
+
   replaceItemFood: (id, food, quantity = 100) => {
     const items = get().items;
     const target = items.find((i) => i.id === id);
@@ -431,6 +464,43 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
     }).catch(() => {});
   },
 
+  moveItemToSlot: (itemId, targetDayIndex, targetMealSlot) => {
+    const currentItems = get().items;
+    const targetItem = currentItems.find((it) => it.id === itemId);
+    if (!targetItem) return;
+    if (targetItem.dayIndex === targetDayIndex && targetItem.mealSlot === targetMealSlot) return;
+
+    const currentSlotItems = currentItems.filter(
+      (it) => it.dayIndex === targetDayIndex && it.mealSlot === targetMealSlot
+    );
+
+    const updatedItem: DietItem = {
+      ...targetItem,
+      dayIndex: targetDayIndex,
+      mealSlot: targetMealSlot,
+      position: currentSlotItems.length,
+      isModified: true,
+    };
+
+    set((state) => ({
+      items: state.items.map((it) => (it.id === itemId ? updatedItem : it)),
+    }));
+
+    get().enqueueSaveMutation(updatedItem);
+
+    appendDietEvent({
+      streamId: get().dietId,
+      eventType: 'ItemReassigned',
+      payload: {
+        itemId,
+        previousDayIndex: targetItem.dayIndex,
+        previousMealSlot: targetItem.mealSlot,
+        newDayIndex: targetDayIndex,
+        newMealSlot: targetMealSlot,
+      },
+    }).catch(() => {});
+  },
+
   removeItem: (id) => {
     const target = get().items.find((i) => i.id === id);
     if (target) {
@@ -533,7 +603,13 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
    */
   getClinicalAudit: () => {
     const state = get();
-    return evaluateClinicalRules(state.items, state.clientWeightKg, state.clientProfileType);
+    return evaluateClinicalRules(
+      state.items,
+      state.clientWeightKg,
+      state.clientProfileType,
+      undefined,
+      state.clientMedications
+    );
   },
 
   /**
@@ -811,5 +887,11 @@ export const selectProteinPerKg = (state: DietState): number => {
  * Selector puro para la auditoría clínica completa (CDSS)
  */
 export const selectClinicalAudit = (state: DietState): ClinicalAuditState => {
-  return evaluateClinicalRules(state.items, state.clientWeightKg, state.clientProfileType);
+  return evaluateClinicalRules(
+    state.items,
+    state.clientWeightKg,
+    state.clientProfileType,
+    undefined,
+    state.clientMedications
+  );
 };

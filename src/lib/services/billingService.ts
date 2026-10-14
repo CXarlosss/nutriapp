@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { triggerPostPaymentOnboarding } from '@/lib/services/onboardingService';
 
 export type ClientBillingStatus = 'active' | 'inactive' | 'pending_review';
 
@@ -8,6 +9,9 @@ export interface BillingUpdateParams {
   stripeCustomerId?: string | null;
   stripeSubscriptionId?: string | null;
   eventType?: string;
+  clientName?: string;
+  clientEmail?: string;
+  clientPhone?: string;
 }
 
 export interface BillingUpdateResult {
@@ -67,6 +71,18 @@ export async function updateClientBillingStatus(
     stripeSubscriptionId,
     lastUpdated: timestamp,
   });
+
+  // 1b. Si el cliente acaba de pagar/activarse, disparar la automatización de onboarding (outbox -> n8n)
+  if (status === 'active') {
+    triggerPostPaymentOnboarding(
+      clientId,
+      params.clientName || 'Paciente NutriApp',
+      params.clientEmail || `${clientId}@paciente.nutriapp.es`,
+      params.clientPhone
+    ).catch((err) => {
+      console.warn('[BillingService] Aviso al preparar onboarding post-pago:', err);
+    });
+  }
 
   const supabase = getSupabaseAdmin();
   if (!supabase) {

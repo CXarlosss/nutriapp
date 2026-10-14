@@ -4,7 +4,9 @@ import type {
   ClinicalValidationResult,
   ClinicalAuditState,
   SuggestedSupplement,
+  PatientMedication,
 } from '@/types/diet';
+import { auditDrugNutrientInteractions } from '../services/clinicalRecordsService';
 
 /**
  * Catálogo base de Guías Científicas de Referencia (ISSN, OMS, EFSA).
@@ -171,7 +173,8 @@ export function evaluateClinicalRules(
   items: DietItem[],
   clientWeightKg: number,
   targetProfile: string = 'deportista',
-  guidelines: ScientificGuideline[] = DEFAULT_SCIENTIFIC_GUIDELINES
+  guidelines: ScientificGuideline[] = DEFAULT_SCIENTIFIC_GUIDELINES,
+  medications?: PatientMedication[]
 ): ClinicalAuditState {
   const safeWeight = Math.max(30, clientWeightKg || 70);
 
@@ -293,6 +296,10 @@ export function evaluateClinicalRules(
     });
   }
 
+  // 5. Evaluación de Interacciones Fármaco-Nutriente
+  const drugNutrientAlerts = auditDrugNutrientInteractions(items, medications || []);
+  const hasCriticalDrugAlert = drugNutrientAlerts.some((a) => a.severity === 'critical');
+
   return {
     proteinPerKg,
     totalFiberAvg,
@@ -301,8 +308,9 @@ export function evaluateClinicalRules(
     totalIronAvg,
     evaluations,
     criticalViolationsCount,
-    hasCriticalBlocker: criticalViolationsCount > 0,
+    hasCriticalBlocker: criticalViolationsCount > 0 || hasCriticalDrugAlert,
     suggestedFoods: Array.from(suggestedFoodsMap.values()),
+    drugNutrientAlerts,
   };
 }
 

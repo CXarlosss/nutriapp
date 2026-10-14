@@ -6,6 +6,7 @@ export type DietEventType =
   | 'ItemQuantityUpdated'
   | 'ItemAdded'
   | 'ItemRemoved'
+  | 'ItemReassigned'
   | 'TargetMacrosAdjusted'
   | 'DayDemandConfigured';
 
@@ -83,14 +84,23 @@ export type ItemRemovedEvent = BaseDietEvent<'ItemRemoved', {
   dayIndex: number;
 }>;
 
-// 6. Ajuste de objetivos calóricos/macros
+// 6. Reasignación de alimento entre celdas (Drag and Drop magnético)
+export type ItemReassignedEvent = BaseDietEvent<'ItemReassigned', {
+  itemId: string;
+  previousDayIndex: number;
+  previousMealSlot: MealSlotType;
+  newDayIndex: number;
+  newMealSlot: MealSlotType;
+}>;
+
+// 7. Ajuste de objetivos calóricos/macros
 export type TargetMacrosAdjustedEvent = BaseDietEvent<'TargetMacrosAdjusted', {
   oldTargetKcal: number;
   newTargetKcal: number;
   reason?: string;
 }>;
 
-// 7. Ciclado de nutrientes por día
+// 8. Ciclado de nutrientes por día
 export type DayDemandConfiguredEvent = BaseDietEvent<'DayDemandConfigured', {
   dayIndex: number;
   demandType: DayDemandType;
@@ -102,5 +112,6 @@ export type DietEvent =
   | ItemQuantityUpdatedEvent
   | ItemAddedEvent
   | ItemRemovedEvent
+  | ItemReassignedEvent
   | TargetMacrosAdjustedEvent
   | DayDemandConfiguredEvent;

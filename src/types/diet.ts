@@ -42,6 +42,7 @@ export interface DietItem {
   omega3G?: number;
   omega6G?: number;
   notes?: string;
+  mealPrepNotes?: string;
   isModified?: boolean;
 }
 
@@ -117,6 +118,90 @@ export interface ClinicalAuditState {
   criticalViolationsCount: number;
   hasCriticalBlocker: boolean;
   suggestedFoods: SuggestedSupplement[];
+  drugNutrientAlerts?: DrugNutrientInteractionAlert[];
+}
+
+// ==============================================================================
+// HISTORIA CLÍNICA, ANALÍTICAS SANGUÍNEAS Y FARMACOTERAPIA (CORE MÉDICO)
+// ==============================================================================
+
+export interface BloodMarkerValue {
+  value: number;
+  unit: string;
+  minRef: number;
+  maxRef: number;
+  status: 'optimal' | 'warning' | 'critical';
+  label: string;
+  category: 'hierro' | 'vitaminas' | 'glucemia' | 'lipidos' | 'tiroides';
+}
+
+export interface BloodTestReport {
+  id: string;
+  clientId: string;
+  testDate: string;
+  laboratoryName: string;
+  notes?: string;
+  markers: {
+    // Hierro
+    ferritina?: BloodMarkerValue;
+    hierro_serico?: BloodMarkerValue;
+    // Vitaminas
+    vitamina_d?: BloodMarkerValue;
+    vitamina_b12?: BloodMarkerValue;
+    // Glucemia
+    hba1c?: BloodMarkerValue;
+    glucosa_basal?: BloodMarkerValue;
+    // Perfil Lipídico
+    colesterol_total?: BloodMarkerValue;
+    colesterol_ldl?: BloodMarkerValue;
+    colesterol_hdl?: BloodMarkerValue;
+    trigliceridos?: BloodMarkerValue;
+    // Tiroides
+    tsh?: BloodMarkerValue;
+    t4_libre?: BloodMarkerValue;
+    t3_libre?: BloodMarkerValue;
+  };
+}
+
+export type BristolStoolType = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+export interface DigestiveSymptomLog {
+  id: string;
+  clientId: string;
+  weekStartDate: string;
+  evaluationDate: string;
+  bloatingScore: number; // 0 a 5
+  refluxScore: number; // 0 a 5
+  bristolStoolType: BristolStoolType; // 1 a 7
+  chronicFatigueScore: number; // 0 a 5
+  notes?: string;
+  correlationTags: string[];
+}
+
+export interface PatientMedication {
+  id: string;
+  clientId: string;
+  drugName: string; // ej. "Levotiroxina"
+  activeIngredient: string; // ej. "Levothyroxine Sodium"
+  dosage: string; // ej. "75 mcg"
+  timingSlot: MealSlotType | 'ayunas_manana' | 'noche';
+  indication: string; // ej. "Hipotiroidismo autoinmune"
+  interactionsNotes?: string;
+  active: boolean;
+}
+
+export interface DrugNutrientInteractionAlert {
+  id: string;
+  drugName: string;
+  conflictingFoodName: string;
+  conflictingSlot: MealSlotType;
+  dayIndex: number;
+  dayName: string;
+  severity: 'critical' | 'warning' | 'info';
+  title: string;
+  biologicalMechanism: string;
+  clinicalRecommendation: string;
+  doiReference: string;
 }
 
 // ==============================================================================
@@ -203,4 +288,99 @@ export interface CyclingPreset {
     trainingFocus?: string;
   }>;
 }
+
+// ==============================================================================
+// ONBOARDING Y FORMULARIO PRE-CONSULTA SINCRONIZADO (CERO DATA ENTRY)
+// ==============================================================================
+
+export interface DailyRoutine {
+  wakeUpTime?: string;
+  bedTime?: string;
+  workType?: string;
+  mealsCount?: number;
+  trainingSchedule?: string;
+  stressLevel?: 'Bajo' | 'Medio' | 'Alto';
+  waterLitersDaily?: number;
+}
+
+export interface DigestiveBaseline {
+  habitualBristol?: BristolStoolType;
+  bloatingFrequency?: string;
+  acidReflux?: boolean;
+  digestionNotes?: string;
+}
+
+export interface PreConsultationFormData {
+  fullName: string;
+  email: string;
+  phone: string;
+  birthDate?: string;
+  age?: number;
+  heightCm: number;
+  currentWeightKg: number;
+  goal: string;
+  dietaryPreference: 'omnivoro' | 'vegetariano' | 'vegano' | 'pescetariano' | 'keto' | 'otro';
+  allergies: string[];
+  pathologies: string[];
+  foodAversions: string[];
+  dailyRoutine: DailyRoutine;
+  digestiveBaseline: DigestiveBaseline;
+  medications: Array<{
+    drugName: string;
+    dosage: string;
+    timingSlot: MealSlotType | 'ayunas_manana' | 'noche';
+    indication: string;
+  }>;
+  generalNotes?: string;
+}
+
+export interface ClientOnboardingProfile {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  planName?: string;
+  onboardingToken: string;
+  onboardingStatus: 'pending' | 'completed';
+  intakeCompletedAt?: string;
+  formData: PreConsultationFormData;
+}
+
+// ==============================================================================
+// USABILIDAD EXTREMA: LISTA DE LA COMPRA AUTOMATIZADA Y MEAL PREP
+// ==============================================================================
+
+export interface ShoppingItem {
+  id: string;
+  foodName: string;
+  cleanName: string;
+  category: string;
+  totalQuantity: number;
+  unit: string;
+  formattedDisplay: string; // ej. "1.2 kg", "250g", "4 ud"
+  checked: boolean;
+  frequencyPerWeek: number; // Número de veces que aparece en la semana
+  mealPrepTips: string[];   // Instrucciones de preparación asociadas
+}
+
+export interface ShoppingCategory {
+  id: string;
+  name: string;
+  icon: string;
+  items: ShoppingItem[];
+}
+
+export interface ShoppingListSummary {
+  totalItemsCount: number;
+  checkedItemsCount: number;
+  categories: ShoppingCategory[];
+  allPrepNotes: Array<{
+    foodName: string;
+    note: string;
+    dayName: string;
+    mealSlot: MealSlotType;
+  }>;
+}
+
+
 

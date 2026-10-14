@@ -15,9 +15,12 @@ import {
   IconCheck,
   IconMail,
   IconX,
+  IconStethoscope,
+  IconChartLine,
 } from '@tabler/icons-react';
 import { Card, MetricCard, Badge, Button, Input } from '@/components/ui/nutri-ui';
 import { requestPaymentForClientAction } from '@/app/actions/billingOutboxActions';
+import { RetentionBusinessDashboard } from './RetentionBusinessDashboard';
 
 interface AppointmentItem {
   id: string;
@@ -40,6 +43,7 @@ interface ClientRow {
   status: 'Activo' | 'Pendiente' | 'Inactivo';
   nextAppointment: string;
   hasDiet: boolean;
+  daysInactive?: number;
 }
 
 const INITIAL_APPOINTMENTS: AppointmentItem[] = [
@@ -56,21 +60,22 @@ const INITIAL_REVIEWS: ReviewPendingItem[] = [
 ];
 
 const ALL_CLIENTS: ClientRow[] = [
-  { id: 'c1', name: 'Marta Morales Sánchez', plan: 'Plan Definición 8S', status: 'Activo', nextAppointment: '20 oct, 09:00', hasDiet: true },
-  { id: 'c2', name: 'Carlos Gómez Pardo', plan: 'Recomposición', status: 'Activo', nextAppointment: '13 oct, 11:30', hasDiet: true },
-  { id: 'c3', name: 'Lucía Fernández Díaz', plan: 'Pérdida de Grasa', status: 'Activo', nextAppointment: '13 oct, 16:00', hasDiet: true },
-  { id: 'c4', name: 'Javier Navarro Soler', plan: 'Salud Intestinal', status: 'Pendiente', nextAppointment: '13 oct, 18:15', hasDiet: false },
-  { id: 'c5', name: 'Elena Ramos Vidal', plan: 'Rendimiento Running', status: 'Activo', nextAppointment: '22 oct, 10:00', hasDiet: true },
-  { id: 'c6', name: 'David Torres Marín', plan: 'Recomposición', status: 'Activo', nextAppointment: '24 oct, 17:00', hasDiet: true },
-  { id: 'c7', name: 'Patricia Ortiz Cano', plan: 'Plan Definición 8S', status: 'Activo', nextAppointment: '27 oct, 09:30', hasDiet: true },
-  { id: 'c8', name: 'Andrés Gil Velasco', plan: 'Pérdida de Grasa', status: 'Inactivo', nextAppointment: 'Sin agendar', hasDiet: false },
-  { id: 'c9', name: 'Sofía Romero Cruz', plan: 'Vegetariana Flexible', status: 'Activo', nextAppointment: '28 oct, 12:00', hasDiet: true },
-  { id: 'c10', name: 'Marcos Alonso Castro', plan: 'Recomposición', status: 'Pendiente', nextAppointment: 'Sin agendar', hasDiet: false },
-  { id: 'c11', name: 'Clara Domínguez Vega', plan: 'Pérdida de Grasa', status: 'Activo', nextAppointment: '30 oct, 11:00', hasDiet: true },
-  { id: 'c12', name: 'Raúl Medina Peñalver', plan: 'Salud Intestinal', status: 'Activo', nextAppointment: '02 nov, 16:30', hasDiet: true },
+  { id: 'c1', name: 'Marta Morales Sánchez', plan: 'Plan Definición 8S', status: 'Activo', nextAppointment: '20 oct, 09:00', hasDiet: true, daysInactive: 1 },
+  { id: 'c2', name: 'Carlos Gómez Pardo', plan: 'Recomposición', status: 'Activo', nextAppointment: '13 oct, 11:30', hasDiet: true, daysInactive: 17 },
+  { id: 'c3', name: 'Lucía Fernández Díaz', plan: 'Pérdida de Grasa', status: 'Activo', nextAppointment: '13 oct, 16:00', hasDiet: true, daysInactive: 2 },
+  { id: 'c4', name: 'Javier Navarro Soler', plan: 'Salud Intestinal', status: 'Pendiente', nextAppointment: '13 oct, 18:15', hasDiet: false, daysInactive: 9 },
+  { id: 'c5', name: 'Elena Ramos Vidal', plan: 'Rendimiento Running', status: 'Activo', nextAppointment: '22 oct, 10:00', hasDiet: true, daysInactive: 16 },
+  { id: 'c6', name: 'David Torres Marín', plan: 'Recomposición', status: 'Activo', nextAppointment: '24 oct, 17:00', hasDiet: true, daysInactive: 15 },
+  { id: 'c7', name: 'Patricia Ortiz Cano', plan: 'Plan Definición 8S', status: 'Activo', nextAppointment: '27 oct, 09:30', hasDiet: true, daysInactive: 3 },
+  { id: 'c8', name: 'Andrés Gil Velasco', plan: 'Pérdida de Grasa', status: 'Inactivo', nextAppointment: 'Sin agendar', hasDiet: false, daysInactive: 35 },
+  { id: 'c9', name: 'Sofía Romero Cruz', plan: 'Vegetariana Flexible', status: 'Activo', nextAppointment: '28 oct, 12:00', hasDiet: true, daysInactive: 4 },
+  { id: 'c10', name: 'Marcos Alonso Castro', plan: 'Recomposición', status: 'Pendiente', nextAppointment: 'Sin agendar', hasDiet: false, daysInactive: 20 },
+  { id: 'c11', name: 'Clara Domínguez Vega', plan: 'Pérdida de Grasa', status: 'Activo', nextAppointment: '30 oct, 11:00', hasDiet: true, daysInactive: 5 },
+  { id: 'c12', name: 'Raúl Medina Peñalver', plan: 'Salud Intestinal', status: 'Activo', nextAppointment: '02 nov, 16:30', hasDiet: true, daysInactive: 6 },
 ];
 
 export function DashboardView() {
+  const [activeTab, setActiveTab] = useState<'clinical' | 'analytics'>('clinical');
   const [search, setSearch] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
   const [freshnessMinutes, setFreshnessMinutes] = useState(2);
@@ -180,17 +185,57 @@ export function DashboardView() {
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          2. FILA DE TRES MÉTRICAS (Grid de 3 columnas iguales, gap 12px)
+          SELECTOR DE PESTAÑAS: GESTIÓN CLÍNICA vs ANALÍTICA DE NEGOCIO
           ───────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-[12px]">
-        <MetricCard label="Citas hoy" value={INITIAL_APPOINTMENTS.length} />
-        <MetricCard label="Clientes activos" value={totalClientsCount} />
-        <MetricCard
-          label="Revisiones pendientes"
-          value={INITIAL_REVIEWS.length}
-          isWarning={true}
-        />
+      <div className="flex items-center gap-2 border-b border-[var(--border)] pb-2 pt-1">
+        <button
+          type="button"
+          data-testid="tab-clinical"
+          onClick={() => setActiveTab('clinical')}
+          className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
+            activeTab === 'clinical'
+              ? 'bg-emerald-600 text-white shadow-xs'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)]'
+          }`}
+        >
+          <IconStethoscope size={15} />
+          <span>Gestión Clínica & Agenda</span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="tab-analytics"
+          onClick={() => setActiveTab('analytics')}
+          className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
+            activeTab === 'analytics'
+              ? 'bg-emerald-600 text-white shadow-xs'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)]'
+          }`}
+        >
+          <IconChartLine size={15} />
+          <span>Analítica de Negocio & Retención (Stripe)</span>
+          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-500 text-white">
+            3 en Riesgo
+          </span>
+        </button>
       </div>
+
+      {activeTab === 'analytics' ? (
+        <RetentionBusinessDashboard />
+      ) : (
+        <>
+          {/* ─────────────────────────────────────────────────────────────
+              2. FILA DE TRES MÉTRICAS (Grid de 3 columnas iguales, gap 12px)
+              ───────────────────────────────────────────────────────────── */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-[12px]">
+            <MetricCard label="Citas hoy" value={INITIAL_APPOINTMENTS.length} />
+            <MetricCard label="Clientes activos" value={totalClientsCount} />
+            <MetricCard
+              label="Revisiones pendientes"
+              value={INITIAL_REVIEWS.length}
+              isWarning={true}
+            />
+          </div>
 
       {/* ─────────────────────────────────────────────────────────────
           3. FILA DE DOS TARJETAS (Grid 1.3fr / 1fr con gap 12px)
@@ -344,12 +389,22 @@ export function DashboardView() {
                       className="text-[13px] border-t border-[var(--border)] hover:bg-[var(--card-subtle)] transition-colors"
                     >
                       <td className="p-[8px_12px] text-[var(--text)] font-[400] truncate">
-                        <Link
-                          href={`/clients/${client.id}`}
-                          className="hover:text-[var(--brand-solid)] hover:underline"
-                        >
-                          {client.name}
-                        </Link>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Link
+                            href={`/clients/${client.id}`}
+                            className="hover:text-[var(--brand-solid)] hover:underline"
+                          >
+                            {client.name}
+                          </Link>
+                          {client.daysInactive && client.daysInactive >= 14 && (
+                            <span
+                              className="px-1.5 py-0.2 text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-300 dark:border-rose-800 rounded shrink-0 inline-flex items-center gap-0.5"
+                              title="Bandera roja: Lleva más de 14 días sin abrir /mi-dieta"
+                            >
+                              🚩 Inactivo {client.daysInactive}d
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-[8px_12px] text-[var(--text-secondary)] truncate">
                         {client.plan}
@@ -426,6 +481,8 @@ export function DashboardView() {
           </div>
         </div>
       </div>
+        </>
+      )}
 
       {/* Modal Informativo del Patrón Outbox & Copia de Enlace Seguro */}
       {outboxModal && outboxModal.isOpen && (
