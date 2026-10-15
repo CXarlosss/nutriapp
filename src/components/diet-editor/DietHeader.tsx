@@ -15,8 +15,11 @@ import {
   IconExternalLink,
   IconShieldCheck,
   IconHistory,
+  IconDeviceFloppy,
+  IconBookmark,
 } from '@tabler/icons-react';
 import { Button, Badge } from '@/components/ui/nutri-ui';
+import { SaveAsTemplateModal } from './SaveAsTemplateModal';
 
 export const DietHeader: React.FC = () => {
   const {
@@ -27,6 +30,8 @@ export const DietHeader: React.FC = () => {
     getClinicalAudit,
     clientWeightKg,
     clientProfileType,
+    items,
+    dayCyclingConfigs,
   } = useDietStore();
 
   const [localDietName, setLocalDietName] = useState(dietName);
@@ -34,6 +39,8 @@ export const DietHeader: React.FC = () => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [showBlockerModal, setShowBlockerModal] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+  const [templateSuccessToast, setTemplateSuccessToast] = useState<string | null>(null);
 
   // Auditoría clínica en tiempo real (CDSS)
   const audit = getClinicalAudit();
@@ -178,6 +185,17 @@ export const DietHeader: React.FC = () => {
           </a>
 
           <Button
+            variant="secondary"
+            data-testid="save-as-template-btn"
+            className="h-[32px] px-2.5 text-[12px] border-purple-500/30 text-purple-700 dark:text-purple-300 bg-purple-50/50 dark:bg-purple-950/30 hover:bg-purple-100/60 dark:hover:bg-purple-950/60 flex items-center gap-1.5"
+            onClick={() => setShowSaveTemplateModal(true)}
+            title="Guardar todos los alimentos de los 7 días como plantilla reutilizable"
+          >
+            <IconDeviceFloppy size={14} className="text-purple-600 dark:text-purple-400" />
+            <span className="hidden sm:inline">Guardar como Plantilla</span>
+          </Button>
+
+          <Button
             variant="primary"
             data-testid="publish-diet-btn"
             className={`h-[32px] px-3 text-[12px] ${
@@ -320,6 +338,38 @@ export const DietHeader: React.FC = () => {
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Modal: Guardar como Plantilla Reutilizable */}
+      <SaveAsTemplateModal
+        isOpen={showSaveTemplateModal}
+        onClose={() => setShowSaveTemplateModal(false)}
+        defaultTitle={localDietName}
+        items={items}
+        dayCyclingConfigs={dayCyclingConfigs}
+        onSuccess={(name) => {
+          setTemplateSuccessToast(`¡Plantilla "${name}" guardada con éxito en tu biblioteca!`);
+          setTimeout(() => setTemplateSuccessToast(null), 5000);
+        }}
+      />
+
+      {/* Toast de confirmación de plantilla guardada */}
+      {templateSuccessToast && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-purple-900 text-white shadow-2xl border border-purple-500/40 flex items-center gap-3 animate-fadeIn">
+          <div className="w-8 h-8 rounded-full bg-purple-500/30 flex items-center justify-center text-purple-300 shrink-0">
+            <IconBookmark size={18} />
+          </div>
+          <div>
+            <span className="font-semibold text-[13px] block">Plantilla Guardada</span>
+            <span className="text-[12px] text-purple-200">{templateSuccessToast}</span>
+          </div>
+          <Link
+            href="/templates"
+            className="ml-2 px-2.5 py-1 text-[11px] font-medium bg-white/20 hover:bg-white/30 rounded-lg text-white transition-colors"
+          >
+            Ver Plantillas
+          </Link>
         </div>
       )}
     </div>

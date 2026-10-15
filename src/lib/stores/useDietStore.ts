@@ -196,6 +196,9 @@ interface DietStoreState {
   aiGeneratingDay: number | null; // Bloqueo de concurrencia y rastreo del día en generación
   generateAIVariantForDay: (dayIndex: number) => Promise<boolean>;
 
+  // Carga e hidratación de plantillas
+  loadTemplateItems: (templateName: string, items: DietItem[], dayCyclingConfigs?: Record<number, DayCyclingConfig>) => void;
+
   // Motor interno de guardado
   enqueueSaveMutation: (item: DietItem) => void;
   flushPendingMutations: () => Promise<void>;
@@ -211,6 +214,16 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
   clientProfileType: 'deportista',
   items: INITIAL_ITEMS,
   targetKcal: 1900,
+
+  loadTemplateItems: (templateName, newItems, dayCyclingConfigs) => {
+    set({
+      dietName: templateName,
+      items: newItems && newItems.length > 0 ? newItems : INITIAL_ITEMS,
+      dayCyclingConfigs: dayCyclingConfigs || getDefaultDayConfigs(),
+      saveStatus: 'saved',
+      lastSavedAt: new Date(),
+    });
+  },
 
   // Farmacoterapia y Alertas Fármaco-Nutriente
   clientMedications: MOCK_MEDICATIONS,
