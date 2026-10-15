@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDietStore } from '@/lib/stores/useDietStore';
 import { MealSlotType, DietItem, DayDemandType } from '@/types/diet';
 import { FoodFuzzySearch } from './FoodFuzzySearch';
+import { SaveAsRecipeModal } from './SaveAsRecipeModal';
 import {
   IconSun,
   IconCoffee,
@@ -74,6 +75,7 @@ export const DietGrid: React.FC = () => {
   // Estados de Drag & Drop Magnético y Snap Cinético (Framer Motion)
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{ dayIndex: number; mealSlot: MealSlotType } | null>(null);
+  const [recipeSlotToSave, setRecipeSlotToSave] = useState<{ dayIndex: number; mealSlot: MealSlotType; items: DietItem[] } | null>(null);
 
   // Manejo de atajos de teclado
   useEffect(() => {
@@ -590,6 +592,23 @@ export const DietGrid: React.FC = () => {
                             </motion.div>
                           );
                         })}
+
+                        {items.length >= 2 && (
+                          <div className="pt-0.5 flex items-center justify-end">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRecipeSlotToSave({ dayIndex: day.index, mealSlot: slot.key, items });
+                              }}
+                              className="text-[10px] text-purple-600 dark:text-purple-400 hover:text-purple-700 hover:underline flex items-center gap-0.5 opacity-40 hover:opacity-100 transition-opacity"
+                              title="Guardar estos alimentos como una nueva receta reutilizable"
+                            >
+                              <IconToolsKitchen2 size={11} />
+                              <span>Guardar receta</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -701,6 +720,16 @@ export const DietGrid: React.FC = () => {
           <span>Tab / Flechas para navegar · Enter para editar · Ctrl+C / Ctrl+V · Ctrl+Z deshacer</span>
         </div>
       </div>
+
+      {/* Modal: Guardar Alimentos de la Celda como Nueva Receta */}
+      {recipeSlotToSave && (
+        <SaveAsRecipeModal
+          isOpen={Boolean(recipeSlotToSave)}
+          onClose={() => setRecipeSlotToSave(null)}
+          defaultCategory={recipeSlotToSave.mealSlot}
+          initialItems={recipeSlotToSave.items}
+        />
+      )}
     </div>
   );
 };

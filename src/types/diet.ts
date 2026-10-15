@@ -412,13 +412,13 @@ export type FoodDragPayload = {
 
 export interface RecipeIngredient {
   foodId: string;
-  foodName: string;
+  foodName?: string;
   grams: number;
   unit?: string;
-  kcal: number;
-  proteinG: number;
-  carbsG: number;
-  fatG: number;
+  kcal?: number;
+  proteinG?: number;
+  carbsG?: number;
+  fatG?: number;
   notes?: string;
 }
 
@@ -426,11 +426,17 @@ export interface Recipe {
   id: string;
   name: string;
   category: 'desayuno' | 'almuerzo' | 'comida' | 'merienda' | 'cena' | 'snack' | 'general';
-  prepTimeMinutes: number;
-  totalKcal: number;
-  proteinG: number;
-  carbsG: number;
-  fatG: number;
+  prepTimeMinutes?: number;
+  totalKcal?: number;
+  proteinG?: number;
+  carbsG?: number;
+  fatG?: number;
+  macros?: {
+    kcal: number;
+    protein: number;
+    carbs: number;
+    fats: number;
+  };
   tags: string[];
   notes?: string;
   ingredients: RecipeIngredient[];

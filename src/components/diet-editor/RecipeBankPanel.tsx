@@ -10,11 +10,14 @@ import {
   IconToolsKitchen2,
   IconTag,
   IconCheck,
+  IconTrash,
+  IconBookmarkPlus,
 } from '@tabler/icons-react';
 import { Badge, Button, Input } from '@/components/ui/nutri-ui';
-import { RECIPES_CATALOG } from '@/lib/data/mockRecipes';
-import { Recipe, RecipeDragPayload } from '@/types/diet';
+import { Recipe, RecipeDragPayload, DietItem } from '@/types/diet';
 import { useDietStore } from '@/lib/stores/useDietStore';
+import { useRecipeStore } from '@/lib/stores/useRecipeStore';
+import { SaveAsRecipeModal } from './SaveAsRecipeModal';
 
 interface RecipeBankPanelProps {
   onRecipeAdded?: (recipeName: string) => void;
@@ -24,27 +27,33 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('todos');
   const [addedRecipeId, setAddedRecipeId] = useState<string | null>(null);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [modalInitialItems, setModalInitialItems] = useState<DietItem[]>([]);
 
-  const { focusedCell, unpackRecipeToSlot } = useDietStore();
+  const { focusedCell, getItemsForSlot, unpackRecipeToSlot } = useDietStore();
+  const { recipes, deleteRecipe } = useRecipeStore();
 
   const categories = [
     { key: 'todos', label: 'Todos' },
     { key: 'desayuno', label: 'Desayuno' },
     { key: 'comida', label: 'Comidas' },
+    { key: 'cena', label: 'Cenas' },
     { key: 'merienda', label: 'Meriendas' },
   ];
 
   const filteredRecipes = useMemo(() => {
-    return RECIPES_CATALOG.filter((recipe) => {
+    return recipes.filter((recipe) => {
       const matchCat =
         selectedCategory === 'todos' || recipe.category === selectedCategory;
       const matchSearch =
         recipe.name.toLowerCase().includes(search.toLowerCase()) ||
         recipe.tags.some((t) => t.toLowerCase().includes(search.toLowerCase())) ||
-        recipe.ingredients.some((i) => i.foodName.toLowerCase().includes(search.toLowerCase()));
+        recipe.ingredients.some((i) =>
+          (i.foodName || i.foodId).toLowerCase().includes(search.toLowerCase())
+        );
       return matchCat && matchSearch;
     });
-  }, [search, selectedCategory]);
+  }, [recipes, search, selectedCategory]);
 
   const handleDragStart = (e: React.DragEvent, recipe: Recipe) => {
     const payload: RecipeDragPayload = {
@@ -53,7 +62,7 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
       name: recipe.name,
       items: recipe.ingredients.map((ing) => ({
         foodId: ing.foodId,
-        foodName: ing.foodName,
+        foodName: ing.foodName || ing.foodId.replace('food-', '').replace(/-/g, ' '),
         grams: ing.grams,
         unit: ing.unit || 'g',
         kcal: ing.kcal,
@@ -79,7 +88,7 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
       name: recipe.name,
       items: recipe.ingredients.map((ing) => ({
         foodId: ing.foodId,
-        foodName: ing.foodName,
+        foodName: ing.foodName || ing.foodId.replace('food-', '').replace(/-/g, ' '),
         grams: ing.grams,
         unit: ing.unit || 'g',
         kcal: ing.kcal,
@@ -96,15 +105,41 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
     setTimeout(() => setAddedRecipeId(null), 1500);
   };
 
+  // Guardar los alimentos de la celda actualmente seleccionada en la cuadrícula como una nueva receta
+  const handleOpenSaveCurrentSlot = () => {
+    if (focusedCell) {
+      const itemsInSlot = getItemsForSlot(focusedCell.dayIndex, focusedCell.mealSlot);
+      setModalInitialItems(itemsInSlot);
+    } else {
+      setModalInitialItems([]);
+    }
+    setIsSaveModalOpen(true);
+  };
+
   return (
     <div className="flex flex-col h-full space-y-3 p-3 overflow-hidden text-[13px]">
-      {/* Banner de instrucción Drag & Drop */}
-      <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-500/20 text-[11px] text-purple-700 dark:text-purple-300 flex items-start gap-2">
-        <span className="text-[14px]">🧲</span>
-        <div>
-          <strong className="font-semibold block text-[12px]">Desempaquetado Mágico (Drag & Drop)</strong>
-          Arrastra cualquier plato a la cuadrícula: se descompondrá en sus ingredientes individuales atómicos a 60 FPS.
+      {/* Banner de instrucción Drag & Drop y botón de Guardar Receta */}
+      <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-500/20 text-[11px] text-purple-700 dark:text-purple-300 flex items-start justify-between gap-2">
+        <div className="flex items-start gap-1.5 min-w-0">
+          <span className="text-[14px]">🧲</span>
+          <div className="leading-snug">
+            <strong className="font-semibold block text-[12px]">Desempaquetado Mágico (Drag & Drop)</strong>
+            <span>Arrastra cualquier plato a la cuadrícula: se descompondrá en sus ingredientes atómicos a 60 FPS.</span>
+          </div>
         </div>
+      </div>
+
+      {/* Botón destacado: Guardar Receta */}
+      <div className="flex items-center gap-1.5">
+        <Button
+          variant="secondary"
+          onClick={handleOpenSaveCurrentSlot}
+          className="w-full h-[32px] px-3 text-[12px] border-purple-500/30 text-purple-700 dark:text-purple-300 bg-purple-50/50 dark:bg-purple-950/30 hover:bg-purple-100/70 flex items-center justify-center gap-1.5 shadow-xs"
+          title="Crear una receta a partir de los alimentos de la celda activa o desde cero"
+        >
+          <IconBookmarkPlus size={15} className="text-purple-600 dark:text-purple-400" />
+          <span>+ Guardar Nueva Receta</span>
+        </Button>
       </div>
 
       {/* Buscador de recetas */}
@@ -113,7 +148,7 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
           icon={<IconSearch size={14} className="text-[var(--text-secondary)]" />}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar receta o ingrediente..."
+          placeholder="Buscar entre las 20 recetas..."
           className="text-[12px] h-[32px]"
         />
       </div>
@@ -145,6 +180,11 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
         ) : (
           filteredRecipes.map((recipe) => {
             const isJustAdded = addedRecipeId === recipe.id;
+            const kcal = recipe.totalKcal || recipe.macros?.kcal || 0;
+            const protein = recipe.proteinG || recipe.macros?.protein || 0;
+            const carbs = recipe.carbsG || recipe.macros?.carbs || 0;
+            const fats = recipe.fatG || recipe.macros?.fats || 0;
+            const isCustom = recipe.id.startsWith('rec-custom-');
 
             return (
               <div
@@ -154,7 +194,7 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
                 className="group relative p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] hover:border-purple-500/40 hover:shadow-md transition-all cursor-grab active:cursor-grabbing select-none"
               >
                 {/* Cabecera de la tarjeta */}
-                <div className="flex items-start justify-between gap-1.5 mb-1.5">
+                <div className="flex items-start justify-between gap-1.5 mb-1">
                   <div className="flex items-start gap-1.5 min-w-0">
                     <IconGripVertical
                       size={16}
@@ -164,40 +204,62 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
                       {recipe.name}
                     </h4>
                   </div>
-                  <Badge variant="brand" className="shrink-0 text-[10px] px-1.5 py-0.5">
-                    {recipe.totalKcal} kcal
-                  </Badge>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {isCustom && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteRecipe(recipe.id);
+                        }}
+                        className="text-[var(--text-muted)] hover:text-[var(--danger-text)] p-0.5"
+                        title="Eliminar receta personalizada"
+                      >
+                        <IconTrash size={12} />
+                      </button>
+                    )}
+                    <Badge variant="brand" className="text-[10px] px-1.5 py-0.5 font-mono">
+                      {kcal} kcal
+                    </Badge>
+                  </div>
                 </div>
 
-                {/* Macros y tiempo */}
+                {/* Macros */}
                 <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)] font-mono mb-2">
                   <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                    P: {recipe.proteinG}g
+                    P: {protein}g
                   </span>
                   <span>•</span>
                   <span className="text-amber-600 dark:text-amber-400 font-medium">
-                    C: {recipe.carbsG}g
+                    C: {carbs}g
                   </span>
                   <span>•</span>
                   <span className="text-blue-600 dark:text-blue-400 font-medium">
-                    G: {recipe.fatG}g
+                    G: {fats}g
                   </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-0.5 text-[10px]">
-                    <IconClock size={11} /> {recipe.prepTimeMinutes}m
-                  </span>
+                  {recipe.tags && recipe.tags.length > 0 && (
+                    <>
+                      <span>•</span>
+                      <span className="text-[10px] text-purple-600 dark:text-purple-400 truncate max-w-[80px]">
+                        {recipe.tags[0]}
+                      </span>
+                    </>
+                  )}
                 </div>
 
-                {/* Desglose de Ingredientes Atómicos (Píldoras) */}
+                {/* Desglose de Ingredientes Atómicos */}
                 <div className="flex flex-wrap gap-1 mb-2">
-                  {recipe.ingredients.map((ing, idx) => (
-                    <span
-                      key={idx}
-                      className="px-1.5 py-0.5 rounded-[4px] bg-[var(--card-subtle)] border border-[var(--border)] text-[10px] text-[var(--text-secondary)]"
-                    >
-                      {ing.foodName} <strong className="font-mono text-[var(--text)]">{ing.grams}g</strong>
-                    </span>
-                  ))}
+                  {recipe.ingredients.map((ing, idx) => {
+                    const cleanName = ing.foodName || ing.foodId.replace('food-', '').replace(/-/g, ' ');
+                    return (
+                      <span
+                        key={idx}
+                        className="px-1.5 py-0.5 rounded-[4px] bg-[var(--card-subtle)] border border-[var(--border)] text-[10px] text-[var(--text-secondary)]"
+                      >
+                        {cleanName} <strong className="font-mono text-[var(--text)]">{ing.grams}g</strong>
+                      </span>
+                    );
+                  })}
                 </div>
 
                 {/* Botón de Inserción Rápida con 1 clic al slot enfocado */}
@@ -234,6 +296,14 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
           })
         )}
       </div>
+
+      {/* Modal para Guardar Receta */}
+      <SaveAsRecipeModal
+        isOpen={isSaveModalOpen}
+        onClose={() => setIsSaveModalOpen(false)}
+        defaultCategory={focusedCell?.mealSlot || 'desayuno'}
+        initialItems={modalInitialItems}
+      />
     </div>
   );
 };
