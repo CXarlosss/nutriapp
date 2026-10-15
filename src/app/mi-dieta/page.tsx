@@ -133,10 +133,10 @@ async function MiDietaContent({ searchParams }: MiDietaProps) {
 
     itemsData = [
       // Día 1
-      { id: '1', day_index: 1, meal_slot: 'desayuno', free_text: 'Avena en copos suaves con canela', quantity: 65, unit: 'g', kcal: 245, protein_g: 8.8, carbs_g: 44.2, fat_g: 4.2, notes: 'Dejar la chía y la avena en remojo la noche anterior', mealPrepNotes: 'Dejar la chía y la avena en remojo la noche anterior' },
+      { id: '1', day_index: 1, meal_slot: 'desayuno', free_text: 'Avena en copos', quantity: 65, unit: 'g', kcal: 245, protein_g: 8.8, carbs_g: 44.2, fat_g: 4.2, notes: 'Dejar la chía y la avena en remojo la noche anterior', mealPrepNotes: 'Dejar la chía y la avena en remojo la noche anterior' },
       { id: '2', day_index: 1, meal_slot: 'desayuno', free_text: 'Yogur griego 0% natural', quantity: 150, unit: 'g', kcal: 89, protein_g: 15.0, carbs_g: 5.4, fat_g: 0.0 },
-      { id: '3', day_index: 1, meal_slot: 'desayuno', free_text: 'Plátano maduro en rodajas', quantity: 1, unit: 'ud', kcal: 89, protein_g: 1.1, carbs_g: 22.8, fat_g: 0.3 },
-      { id: '4', day_index: 1, meal_slot: 'comida', free_text: 'Pechuga de pollo a la plancha', quantity: 220, unit: 'g', kcal: 360, protein_g: 68.0, carbs_g: 0.0, fat_g: 8.0 },
+      { id: '3', day_index: 1, meal_slot: 'desayuno', free_text: 'Plátano maduro', quantity: 1, unit: 'ud', kcal: 89, protein_g: 1.1, carbs_g: 22.8, fat_g: 0.3 },
+      { id: '4', day_index: 1, meal_slot: 'comida', free_text: 'Pechuga de pollo a la plancha', quantity: 300, unit: 'g', kcal: 450, protein_g: 80.0, carbs_g: 0.0, fat_g: 10.0 },
       { id: '5', day_index: 1, meal_slot: 'comida', free_text: 'Patata cocida al vapor', quantity: 200, unit: 'g', kcal: 154, protein_g: 4.0, carbs_g: 34.0, fat_g: 0.2, notes: 'Cocinar la patata y enfriar 24h para generar almidón resistente', mealPrepNotes: 'Cocinar la patata y enfriar 24h para generar almidón resistente' },
       { id: '6', day_index: 1, meal_slot: 'comida', free_text: 'Aceite de oliva virgen extra', quantity: 10, unit: 'ml', kcal: 88, protein_g: 0.0, carbs_g: 0.0, fat_g: 10.0 },
       { id: '7', day_index: 1, meal_slot: 'merienda', free_text: 'Manzana con piel', quantity: 150, unit: 'g', kcal: 78, protein_g: 0.5, carbs_g: 21.0, fat_g: 0.3 },
@@ -148,32 +148,32 @@ async function MiDietaContent({ searchParams }: MiDietaProps) {
       { id: '11', day_index: 2, meal_slot: 'desayuno', free_text: 'Tostada de pan de centeno con aguacate', quantity: 80, unit: 'g', kcal: 210, protein_g: 6.0, carbs_g: 30.0, fat_g: 8.0 },
       { id: '12', day_index: 2, meal_slot: 'desayuno', free_text: 'Huevos revueltos camperos', quantity: 2, unit: 'ud', kcal: 150, protein_g: 13.0, carbs_g: 1.0, fat_g: 10.0 },
       { id: '13', day_index: 2, meal_slot: 'comida', free_text: 'Arroz basmati con ternera magra', quantity: 200, unit: 'g', kcal: 420, protein_g: 45.0, carbs_g: 48.0, fat_g: 7.0 },
-      { id: '14', day_index: 2, meal_slot: 'merienda', free_text: 'Queso fresco batido 0% con frutos rojos', quantity: 200, unit: 'g', kcal: 120, protein_g: 18.0, carbs_g: 10.0, fat_g: 0.2 },
+      { id: '14', day_index: 2, meal_slot: 'merienda', free_text: 'Plátano maduro', quantity: 1, unit: 'ud', kcal: 89, protein_g: 1.1, carbs_g: 22.8, fat_g: 0.3 },
       { id: '15', day_index: 2, meal_slot: 'cena', free_text: 'Merluza al horno con espárragos verdes', quantity: 200, unit: 'g', kcal: 190, protein_g: 34.0, carbs_g: 3.0, fat_g: 3.5 },
 
       // Día 3
-      { id: '16', day_index: 3, meal_slot: 'desayuno', free_text: 'Porridge de avena con semillas de chía', quantity: 65, unit: 'g', kcal: 245, protein_g: 8.8, carbs_g: 44.2, fat_g: 4.2 },
+      { id: '16', day_index: 3, meal_slot: 'desayuno', free_text: 'Avena en copos', quantity: 65, unit: 'g', kcal: 245, protein_g: 8.8, carbs_g: 44.2, fat_g: 4.2 },
       { id: '17', day_index: 3, meal_slot: 'desayuno', free_text: 'Plátano maduro', quantity: 1, unit: 'ud', kcal: 89, protein_g: 1.1, carbs_g: 22.8, fat_g: 0.3 },
       { id: '18', day_index: 3, meal_slot: 'comida', free_text: 'Lomo de salmón a la plancha con quinoa', quantity: 220, unit: 'g', kcal: 460, protein_g: 42.0, carbs_g: 35.0, fat_g: 16.0 },
-      { id: '19', day_index: 3, meal_slot: 'cena', free_text: 'Pechuga de pavo con ensalada de rúcula y tomate', quantity: 200, unit: 'g', kcal: 240, protein_g: 46.0, carbs_g: 4.0, fat_g: 3.0 },
+      { id: '19', day_index: 3, meal_slot: 'cena', free_text: 'Pechuga de pollo a la plancha', quantity: 300, unit: 'g', kcal: 450, protein_g: 80.0, carbs_g: 0.0, fat_g: 10.0 },
 
       // Día 4
-      { id: '20', day_index: 4, meal_slot: 'desayuno', free_text: 'Avena en copos suaves con leche vegetal', quantity: 60, unit: 'g', kcal: 227, protein_g: 8.1, carbs_g: 40.8, fat_g: 3.9 },
-      { id: '21', day_index: 4, meal_slot: 'comida', free_text: 'Pechuga de pollo a la plancha con patatas', quantity: 250, unit: 'g', kcal: 430, protein_g: 58.0, carbs_g: 35.0, fat_g: 6.0 },
+      { id: '20', day_index: 4, meal_slot: 'desayuno', free_text: 'Avena en copos', quantity: 60, unit: 'g', kcal: 227, protein_g: 8.1, carbs_g: 40.8, fat_g: 3.9 },
+      { id: '21', day_index: 4, meal_slot: 'comida', free_text: 'Pechuga de pollo a la plancha', quantity: 300, unit: 'g', kcal: 450, protein_g: 80.0, carbs_g: 0.0, fat_g: 10.0 },
       { id: '22', day_index: 4, meal_slot: 'cena', free_text: 'Tortilla francesa con champiñones', quantity: 2, unit: 'ud', kcal: 180, protein_g: 15.0, carbs_g: 2.0, fat_g: 12.0 },
 
       // Día 5
       { id: '23', day_index: 5, meal_slot: 'desayuno', free_text: 'Yogur griego con frutos secos', quantity: 150, unit: 'g', kcal: 220, protein_g: 16.0, carbs_g: 8.0, fat_g: 14.0 },
-      { id: '24', day_index: 5, meal_slot: 'comida', free_text: 'Ternera magra con boniato asado', quantity: 220, unit: 'g', kcal: 440, protein_g: 48.0, carbs_g: 38.0, fat_g: 8.0 },
+      { id: '24', day_index: 5, meal_slot: 'merienda', free_text: 'Plátano maduro', quantity: 1, unit: 'ud', kcal: 89, protein_g: 1.1, carbs_g: 22.8, fat_g: 0.3 },
       { id: '25', day_index: 5, meal_slot: 'cena', free_text: 'Lubina a la espalda con verduras salteadas', quantity: 220, unit: 'g', kcal: 260, protein_g: 40.0, carbs_g: 6.0, fat_g: 8.0 },
 
       // Día 6
       { id: '26', day_index: 6, meal_slot: 'desayuno', free_text: 'Tostada de pan integral con pavo y aceite', quantity: 100, unit: 'g', kcal: 240, protein_g: 18.0, carbs_g: 28.0, fat_g: 6.0 },
       { id: '27', day_index: 6, meal_slot: 'comida', free_text: 'Lentejas estofadas con verduras', quantity: 250, unit: 'g', kcal: 320, protein_g: 22.0, carbs_g: 48.0, fat_g: 4.0 },
-      { id: '28', day_index: 6, meal_slot: 'cena', free_text: 'Revuelto de gambas con ajetes', quantity: 180, unit: 'g', kcal: 210, protein_g: 28.0, carbs_g: 3.0, fat_g: 9.0 },
+      { id: '28', day_index: 6, meal_slot: 'cena', free_text: 'Pechuga de pollo a la plancha', quantity: 300, unit: 'g', kcal: 450, protein_g: 80.0, carbs_g: 0.0, fat_g: 10.0 },
 
       // Día 7
-      { id: '29', day_index: 7, meal_slot: 'desayuno', free_text: 'Tortitas de avena y plátano caseras', quantity: 150, unit: 'g', kcal: 280, protein_g: 12.0, carbs_g: 46.0, fat_g: 5.0 },
+      { id: '29', day_index: 7, meal_slot: 'desayuno', free_text: 'Avena en copos', quantity: 60, unit: 'g', kcal: 227, protein_g: 8.1, carbs_g: 40.8, fat_g: 3.9 },
       { id: '30', day_index: 7, meal_slot: 'comida', free_text: 'Arroz con pollo campero y verduras', quantity: 250, unit: 'g', kcal: 460, protein_g: 38.0, carbs_g: 56.0, fat_g: 8.0 },
       { id: '31', day_index: 7, meal_slot: 'cena', free_text: 'Crema de calabaza con semillas tostadas', quantity: 250, unit: 'g', kcal: 180, protein_g: 5.0, carbs_g: 18.0, fat_g: 9.0 },
     ];

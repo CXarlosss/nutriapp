@@ -147,7 +147,9 @@ memoryOnboardingStore.set('token_marta_morales_2026', {
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
+  if (!url || !key || url.includes('mock') || key.includes('mock') || url.includes('example') || key.includes('example')) {
+    return null;
+  }
   return createSupabaseClient(url, key, { auth: { persistSession: false } });
 }
 

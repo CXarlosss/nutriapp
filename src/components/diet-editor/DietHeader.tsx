@@ -62,8 +62,7 @@ export const DietHeader: React.FC = () => {
     }
     flushPendingMutations();
     setPublishSuccess(true);
-    setShowPublishedModal(true);
-    setTimeout(() => setPublishSuccess(false), 4000);
+    setTimeout(() => setPublishSuccess(false), 5000);
   };
 
   const criticalIssues = audit.evaluations.filter((e) => e.status === 'critical' && !e.passed);
@@ -169,16 +168,14 @@ export const DietHeader: React.FC = () => {
             <IconArrowForwardUp size={16} stroke={1.5} />
           </button>
 
-          <Link href="/dietas/diet-demo-1">
-            <Button
-              variant="secondary"
-              data-testid="audit-clinical-btn"
-              className="h-[32px] px-2.5 text-[12px]"
-              title="Ver historial de auditoría inmutable y Time Travel"
-            >
-              <IconHistory size={14} stroke={1.5} />
-              <span className="hidden sm:inline">Auditoría Clínica</span>
-            </Button>
+          <Link
+            href="/dietas/diet-demo-1"
+            data-testid="audit-clinical-btn"
+            className="h-[32px] px-2.5 text-[12px] rounded-[8px] font-[500] inline-flex items-center justify-center gap-1.5 border border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--card-subtle)] transition-all cursor-pointer"
+            title="Ver historial de auditoría inmutable y Time Travel"
+          >
+            <IconHistory size={14} stroke={1.5} />
+            <span className="hidden sm:inline">Auditoría Clínica</span>
           </Link>
 
           {/* Ver Dieta (Vista del paciente) */}
@@ -289,10 +286,17 @@ export const DietHeader: React.FC = () => {
       {publishSuccess && (
         <div
           data-testid="publish-success-banner"
-          className="fixed bottom-4 right-4 z-50 bg-[var(--card)] border border-[var(--brand-solid)] rounded-[8px] p-3 shadow-xl text-[13px] text-[var(--brand-text)] flex items-center gap-2 animate-fadeIn"
+          className="fixed bottom-4 right-4 z-50 bg-[var(--card)] border border-[var(--brand-solid)] rounded-[8px] p-3 shadow-xl text-[13px] text-[var(--brand-text)] flex items-center gap-2.5 animate-fadeIn"
         >
-          <IconShieldCheck size={18} className="text-[var(--brand-solid)]" />
+          <IconShieldCheck size={18} className="text-[var(--brand-solid)] shrink-0" />
           <span>Dieta validada clínicamente y publicada con éxito</span>
+          <button
+            type="button"
+            onClick={() => setShowPublishedModal(true)}
+            className="ml-2 px-2.5 py-1 text-[11px] font-medium bg-[var(--brand-solid)] text-[var(--brand-solid-text)] rounded-[6px] hover:opacity-90 transition-opacity cursor-pointer shrink-0"
+          >
+            Ver entrega / Compartir
+          </button>
         </div>
       )}
 
@@ -357,8 +361,7 @@ export const DietHeader: React.FC = () => {
                   setShowBlockerModal(false);
                   flushPendingMutations();
                   setPublishSuccess(true);
-                  setShowPublishedModal(true);
-                  setTimeout(() => setPublishSuccess(false), 4000);
+                  setTimeout(() => setPublishSuccess(false), 5000);
                 }}
               >
                 Forzar Publicación (Excepción Clínica)

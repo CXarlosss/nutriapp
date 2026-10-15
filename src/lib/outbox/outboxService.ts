@@ -41,7 +41,7 @@ const memoryOutboxStore = new Map<string, OutboxEventRecord>();
 export function getSupabaseAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
+  if (!url || !key || url.includes('mock') || key.includes('mock') || url.includes('example') || key.includes('example')) {
     return null;
   }
   return createSupabaseClient(url, key, {
@@ -55,7 +55,9 @@ function getSupabaseClient() {
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) return null;
+  if (!url || !anonKey || url.includes('mock') || anonKey.includes('mock') || url.includes('example') || anonKey.includes('example')) {
+    return null;
+  }
   return createSupabaseClient(url, anonKey, {
     auth: { persistSession: false },
   });
