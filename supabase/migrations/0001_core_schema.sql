@@ -6,14 +6,14 @@ create extension if not exists btree_gist;
 create extension if not exists pgcrypto;
 
 -- Perfiles (vinculados a auth.users)
-create table profiles (
+create table if not exists profiles (
   id uuid primary key references auth.users on delete cascade,
   role text not null check (role in ('admin','client')),
   full_name text, email text, phone text,
   created_at timestamptz default now()
 );
 
-create table nutritionists (
+create table if not exists nutritionists (
   id uuid primary key references profiles(id) on delete cascade,
   timezone text default 'Europe/Madrid',
   google_calendar_id text,
@@ -23,7 +23,7 @@ create table nutritionists (
   working_hours jsonb                     -- {"mon":[["09:00","14:00"],["16:00","19:00"]],...}
 );
 
-create table clients (
+create table if not exists clients (
   id uuid primary key default gen_random_uuid(),
   nutritionist_id uuid not null references nutritionists(id),
   profile_id uuid unique references profiles(id),   -- null hasta aceptar invitación
@@ -35,9 +35,9 @@ create table clients (
   consent_at timestamptz,                 -- consentimiento RGPD
   created_at timestamptz default now()
 );
-create index on clients(nutritionist_id);
+create index if not exists idx_clients_nutritionist on clients(nutritionist_id);
 
-create table plans (
+create table if not exists plans (
   id uuid primary key default gen_random_uuid(),
   nutritionist_id uuid references nutritionists(id),
   name text not null, duration_days int, price_cents int,
@@ -45,7 +45,7 @@ create table plans (
   stripe_price_id text, active boolean default true
 );
 
-create table subscriptions (
+create table if not exists subscriptions (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null references clients(id) on delete cascade,
   plan_id uuid not null references plans(id),
@@ -55,9 +55,9 @@ create table subscriptions (
   stripe_session_id text,
   created_at timestamptz default now()
 );
-create index on subscriptions(client_id);
+create index if not exists idx_subscriptions_client on subscriptions(client_id);
 
-create table appointments (
+create table if not exists appointments (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null references clients(id) on delete cascade,
   nutritionist_id uuid not null references nutritionists(id),
@@ -72,9 +72,9 @@ create table appointments (
     tstzrange(starts_at, ends_at) with &&
   ) where (status = 'scheduled')
 );
-create index on appointments(client_id);
+create index if not exists idx_appointments_client on appointments(client_id);
 
-create table booking_tokens (
+create table if not exists booking_tokens (
   token text primary key,
   client_id uuid not null references clients(id) on delete cascade,
   subscription_id uuid references subscriptions(id),
@@ -83,15 +83,15 @@ create table booking_tokens (
 );
 
 -- Catálogo de alimentos (macros por 100 g)
-create table foods (
+create table if not exists foods (
   id uuid primary key default gen_random_uuid(),
   name text not null, category text,
   kcal numeric, protein_g numeric, carbs_g numeric, fat_g numeric,
   default_unit text default 'g'
 );
-create index on foods (lower(name));
+create index if not exists idx_foods_lower_name on foods (lower(name));
 
-create table diet_templates (
+create table if not exists diet_templates (
   id uuid primary key default gen_random_uuid(),
   nutritionist_id uuid references nutritionists(id),
   name text not null, description text, target_kcal int, tags text[],
@@ -99,7 +99,7 @@ create table diet_templates (
   created_at timestamptz default now()
 );
 
-create table template_items (
+create table if not exists template_items (
   id uuid primary key default gen_random_uuid(),
   template_id uuid not null references diet_templates(id) on delete cascade,
   day_index smallint not null,
@@ -110,9 +110,9 @@ create table template_items (
   free_text text,
   quantity numeric, unit text default 'g', notes text
 );
-create index on template_items(template_id);
+create index if not exists idx_template_items_template on template_items(template_id);
 
-create table assigned_diets (
+create table if not exists assigned_diets (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null references clients(id) on delete cascade,
   template_id uuid references diet_templates(id) on delete set null,
@@ -123,9 +123,9 @@ create table assigned_diets (
   published_at timestamptz,
   created_at timestamptz default now()
 );
-create index on assigned_diets(client_id);
+create index if not exists idx_assigned_diets_client on assigned_diets(client_id);
 
-create table assigned_diet_items (
+create table if not exists assigned_diet_items (
   id uuid primary key default gen_random_uuid(),
   diet_id uuid not null references assigned_diets(id) on delete cascade,
   day_index smallint not null,
@@ -137,7 +137,7 @@ create table assigned_diet_items (
   source_item_id uuid references template_items(id) on delete set null,
   is_modified boolean default false
 );
-create index on assigned_diet_items(diet_id);
+create index if not exists idx_assigned_diet_items_diet on assigned_diet_items(diet_id);
 
 -- Copy-on-assign: clona la plantilla en una dieta draft independiente
 create or replace function assign_template(p_client_id uuid, p_template_id uuid)
@@ -178,6 +178,7 @@ having now()::date - coalesce(max(a.starts_at)::date, s.starts_on) >= p.review_i
 -- NOTA: RLS se añade en 0002. Hasta entonces, permitir lectura de profiles
 -- para la "prueba de fuego" (eliminar en 0002):
 alter table profiles enable row level security;
+drop policy if exists "tmp_read_profiles" on profiles;
 create policy "tmp_read_profiles" on profiles for select using (true);
 
 -- Permisos explícitos para la Data API (exposición automática desactivada).
