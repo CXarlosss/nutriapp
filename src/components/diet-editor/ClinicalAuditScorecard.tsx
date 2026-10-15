@@ -16,11 +16,14 @@ import {
   IconBook,
   IconPill,
   IconX,
+  IconToolsKitchen2,
 } from '@tabler/icons-react';
 import { Badge, Button } from '@/components/ui/nutri-ui';
+import { RecipeBankPanel } from './RecipeBankPanel';
 
 export const ClinicalAuditScorecard: React.FC = () => {
   const [isOpen, setIsOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState<'recipes' | 'cdss'>('recipes');
   const [selectedAlert, setSelectedAlert] = useState<any | null>(null);
   const {
     items,
@@ -42,15 +45,24 @@ export const ClinicalAuditScorecard: React.FC = () => {
       }`}
     >
       {/* Botón de alternar colapso */}
-      <div className="p-3 border-b border-[var(--border)] flex items-center justify-between bg-[var(--card-subtle)]">
+      <div className="p-2.5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--card-subtle)]">
         {isOpen ? (
           <div className="flex items-center gap-2">
-            <IconShieldCheck size={18} className="text-[var(--brand-solid)]" stroke={1.5} />
-            <span className="text-[13px] font-[500] text-[var(--text)]">Copiloto Científico CDSS</span>
+            {activeTab === 'recipes' ? (
+              <>
+                <IconToolsKitchen2 size={18} className="text-purple-600 dark:text-purple-400" stroke={1.5} />
+                <span className="text-[13px] font-[600] text-[var(--text)]">Banco de Platos (Lego)</span>
+              </>
+            ) : (
+              <>
+                <IconShieldCheck size={18} className="text-[var(--brand-solid)]" stroke={1.5} />
+                <span className="text-[13px] font-[600] text-[var(--text)]">Copiloto Clínico CDSS</span>
+              </>
+            )}
           </div>
         ) : (
-          <div className="mx-auto" title="Abrir Copiloto Científico">
-            <IconShieldCheck size={18} className="text-[var(--brand-solid)]" stroke={1.5} />
+          <div className="mx-auto" title="Abrir Copiloto / Banco de Platos">
+            <IconToolsKitchen2 size={18} className="text-purple-600 dark:text-purple-400" stroke={1.5} />
           </div>
         )}
 
@@ -65,9 +77,43 @@ export const ClinicalAuditScorecard: React.FC = () => {
       </div>
 
       {isOpen && (
-        <div className="p-4 space-y-4 overflow-y-auto flex-1">
-          {/* Ajuste del perfil y peso del cliente */}
-          <div className="bg-[var(--card-subtle)] p-3 rounded-[8px] border border-[var(--border)] space-y-2 text-[12px]">
+        <>
+          {/* Segmented Switcher de Pestañas: Banco de Platos vs CDSS */}
+          <div className="flex border-b border-[var(--border)] p-1.5 bg-[var(--card-subtle)] gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveTab('recipes')}
+              className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                activeTab === 'recipes'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card)]'
+              }`}
+            >
+              <IconToolsKitchen2 size={13} />
+              <span>Platos (Lego)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('cdss')}
+              className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                activeTab === 'cdss'
+                  ? 'bg-[var(--brand-solid)] text-white shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card)]'
+              }`}
+            >
+              <IconShieldCheck size={13} />
+              <span>CDSS Clínico</span>
+            </button>
+          </div>
+
+          {activeTab === 'recipes' ? (
+            <div className="flex-1 overflow-hidden">
+              <RecipeBankPanel />
+            </div>
+          ) : (
+            <div className="p-4 space-y-4 overflow-y-auto flex-1">
+              {/* Ajuste del perfil y peso del cliente */}
+              <div className="bg-[var(--card-subtle)] p-3 rounded-[8px] border border-[var(--border)] space-y-2 text-[12px]">
             <div className="flex items-center justify-between">
               <span className="text-[var(--text-secondary)] flex items-center gap-1">
                 <IconScale size={14} /> Peso del paciente:
@@ -339,6 +385,8 @@ export const ClinicalAuditScorecard: React.FC = () => {
           )}
         </div>
       )}
+    </>
+  )}
 
       {/* Modal de Detalle de Alerta Fármaco-Nutriente con Transición de Origen (Shared Layout) */}
       <AnimatePresence>

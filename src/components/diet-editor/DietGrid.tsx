@@ -54,6 +54,7 @@ export const DietGrid: React.FC = () => {
     updateItemQuantity,
     updateItemNotes,
     addItemToSlot,
+    unpackRecipeToSlot,
     moveItemToSlot,
     removeItem,
     copyDayToAllDays,
@@ -351,6 +352,31 @@ export const DietGrid: React.FC = () => {
                     }}
                     onDrop={(e) => {
                       e.preventDefault();
+
+                      // 1. Detectar si viene un payload JSON de Receta o Alimento del Banco
+                      const jsonStr = e.dataTransfer.getData('application/json');
+                      if (jsonStr) {
+                        try {
+                          const payload = JSON.parse(jsonStr);
+                          if (payload.type === 'RECIPE') {
+                            // Desempaquetado Mágico de Receta a Alimentos Atómicos
+                            unpackRecipeToSlot(day.index, slot.key, payload);
+                            setDraggingItemId(null);
+                            setDragOverCell(null);
+                            return;
+                          } else if (payload.type === 'FOOD' && payload.food) {
+                            // Alimento atómico arrastrado individualmente
+                            addItemToSlot(day.index, slot.key, payload.food, payload.quantity || 100);
+                            setDraggingItemId(null);
+                            setDragOverCell(null);
+                            return;
+                          }
+                        } catch (err) {
+                          console.error('Error procesando drop de receta/alimento:', err);
+                        }
+                      }
+
+                      // 2. Movimiento interno de alimento existente en la cuadrícula
                       const droppedId = e.dataTransfer.getData('text/plain') || draggingItemId;
                       if (droppedId) {
                         moveItemToSlot(droppedId, day.index, slot.key);

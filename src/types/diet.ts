@@ -382,5 +382,60 @@ export interface ShoppingListSummary {
   }>;
 }
 
+// ==============================================================================
+// BANCO DE RECETAS Y DESEMPAQUETADO MÁGICO (DRAG & DROP ATÓMICO)
+// ==============================================================================
+
+export type RecipeDragPayload = {
+  type: 'RECIPE';
+  recipeId: string;
+  name: string;
+  items: Array<{
+    foodId: string;
+    foodName?: string;
+    grams: number;
+    unit?: string;
+    kcal?: number;
+    proteinG?: number;
+    carbsG?: number;
+    fatG?: number;
+    notes?: string;
+  }>;
+};
+
+export type FoodDragPayload = {
+  type: 'FOOD';
+  foodId: string;
+  foodName?: string;
+  quantity?: number;
+};
+
+export interface RecipeIngredient {
+  foodId: string;
+  foodName: string;
+  grams: number;
+  unit?: string;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  notes?: string;
+}
+
+export interface Recipe {
+  id: string;
+  name: string;
+  category: 'desayuno' | 'almuerzo' | 'comida' | 'merienda' | 'cena' | 'snack' | 'general';
+  prepTimeMinutes: number;
+  totalKcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  tags: string[];
+  notes?: string;
+  ingredients: RecipeIngredient[];
+}
+
+
 
 

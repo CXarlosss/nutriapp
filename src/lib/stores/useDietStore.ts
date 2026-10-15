@@ -11,6 +11,7 @@ import {
   DayCyclingConfig,
   CyclingPreset,
   PatientMedication,
+  RecipeDragPayload,
 } from '@/types/diet';
 import { persistDietItemsBatch } from '@/lib/services/dietService';
 import { evaluateClinicalRules } from '@/lib/clinical/clinicalDecisionEngine';
@@ -170,6 +171,7 @@ interface DietStoreState {
   updateItemNotes: (id: string, notes: string) => void;
   replaceItemFood: (id: string, food: Food, quantity?: number) => void;
   addItemToSlot: (dayIndex: number, mealSlot: MealSlotType, food: Food, quantity?: number) => void;
+  unpackRecipeToSlot: (dayIndex: number, mealSlot: MealSlotType, recipe: RecipeDragPayload) => void;
   moveItemToSlot: (itemId: string, targetDayIndex: number, targetMealSlot: MealSlotType) => void;
   removeItem: (id: string) => void;
   copyDayToAllDays: (sourceDayIndex: number) => void;
@@ -475,6 +477,54 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
       eventType: 'ItemAdded',
       payload: { item: newItem },
     }).catch(() => {});
+  },
+
+  unpackRecipeToSlot: (dayIndex, mealSlot, recipe) => {
+    const currentSlotItems = get().items.filter(
+      (i) => i.dayIndex === dayIndex && i.mealSlot === mealSlot
+    );
+    const startPos = currentSlotItems.length;
+
+    const newItems: DietItem[] = recipe.items.map((ingredient, idx) => {
+      const quantity = ingredient.grams || 100;
+      const ratio = quantity / 100;
+      const foodId = ingredient.foodId;
+      const foodName = ingredient.foodName || `Ingrediente ${idx + 1}`;
+
+      return {
+        id: `rec-item-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+        dietId: get().dietId,
+        dayIndex,
+        mealSlot,
+        position: startPos + idx,
+        foodId,
+        foodName,
+        quantity,
+        unit: ingredient.unit || 'g',
+        kcal: ingredient.kcal !== undefined ? Math.round(ingredient.kcal) : Math.round(150 * ratio),
+        proteinG: ingredient.proteinG !== undefined ? Number(ingredient.proteinG.toFixed(1)) : Number((10 * ratio).toFixed(1)),
+        carbsG: ingredient.carbsG !== undefined ? Number(ingredient.carbsG.toFixed(1)) : Number((15 * ratio).toFixed(1)),
+        fatG: ingredient.fatG !== undefined ? Number(ingredient.fatG.toFixed(1)) : Number((3 * ratio).toFixed(1)),
+        notes: ingredient.notes || `[De receta: ${recipe.name}]`,
+        mealPrepNotes: `[De receta: ${recipe.name}]`,
+        isModified: true,
+      };
+    });
+
+    // Inserción atómica en lote (Batch Update en un solo tick, 60 FPS)
+    set((state) => ({
+      items: [...state.items, ...newItems],
+    }));
+
+    // Encolar mutaciones y registrar eventos inmutables
+    newItems.forEach((item) => {
+      get().enqueueSaveMutation(item);
+      appendDietEvent({
+        streamId: get().dietId,
+        eventType: 'ItemAdded',
+        payload: { item },
+      }).catch(() => {});
+    });
   },
 
   moveItemToSlot: (itemId, targetDayIndex, targetMealSlot) => {
