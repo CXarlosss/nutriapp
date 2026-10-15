@@ -4,18 +4,7 @@
 -- ==============================================================================
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 1. LIMPIEZA DE FIRMAS PREVIAS PARA PERMITIR db push SIN CONFLICTOS
--- ─────────────────────────────────────────────────────────────────────────────
-DROP FUNCTION IF EXISTS public.get_diet_event_stream(text, int);
-DROP FUNCTION IF EXISTS public.append_diet_event(text, int, text, jsonb, jsonb);
-DROP FUNCTION IF EXISTS public.append_diet_event(text, int, text, jsonb, jsonb, uuid);
-DROP FUNCTION IF EXISTS public.enqueue_outbox_event(text, text, text, jsonb, int);
-DROP FUNCTION IF EXISTS public.enqueue_outbox_event(text, text, text, jsonb, int, uuid);
-DROP FUNCTION IF EXISTS public.set_current_clinic(uuid);
-DROP FUNCTION IF EXISTS public.current_user_clinic_id();
-
--- ─────────────────────────────────────────────────────────────────────────────
--- 2. SESIÓN SEGURA Y PREVENCIÓN DE POOL LEAKING (is_local = true)
+-- 1. SESIÓN SEGURA Y PREVENCIÓN DE POOL LEAKING (is_local = true)
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION public.set_current_clinic(p_clinic_id UUID)
 RETURNS VOID
