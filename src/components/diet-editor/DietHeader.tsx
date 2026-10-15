@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useDietStore } from '@/lib/stores/useDietStore';
 import {
@@ -8,6 +8,7 @@ import {
   IconArrowBackUp,
   IconArrowForwardUp,
   IconFileDownload,
+  IconEye,
   IconChevronDown,
   IconChevronUp,
   IconAlertTriangle,
@@ -20,11 +21,14 @@ import {
 } from '@tabler/icons-react';
 import { Button, Badge } from '@/components/ui/nutri-ui';
 import { SaveAsTemplateModal } from './SaveAsTemplateModal';
+import { PublishedDietModal } from './PublishedDietModal';
 
 export const DietHeader: React.FC = () => {
   const {
     dietName,
     clientName,
+    clientPhone,
+    clientEmail,
     saveStatus,
     flushPendingMutations,
     getClinicalAudit,
@@ -39,8 +43,13 @@ export const DietHeader: React.FC = () => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [showBlockerModal, setShowBlockerModal] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
+  const [showPublishedModal, setShowPublishedModal] = useState(false);
   const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
   const [templateSuccessToast, setTemplateSuccessToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLocalDietName(dietName);
+  }, [dietName]);
 
   // Auditoría clínica en tiempo real (CDSS)
   const audit = getClinicalAudit();
@@ -53,6 +62,7 @@ export const DietHeader: React.FC = () => {
     }
     flushPendingMutations();
     setPublishSuccess(true);
+    setShowPublishedModal(true);
     setTimeout(() => setPublishSuccess(false), 4000);
   };
 
@@ -171,12 +181,28 @@ export const DietHeader: React.FC = () => {
             </Button>
           </Link>
 
+          {/* Ver Dieta (Vista del paciente) */}
           <a
-            href={`/api/export-pdf?client=${encodeURIComponent(clientName)}&diet=${encodeURIComponent(
+            href={`/mi-dieta?clientName=${encodeURIComponent(clientName)}&diet=${encodeURIComponent(
               localDietName
             )}`}
             target="_blank"
             rel="noopener noreferrer"
+            title="Ver cómo ve el paciente la dieta en su portal móvil"
+          >
+            <Button variant="secondary" className="h-[32px] px-2.5 text-[12px] text-emerald-700 dark:text-emerald-300">
+              <IconEye size={14} stroke={1.5} />
+              <span className="hidden sm:inline">Ver Dieta</span>
+            </Button>
+          </a>
+
+          <a
+            href={`/api/export-pdf?client=${encodeURIComponent(clientName)}&diet=${encodeURIComponent(
+              localDietName
+            )}&autoprint=true`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Descargar informe médico oficial en PDF"
           >
             <Button variant="secondary" className="h-[32px] px-2.5 text-[12px]">
               <IconFileDownload size={14} stroke={1.5} />
@@ -331,6 +357,7 @@ export const DietHeader: React.FC = () => {
                   setShowBlockerModal(false);
                   flushPendingMutations();
                   setPublishSuccess(true);
+                  setShowPublishedModal(true);
                   setTimeout(() => setPublishSuccess(false), 4000);
                 }}
               >
@@ -340,6 +367,16 @@ export const DietHeader: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal: Dieta Publicada con Éxito (Descargar PDF, Ver dieta enviada y Enviar por WhatsApp/Email) */}
+      <PublishedDietModal
+        isOpen={showPublishedModal}
+        onClose={() => setShowPublishedModal(false)}
+        dietName={localDietName}
+        clientName={clientName}
+        clientPhone={clientPhone}
+        clientEmail={clientEmail}
+      />
 
       {/* Modal: Guardar como Plantilla Reutilizable */}
       <SaveAsTemplateModal

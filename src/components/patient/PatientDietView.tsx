@@ -167,7 +167,7 @@ export function PatientDietView({
         </Link>
         <div className="flex items-center gap-2">
           <a
-            href={`/api/export-pdf?client=${encodeURIComponent(dietData.client_name)}&diet=${encodeURIComponent(dietData.name)}`}
+            href={`/api/export-pdf?client=${encodeURIComponent(dietData.client_name)}&diet=${encodeURIComponent(dietData.name)}&autoprint=true`}
             target="_blank"
             rel="noopener noreferrer"
             data-testid="export-hospital-pdf-btn"

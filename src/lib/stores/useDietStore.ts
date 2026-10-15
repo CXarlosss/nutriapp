@@ -140,6 +140,8 @@ interface DietStoreState {
   dietId: string;
   dietName: string;
   clientName: string;
+  clientPhone?: string;
+  clientEmail?: string;
   clientWeightKg: number;
   clientProfileType: 'deportista' | 'sedentario' | 'general';
   items: DietItem[];
@@ -165,6 +167,14 @@ interface DietStoreState {
   moveFocus: (direction: 'up' | 'down' | 'left' | 'right' | 'tab' | 'shift-tab') => void;
   setClientWeightKg: (weight: number) => void;
   setClientProfileType: (profile: 'deportista' | 'sedentario' | 'general') => void;
+  setClientInfo: (info: {
+    clientName?: string;
+    clientPhone?: string;
+    clientEmail?: string;
+    clientWeightKg?: number;
+    clientProfileType?: 'deportista' | 'sedentario' | 'general';
+    dietName?: string;
+  }) => void;
   
   // Mutaciones optimistas de ítems
   updateItemQuantity: (id: string, quantity: number) => void;
@@ -255,6 +265,7 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
 
   setClientWeightKg: (weight) => set({ clientWeightKg: weight }),
   setClientProfileType: (profile) => set({ clientProfileType: profile }),
+  setClientInfo: (info) => set((state) => ({ ...state, ...info })),
 
   moveFocus: (direction) => {
     const current = get().focusedCell;

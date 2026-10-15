@@ -8,6 +8,7 @@ import {
   IconCalendarOff,
   IconArrowsSort,
   IconFileDownload,
+  IconEye,
   IconSearch,
   IconCreditCard,
   IconSend,
@@ -457,16 +458,37 @@ export function DashboardView() {
                       </td>
                       <td className="p-[8px_12px] text-right">
                         {client.hasDiet ? (
-                          <button
-                            type="button"
-                            className="p-1 rounded-[6px] text-[var(--text-secondary)] hover:text-[var(--brand-solid)] hover:bg-[var(--card-subtle)] transition-colors inline-flex items-center justify-center cursor-pointer"
-                            aria-label="Descargar PDF"
-                            title="Descargar PDF"
-                          >
-                            <IconFileDownload size={16} stroke={1.5} />
-                          </button>
+                          <div className="flex items-center justify-end gap-1">
+                            <a
+                              href={`/mi-dieta?clientName=${encodeURIComponent(client.name)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1 rounded-[6px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors inline-flex items-center justify-center cursor-pointer"
+                              title={`Ver dieta enviada a ${client.name} (portal del paciente)`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <IconEye size={16} stroke={1.5} />
+                            </a>
+                            <a
+                              href={`/api/export-pdf?client=${encodeURIComponent(client.name)}&diet=${encodeURIComponent('Pauta ' + client.plan)}&autoprint=true`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1 rounded-[6px] text-[var(--text-secondary)] hover:text-[var(--brand-solid)] hover:bg-[var(--card-subtle)] transition-colors inline-flex items-center justify-center cursor-pointer"
+                              title={`Descargar PDF oficial de la dieta de ${client.name}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <IconFileDownload size={16} stroke={1.5} />
+                            </a>
+                          </div>
                         ) : (
-                          <span className="text-[12px] text-[var(--text-muted)]">—</span>
+                          <Link
+                            href={`/dietas/creador?client=${client.id}`}
+                            className="text-[11px] text-[var(--brand-solid)] hover:underline inline-flex items-center gap-0.5"
+                            title="Crear pauta en Diet Builder"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            + Crear
+                          </Link>
                         )}
                       </td>
                     </tr>

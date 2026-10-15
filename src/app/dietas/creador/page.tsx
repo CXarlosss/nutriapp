@@ -8,6 +8,7 @@ import { DietGrid } from '@/components/diet-editor/DietGrid';
 import { ClinicalAuditScorecard } from '@/components/diet-editor/ClinicalAuditScorecard';
 import { useDietStore } from '@/lib/stores/useDietStore';
 import { useTemplateStore } from '@/lib/stores/useTemplateStore';
+import { useModeStore, findClientById } from '@/lib/stores/useModeStore';
 
 export default function DietCreatorPage() {
   return (
@@ -20,8 +21,24 @@ export default function DietCreatorPage() {
 function DietCreatorContent() {
   const searchParams = useSearchParams();
   const templateId = searchParams.get('template');
-  const { loadTemplateItems } = useDietStore();
+  const clientId = searchParams.get('client');
+  const { loadTemplateItems, setClientInfo } = useDietStore();
   const { getTemplateById } = useTemplateStore();
+  const { realClients } = useModeStore();
+
+  useEffect(() => {
+    if (clientId) {
+      const client = findClientById(clientId, realClients);
+      if (client) {
+        setClientInfo({
+          clientName: client.name,
+          clientPhone: client.phone,
+          clientEmail: client.email,
+          dietName: `Pauta Nutricional ${client.plan} - ${client.name.split(' ')[0]}`,
+        });
+      }
+    }
+  }, [clientId, realClients, setClientInfo]);
 
   useEffect(() => {
     if (templateId) {

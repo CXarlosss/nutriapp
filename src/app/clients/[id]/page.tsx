@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
   IconFileDownload,
+  IconEye,
   IconEdit,
   IconArrowLeft,
   IconFlask,
@@ -557,18 +558,57 @@ function ClientDetailContent() {
                         <div className="font-[500] text-[var(--text)]">{d.name}</div>
                         <div className="text-[12px] text-[var(--text-secondary)]">{d.origin} • {d.range}</div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <Badge variant={d.status === 'Publicada' ? 'success' : 'warning'}>{d.status}</Badge>
+
+                        {/* Ver lo que he mandado (Portal del paciente) */}
+                        <a
+                          href={`/mi-dieta?clientName=${encodeURIComponent(client.name)}&diet=${encodeURIComponent(d.name)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Ver cómo ve el paciente la dieta en su portal móvil"
+                        >
+                          <Button variant="ghost" className="h-[30px] px-2 text-[12px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40">
+                            <IconEye size={14} />
+                            <span>Ver Dieta</span>
+                          </Button>
+                        </a>
+
+                        {/* Descargar PDF oficial */}
+                        <a
+                          href={`/api/export-pdf?client=${encodeURIComponent(client.name)}&diet=${encodeURIComponent(d.name)}&autoprint=true`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Descargar o imprimir informe médico oficial en PDF"
+                        >
+                          <Button variant="ghost" className="h-[30px] px-2 text-[12px] text-[var(--brand-solid)] hover:bg-[var(--card-subtle)]">
+                            <IconFileDownload size={14} />
+                            <span>Descargar PDF</span>
+                          </Button>
+                        </a>
+
+                        {/* Enviar directamente por WhatsApp */}
+                        {client.phone && (
+                          <a
+                            href={generateWhatsAppLink(
+                              client.phone,
+                              `¡Hola ${client.name.split(' ')[0]}! Ya tienes disponible tu ${d.name}. Puedes ver tu menú completo, opciones de intercambio y lista de la compra directamente aquí: ${typeof window !== 'undefined' ? window.location.origin : 'https://nutriapp-cyan.vercel.app'}/mi-dieta?clientName=${encodeURIComponent(client.name)}&diet=${encodeURIComponent(d.name)}`
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-[6px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors inline-flex items-center"
+                            title={`Enviar ${d.name} a ${client.name} por WhatsApp`}
+                          >
+                            <IconBrandWhatsapp size={16} />
+                          </a>
+                        )}
+
                         <Link href={`/dietas/creador?client=${client.id}`}>
                           <Button variant="ghost" className="h-[30px] px-2 text-[12px]">
                             <IconEdit size={14} />
                             <span>Editar</span>
                           </Button>
                         </Link>
-                        <Button variant="ghost" className="h-[30px] px-2 text-[12px]">
-                          <IconFileDownload size={14} />
-                          <span>Descargar PDF</span>
-                        </Button>
                       </div>
                     </div>
                   ))}
