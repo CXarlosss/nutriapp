@@ -99,14 +99,14 @@ export function DashboardView() {
 
   const activeClientsData: ClientRow[] = useMemo(() => {
     if (mode === 'demo') return ALL_CLIENTS;
-    return realClients.map((c) => ({
-      id: c.id,
-      name: c.name,
-      plan: c.plan,
-      status: (c.status === 'Activo' ? 'Activo' : c.status === 'Inactivo' ? 'Inactivo' : 'Pendiente') as 'Activo' | 'Pendiente' | 'Inactivo',
-      nextAppointment: c.nextAppointment,
-      hasDiet: c.hasDiet,
-      daysInactive: 0,
+    return (realClients || []).map((c) => ({
+      id: c?.id || `client_${Math.random()}`,
+      name: c?.name || 'Paciente',
+      plan: c?.plan || 'Plan General',
+      status: (c?.status === 'Activo' ? 'Activo' : c?.status === 'Inactivo' ? 'Inactivo' : 'Pendiente') as 'Activo' | 'Pendiente' | 'Inactivo',
+      nextAppointment: c?.nextAppointment || 'Sin agendar',
+      hasDiet: Boolean(c?.hasDiet),
+      daysInactive: typeof c?.daysInPlan === 'number' ? c.daysInPlan : 0,
     }));
   }, [mode, realClients]);
 
@@ -237,9 +237,15 @@ export function DashboardView() {
         >
           <IconChartLine size={15} />
           <span>Analítica de Negocio & Retención (Stripe)</span>
-          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-500 text-white">
-            3 en Riesgo
-          </span>
+          {mode === 'demo' ? (
+            <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-500 text-white">
+              3 en Riesgo
+            </span>
+          ) : (
+            <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              0 en Riesgo
+            </span>
+          )}
         </button>
       </div>
 
@@ -528,7 +534,7 @@ export function DashboardView() {
         {/* Paginación inferior */}
         <div className="p-[8px_12px] border-t border-[var(--border)] flex items-center justify-between text-[12px] text-[var(--text-secondary)]">
           <div>
-            Mostrando {filteredClients.length === 0 ? 0 : 1}-{Math.min(filteredClients.length, pageSize)} de {activeClientsCount}
+            Mostrando {filteredClients.length === 0 ? 0 : (page - 1) * pageSize + 1}-{Math.min(filteredClients.length, page * pageSize)} de {activeClientsCount}
           </div>
 
           <div className="flex items-center gap-1">
