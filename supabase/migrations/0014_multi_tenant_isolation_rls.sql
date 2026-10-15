@@ -451,6 +451,14 @@ END $$;
 -- Auto-inyección de clinic_id y prevención de cruce entre tenants
 -- ─────────────────────────────────────────────────────────────────────────────
 
+-- Limpieza preventiva de firmas anteriores de migraciones 0009 y 0010
+DROP FUNCTION IF EXISTS public.append_diet_event(text, integer, text, jsonb, jsonb);
+DROP FUNCTION IF EXISTS public.append_diet_event(text, integer, text, jsonb, jsonb, uuid);
+DROP FUNCTION IF EXISTS public.get_diet_event_stream(text, integer);
+DROP FUNCTION IF EXISTS public.get_diet_event_stream(text);
+DROP FUNCTION IF EXISTS public.enqueue_outbox_event(text, text, text, jsonb, integer);
+DROP FUNCTION IF EXISTS public.enqueue_outbox_event(text, text, text, jsonb, integer, uuid);
+
 -- 7.1. append_diet_event: Append-Only con blindaje multi-tenant
 CREATE OR REPLACE FUNCTION public.append_diet_event(
     p_stream_id TEXT,
