@@ -13,6 +13,7 @@ import {
   IconLogout,
 } from '@tabler/icons-react';
 import { Avatar } from '@/components/ui/nutri-ui';
+import { ModeToggle, DemoNoticeBanner } from './ModeToggle';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -112,6 +113,11 @@ export function AppShell({ children }: AppShellProps) {
             </span>
           </Link>
 
+          {/* Selector de Modo: Consulta Real vs Demo */}
+          <div className="mt-3 hidden lg:block">
+            <ModeToggle />
+          </div>
+
           {/* Navegación en columna protegida con Suspense */}
           <Suspense fallback={<div className="mt-[24px] h-[180px]" />}>
             <NavLinks />
@@ -148,6 +154,14 @@ export function AppShell({ children }: AppShellProps) {
           ───────────────────────────────────────────────────────────── */}
       <main className="flex-1 h-full overflow-y-auto pb-20 md:pb-0">
         <div className="p-[20px_16px] sm:p-[24px_32px] max-w-[1200px] mx-auto min-h-full">
+          {/* Selector móvil de Modo */}
+          <div className="lg:hidden mb-3">
+            <ModeToggle />
+          </div>
+
+          {/* Banner informativo de modo demostración */}
+          <DemoNoticeBanner />
+
           {children}
         </div>
       </main>

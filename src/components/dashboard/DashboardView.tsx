@@ -21,6 +21,7 @@ import {
 import { Card, MetricCard, Badge, Button, Input } from '@/components/ui/nutri-ui';
 import { requestPaymentForClientAction } from '@/app/actions/billingOutboxActions';
 import { RetentionBusinessDashboard } from './RetentionBusinessDashboard';
+import { useModeStore } from '@/lib/stores/useModeStore';
 
 interface AppointmentItem {
   id: string;
@@ -75,6 +76,7 @@ const ALL_CLIENTS: ClientRow[] = [
 ];
 
 export function DashboardView() {
+  const { mode, realClients } = useModeStore();
   const [activeTab, setActiveTab] = useState<'clinical' | 'analytics'>('clinical');
   const [search, setSearch] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
@@ -89,6 +91,23 @@ export function DashboardView() {
     checkoutUrl: string;
     eventId: string;
   } | null>(null);
+
+  const activeClientsData: ClientRow[] = useMemo(() => {
+    if (mode === 'demo') return ALL_CLIENTS;
+    return realClients.map((c) => ({
+      id: c.id,
+      name: c.name,
+      plan: c.plan,
+      status: (c.status === 'Activo' ? 'Activo' : c.status === 'Inactivo' ? 'Inactivo' : 'Pendiente') as 'Activo' | 'Pendiente' | 'Inactivo',
+      nextAppointment: c.nextAppointment,
+      hasDiet: c.hasDiet,
+      daysInactive: 0,
+    }));
+  }, [mode, realClients]);
+
+  const activeAppointments = mode === 'demo' ? INITIAL_APPOINTMENTS : [];
+  const activeReviews = mode === 'demo' ? INITIAL_REVIEWS : [];
+  const activeClientsCount = mode === 'demo' ? 38 : realClients.filter((c) => c.status === 'Activo').length;
 
   const handleRequestPayment = async (client: ClientRow) => {
     setCheckoutLoading(client.id);
@@ -135,7 +154,7 @@ export function DashboardView() {
 
   // Filtrado y ordenación de clientes
   const filteredClients = useMemo(() => {
-    let list = ALL_CLIENTS.filter((c) =>
+    let list = activeClientsData.filter((c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.plan.toLowerCase().includes(search.toLowerCase())
     );
@@ -146,10 +165,9 @@ export function DashboardView() {
     });
 
     return list;
-  }, [search, sortAsc]);
+  }, [activeClientsData, search, sortAsc]);
 
-  const totalClientsCount = 38; // Conteo global representativo
-  const totalPages = Math.ceil(filteredClients.length / pageSize);
+  const totalPages = Math.ceil(Math.max(1, filteredClients.length) / pageSize);
   const pagedClients = filteredClients.slice((page - 1) * pageSize, page * pageSize);
 
   const handleRefresh = () => {
@@ -228,12 +246,12 @@ export function DashboardView() {
               2. FILA DE TRES MÉTRICAS (Grid de 3 columnas iguales, gap 12px)
               ───────────────────────────────────────────────────────────── */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-[12px]">
-            <MetricCard label="Citas hoy" value={INITIAL_APPOINTMENTS.length} />
-            <MetricCard label="Clientes activos" value={totalClientsCount} />
+            <MetricCard label="Citas hoy" value={activeAppointments.length} />
+            <MetricCard label="Clientes activos" value={activeClientsCount} />
             <MetricCard
               label="Revisiones pendientes"
-              value={INITIAL_REVIEWS.length}
-              isWarning={true}
+              value={activeReviews.length}
+              isWarning={activeReviews.length > 0}
             />
           </div>
 
@@ -253,7 +271,7 @@ export function DashboardView() {
             </Link>
           </div>
 
-          {INITIAL_APPOINTMENTS.length === 0 ? (
+          {activeAppointments.length === 0 ? (
             <div className="py-8 flex flex-col items-center justify-center text-center">
               <IconCalendarOff size={24} className="text-[var(--text-muted)] mb-2" stroke={1.5} />
               <div className="text-[14px] font-[500] text-[var(--text)]">Hoy no tienes citas</div>
@@ -263,7 +281,7 @@ export function DashboardView() {
             </div>
           ) : (
             <div className="divide-y divide-[var(--border)]">
-              {INITIAL_APPOINTMENTS.map((appt) => {
+              {activeAppointments.map((appt) => {
                 let badgeVariant: 'success' | 'info' | 'neutral' = 'neutral';
                 if (appt.type === 'Completada') badgeVariant = 'success';
                 if (appt.type === 'Online') badgeVariant = 'info';
@@ -295,13 +313,17 @@ export function DashboardView() {
             <h2 className="text-[14px] font-[500] text-[var(--text)]">Toca revisión</h2>
           </div>
 
-          {INITIAL_REVIEWS.length === 0 ? (
-            <div className="py-6 text-[13px] text-[var(--text-secondary)]">
-              Todo al día
+          {activeReviews.length === 0 ? (
+            <div className="py-8 flex flex-col items-center justify-center text-center">
+              <IconCheck size={24} className="text-emerald-500 mb-2" stroke={1.5} />
+              <div className="text-[14px] font-[500] text-[var(--text)]">Todo al día</div>
+              <div className="text-[12px] text-[var(--text-secondary)] mt-1">
+                No hay pacientes con revisiones pendientes.
+              </div>
             </div>
           ) : (
             <div className="divide-y divide-[var(--border)]">
-              {INITIAL_REVIEWS.map((rev) => (
+              {activeReviews.map((rev) => (
                 <Link
                   key={rev.clientId}
                   href={`/clients/${rev.clientId}`}
@@ -458,7 +480,7 @@ export function DashboardView() {
         {/* Paginación inferior */}
         <div className="p-[8px_12px] border-t border-[var(--border)] flex items-center justify-between text-[12px] text-[var(--text-secondary)]">
           <div>
-            Mostrando 1-{Math.min(filteredClients.length, pageSize)} de {totalClientsCount}
+            Mostrando {filteredClients.length === 0 ? 0 : 1}-{Math.min(filteredClients.length, pageSize)} de {activeClientsCount}
           </div>
 
           <div className="flex items-center gap-1">

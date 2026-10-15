@@ -11,6 +11,7 @@ import {
 } from '@tabler/icons-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card, Badge, Button, Input } from '@/components/ui/nutri-ui';
+import { useModeStore } from '@/lib/stores/useModeStore';
 
 interface CalendarEvent {
   id: string;
@@ -42,6 +43,12 @@ const DAYS_HEADER = [
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
 export default function AppointmentsPage() {
+  const { mode } = useModeStore();
+  const [realEvents, setRealEvents] = useState<CalendarEvent[]>([]);
+  const activeEvents = mode === 'demo' ? SAMPLE_EVENTS : realEvents;
+  const [newClientName, setNewClientName] = useState('');
+  const [newType, setNewType] = useState<'online' | 'presencial'>('online');
+
   const [viewMode, setViewMode] = useState<'Día' | 'Semana' | 'Mes'>('Semana');
   const [calendarConnected, setCalendarConnected] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -145,7 +152,7 @@ export default function AppointmentsPage() {
                   {/* 5 columnas de días */}
                   {[1, 2, 3, 4, 5].map((dayIndex) => {
                     // Buscar evento en este slot
-                    const event = SAMPLE_EVENTS.find(
+                    const event = activeEvents.find(
                       (e) => e.dayIndex === dayIndex && Math.floor(e.startHour) === hour
                     );
 
@@ -244,14 +251,22 @@ export default function AppointmentsPage() {
               {isCreatingSidepanel && (
                 <div className="space-y-3 text-[13px]">
                   <div>
-                    <label className="text-[12px] text-[var(--text-secondary)] block mb-1">Nombre del cliente</label>
-                    <Input placeholder="Buscar o escribir nombre" defaultValue="Marta Morales Sánchez" />
+                    <label className="text-[12px] text-[var(--text-secondary)] block mb-1">Nombre del paciente</label>
+                    <Input
+                      placeholder="Escribir nombre del paciente"
+                      value={newClientName}
+                      onChange={(e) => setNewClientName(e.target.value)}
+                    />
                   </div>
                   <div>
                     <label className="text-[12px] text-[var(--text-secondary)] block mb-1">Modalidad</label>
-                    <select className="h-[36px] w-full rounded-[8px] border border-[var(--border)] bg-[var(--card)] px-3 text-[13px]">
-                      <option>Online (Google Meet)</option>
-                      <option>Presencial</option>
+                    <select
+                      value={newType}
+                      onChange={(e) => setNewType(e.target.value as 'online' | 'presencial')}
+                      className="h-[36px] w-full rounded-[8px] border border-[var(--border)] bg-[var(--card)] px-3 text-[13px]"
+                    >
+                      <option value="online">Online (Google Meet)</option>
+                      <option value="presencial">Presencial en consulta</option>
                     </select>
                   </div>
                   <div>
@@ -275,7 +290,24 @@ export default function AppointmentsPage() {
                   </Button>
                 </>
               ) : (
-                <Button variant="primary" onClick={() => setIsCreatingSidepanel(false)}>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    if (slotToCreate && newClientName.trim()) {
+                      const newEvt: CalendarEvent = {
+                        id: `evt_${Date.now()}`,
+                        clientName: newClientName.trim(),
+                        dayIndex: slotToCreate.day,
+                        startHour: slotToCreate.hour,
+                        durationHours: 0.75,
+                        type: newType,
+                      };
+                      setRealEvents((prev) => [...prev, newEvt]);
+                    }
+                    setIsCreatingSidepanel(false);
+                    setNewClientName('');
+                  }}
+                >
                   Guardar y agendar cita
                 </Button>
               )}
