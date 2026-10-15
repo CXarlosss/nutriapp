@@ -76,6 +76,30 @@ export const DietGrid: React.FC = () => {
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [dragOverCell, setDragOverCell] = useState<{ dayIndex: number; mealSlot: MealSlotType } | null>(null);
   const [recipeSlotToSave, setRecipeSlotToSave] = useState<{ dayIndex: number; mealSlot: MealSlotType; items: DietItem[] } | null>(null);
+  const [activeMobileDay, setActiveMobileDay] = useState<number>(1);
+
+  const scrollToDay = (dayIndex: number) => {
+    setActiveMobileDay(dayIndex);
+    if (gridContainerRef.current) {
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+      const dayColWidth = isMobile ? 270 : 168;
+      const targetScroll = (dayIndex - 1) * dayColWidth;
+      gridContainerRef.current.scrollTo({
+        left: targetScroll,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const handleContainerScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) return;
+    const scrollLeft = e.currentTarget.scrollLeft;
+    const dayColWidth = 270;
+    const currentDay = Math.min(7, Math.max(1, Math.round(scrollLeft / dayColWidth) + 1));
+    if (currentDay !== activeMobileDay) {
+      setActiveMobileDay(currentDay);
+    }
+  };
 
   // Manejo de atajos de teclado
   useEffect(() => {
@@ -117,17 +141,44 @@ export const DietGrid: React.FC = () => {
 
   return (
     <div className="w-full space-y-3 pb-8">
-      {/* Contenedor con scroll horizontal interno */}
+      {/* ─────────────────────────────────────────────────────────────
+          SELECTOR RÁPIDO DE DÍA EN MÓVIL (Píldoras con indicador de ciclado)
+          ───────────────────────────────────────────────────────────── */}
+      <div className="flex md:hidden items-center justify-between gap-1 p-1.5 bg-[var(--card)] border border-[var(--border)] rounded-[12px] shadow-xs select-none">
+        {DAYS.map((day) => {
+          const isActive = activeMobileDay === day.index;
+          const config = getDayCyclingConfig(day.index);
+          const icon = config.icon || (config.demandType === 'entrenamiento_pesado' ? '🏋️' : config.demandType === 'descanso' ? '🛌' : '⚡');
+          return (
+            <button
+              key={day.index}
+              type="button"
+              onClick={() => scrollToDay(day.index)}
+              className={`flex-1 py-1.5 px-0.5 rounded-[8px] text-center transition-all cursor-pointer ${
+                isActive
+                  ? 'bg-[var(--brand-solid)] text-white shadow-xs font-semibold'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)]'
+              }`}
+            >
+              <div className="text-[11px] leading-tight">{day.name.slice(0, 3)}</div>
+              <div className="text-[9px] mt-0.5 opacity-90">{icon}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Contenedor con scroll horizontal cinético y snap-x para swipe a 60 FPS */}
       <div
         ref={gridContainerRef}
-        className="w-full overflow-x-auto bg-[var(--card)] border border-[var(--border)] rounded-[12px]"
+        onScroll={handleContainerScroll}
+        className="w-full overflow-x-auto snap-x snap-mandatory scroll-smooth touch-pan-x bg-[var(--card)] border border-[var(--border)] rounded-[12px] scrollbar-thin"
       >
-        <div className="min-w-[1296px] select-none">
+        <div className="min-w-[1990px] md:min-w-[1296px] select-none">
           {/* ─────────────────────────────────────────────────────────────
-              CABECERA DEL GRID (Columna fija 120px + 7 Días min 168px)
+              CABECERA DEL GRID (Columna fija sticky 100/120px + 7 Días)
               ───────────────────────────────────────────────────────────── */}
-          <div className="grid grid-cols-[120px_repeat(7,minmax(168px,1fr))] border-b border-[var(--border)] bg-[var(--card-subtle)]">
-            <div className="p-[8px_12px] border-r border-[var(--border)] text-[12px] font-[500] text-[var(--text-secondary)] flex items-center">
+          <div className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] border-b border-[var(--border)] bg-[var(--card-subtle)]">
+            <div className="sticky left-0 z-20 bg-[var(--card-subtle)] p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)] text-[12px] font-[500] text-[var(--text-secondary)] flex items-center">
               Comida
             </div>
 
@@ -140,7 +191,7 @@ export const DietGrid: React.FC = () => {
               return (
                 <div
                   key={day.index}
-                  className="p-[8px_10px] border-r border-[var(--border)] last:border-r-0 flex flex-col justify-between gap-1.5 relative"
+                  className="snap-start scroll-ml-[100px] md:scroll-ml-0 p-[8px_10px] border-r border-[var(--border)] last:border-r-0 flex flex-col justify-between gap-1.5 relative"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-[12px] font-[600] text-[var(--text)]">{day.name}</span>
@@ -291,13 +342,13 @@ export const DietGrid: React.FC = () => {
           {MEAL_SLOTS.map((slot) => (
             <div
               key={slot.key}
-              className="grid grid-cols-[120px_repeat(7,minmax(168px,1fr))] border-b border-[var(--border)] min-h-[72px]"
+              className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] border-b border-[var(--border)] min-h-[72px]"
             >
-              {/* Columna fija 120px */}
-              <div className="p-[8px_12px] border-r border-[var(--border)] bg-[var(--card-subtle)] flex flex-col justify-center">
-                <div className="flex items-center gap-1.5 text-[12px] font-[500] text-[var(--text)]">
-                  <span className="text-[var(--text-secondary)]">{slot.icon}</span>
-                  <span>{slot.label}</span>
+              {/* Columna fija sticky 100px / 120px */}
+              <div className="sticky left-0 z-20 bg-[var(--card-subtle)] p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)] flex flex-col justify-center">
+                <div className="flex items-center gap-1.5 text-[11px] md:text-[12px] font-[500] text-[var(--text)]">
+                  <span className="text-[var(--text-secondary)] shrink-0">{slot.icon}</span>
+                  <span className="truncate">{slot.label}</span>
                 </div>
               </div>
 
@@ -386,7 +437,7 @@ export const DietGrid: React.FC = () => {
                       setDraggingItemId(null);
                       setDragOverCell(null);
                     }}
-                    className={`border-r border-[var(--border)] last:border-r-0 p-[6px_8px] relative transition-all cursor-pointer min-h-[72px] flex flex-col justify-between ${
+                    className={`snap-start scroll-ml-[100px] md:scroll-ml-0 border-r border-[var(--border)] last:border-r-0 p-[6px_8px] relative transition-all cursor-pointer min-h-[72px] flex flex-col justify-between ${
                       isAiLoading
                         ? 'bg-violet-950/20'
                         : isDragTarget
@@ -639,8 +690,8 @@ export const DietGrid: React.FC = () => {
           {/* ─────────────────────────────────────────────────────────────
               FILA FINAL DE RESUMEN (Kcal y Macros P / C / G)
               ───────────────────────────────────────────────────────────── */}
-          <div className="grid grid-cols-[120px_repeat(7,minmax(168px,1fr))] bg-[var(--card-subtle)] border-t border-[var(--border)]">
-            <div className="p-[8px_12px] border-r border-[var(--border)] text-[12px] font-[500] text-[var(--text-secondary)] flex items-center">
+          <div className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] bg-[var(--card-subtle)] border-t border-[var(--border)]">
+            <div className="sticky left-0 z-20 bg-[var(--card-subtle)] p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)] text-[12px] font-[500] text-[var(--text-secondary)] flex items-center">
               Total día
             </div>
 
@@ -652,7 +703,7 @@ export const DietGrid: React.FC = () => {
               return (
                 <div
                   key={day.index}
-                  className="p-[8px_10px] border-r border-[var(--border)] last:border-r-0 text-[12px]"
+                  className="snap-start scroll-ml-[100px] md:scroll-ml-0 p-[8px_10px] border-r border-[var(--border)] last:border-r-0 text-[12px]"
                 >
                   <div className="flex items-center justify-between mb-0.5">
                     <span

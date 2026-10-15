@@ -168,8 +168,8 @@ export default function ClientsPage() {
           </div>
         ) : (
           <div className="border border-[var(--border)] rounded-[12px] overflow-hidden bg-[var(--card)]">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-[13px]">
+            <div className="overflow-x-auto scrollbar-thin">
+              <table className="w-full text-left border-collapse text-[13px] min-w-[760px]">
                 <thead>
                   <tr className="border-b border-[var(--border)] bg-[var(--card-subtle)] text-[var(--text-secondary)] font-[500] text-[12px]">
                     <th className="p-[10px_16px]">Nombre</th>

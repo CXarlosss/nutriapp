@@ -909,8 +909,8 @@ function ClientDetailContent() {
                 </span>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-[12px] text-left">
+              <div className="overflow-x-auto scrollbar-thin">
+                <table className="w-full text-[12px] text-left min-w-[620px]">
                   <thead>
                     <tr className="border-b border-[var(--border)] text-[var(--text-secondary)] text-[11px]">
                       <th className="py-2 px-3 font-semibold">Fecha</th>

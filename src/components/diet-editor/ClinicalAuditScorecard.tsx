@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDietStore } from '@/lib/stores/useDietStore';
 import {
@@ -22,7 +22,14 @@ import { Badge, Button } from '@/components/ui/nutri-ui';
 import { RecipeBankPanel } from './RecipeBankPanel';
 
 export const ClinicalAuditScorecard: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      setIsOpen(true);
+    }
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'recipes' | 'cdss'>('recipes');
   const [selectedAlert, setSelectedAlert] = useState<any | null>(null);
   const {
@@ -39,11 +46,39 @@ export const ClinicalAuditScorecard: React.FC = () => {
   const audit = getClinicalAudit();
 
   return (
-    <aside
-      className={`transition-all duration-300 bg-[var(--card)] border-l border-[var(--border)] shrink-0 flex flex-col justify-between z-20 ${
-        isOpen ? 'w-[340px]' : 'w-[48px]'
-      }`}
-    >
+    <>
+      {/* Botón flotante en móvil para abrir el Banco de Platos / Copiloto CDSS */}
+      <div className="lg:hidden fixed bottom-5 right-5 z-40">
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white font-medium text-[13px] shadow-xl border border-purple-400/40 cursor-pointer transition-transform hover:scale-105 active:scale-95 select-none"
+          title="Abrir Banco de Platos y Copiloto CDSS"
+        >
+          <IconToolsKitchen2 size={17} stroke={1.75} />
+          <span>Platos & CDSS</span>
+          {audit.hasCriticalBlocker && (
+            <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
+          )}
+        </button>
+      </div>
+
+      {/* Backdrop oscuro en móvil cuando el cajón está abierto */}
+      {isOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 transition-opacity"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Panel: En escritorio es barra lateral fija; en móvil es cajón deslizante z-50 */}
+      <aside
+        className={`transition-all duration-300 bg-[var(--card)] border-l border-[var(--border)] shrink-0 flex flex-col justify-between ${
+          isOpen
+            ? 'fixed inset-y-0 right-0 z-50 w-[340px] max-w-[85vw] shadow-2xl lg:shadow-none lg:static lg:z-20'
+            : 'hidden lg:flex w-[48px] z-20'
+        }`}
+      >
       {/* Botón de alternar colapso */}
       <div className="p-2.5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--card-subtle)]">
         {isOpen ? (
@@ -488,5 +523,6 @@ export const ClinicalAuditScorecard: React.FC = () => {
         )}
       </AnimatePresence>
     </aside>
+    </>
   );
 };

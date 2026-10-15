@@ -250,7 +250,7 @@ export function DashboardView() {
           {/* ─────────────────────────────────────────────────────────────
               2. FILA DE TRES MÉTRICAS (Grid de 3 columnas iguales, gap 12px)
               ───────────────────────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-[12px]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-[12px]">
             <MetricCard label="Citas hoy" value={activeAppointments.length} />
             <MetricCard label="Clientes activos" value={activeClientsCount} />
             <MetricCard
@@ -367,9 +367,9 @@ export function DashboardView() {
           </div>
         </div>
 
-        {/* Tabla con table-layout: fixed (26% / 20% / 18% / 20% / 16%) */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left table-fixed min-w-[640px]">
+        {/* Tabla con table-layout: fixed con scroll horizontal en móvil */}
+        <div className="overflow-x-auto scrollbar-thin">
+          <table className="w-full text-left table-fixed min-w-[700px]">
             <colgroup>
               <col style={{ width: '26%' }} />
               <col style={{ width: '20%' }} />

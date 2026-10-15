@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -11,6 +11,8 @@ import {
   IconTable,
   IconSettings,
   IconLogout,
+  IconMenu2,
+  IconX,
 } from '@tabler/icons-react';
 import { Avatar } from '@/components/ui/nutri-ui';
 import { ModeToggle, DemoNoticeBanner } from './ModeToggle';
@@ -95,8 +97,132 @@ function MobileNavLinks() {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const pathname = usePathname();
+
   return (
-    <div className="h-screen w-screen overflow-hidden flex bg-[var(--bg)] font-sans antialiased text-[var(--text)]">
+    <div className="h-screen w-screen overflow-hidden flex flex-col md:flex-row bg-[var(--bg)] font-sans antialiased text-[var(--text)]">
+      {/* ─────────────────────────────────────────────────────────────
+          BARRA SUPERIOR MÓVIL (< 768px) CON LOGO Y BOTÓN HAMBURGUESA (☰)
+          ───────────────────────────────────────────────────────────── */}
+      <header className="md:hidden h-[54px] bg-[var(--card)] border-b border-[var(--border)] px-4 flex items-center justify-between shrink-0 z-30 select-none">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2 hover:opacity-90 transition-opacity"
+        >
+          <IconLeaf size={20} className="text-[var(--brand-solid)]" stroke={1.75} />
+          <span className="text-[16px] font-[600] text-[var(--text)] tracking-tight">
+            NutriApp
+          </span>
+        </Link>
+
+        <div className="flex items-center gap-2">
+          {/* Botón de Hamburguesa */}
+          <button
+            type="button"
+            onClick={() => setIsMobileDrawerOpen(true)}
+            className="p-1.5 rounded-[8px] text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)] transition-colors cursor-pointer border border-[var(--border)]"
+            aria-label="Abrir menú"
+            title="Abrir menú de navegación"
+          >
+            <IconMenu2 size={20} stroke={1.75} />
+          </button>
+        </div>
+      </header>
+
+      {/* ─────────────────────────────────────────────────────────────
+          DRAWER / MENÚ DESPLEGABLE OFF-CANVAS EN MÓVIL (< 768px)
+          ───────────────────────────────────────────────────────────── */}
+      {isMobileDrawerOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex animate-fadeIn">
+          {/* Fondo oscuro con desenfoque */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsMobileDrawerOpen(false)}
+          />
+
+          {/* Panel deslizante lateral */}
+          <div className="relative w-[280px] max-w-[80vw] bg-[var(--card)] border-r border-[var(--border)] h-full flex flex-col justify-between p-5 z-50 shadow-2xl animate-scaleUp">
+            <div>
+              {/* Cabecera del Drawer */}
+              <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
+                <Link
+                  href="/dashboard"
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="flex items-center gap-2"
+                >
+                  <IconLeaf size={22} className="text-[var(--brand-solid)]" stroke={1.75} />
+                  <span className="text-[17px] font-[700] text-[var(--text)] tracking-tight">
+                    NutriApp
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileDrawerOpen(false)}
+                  className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)] cursor-pointer"
+                  aria-label="Cerrar menú"
+                >
+                  <IconX size={20} />
+                </button>
+              </div>
+
+              {/* Selector de modo en drawer */}
+              <div className="mt-4">
+                <ModeToggle />
+              </div>
+
+              {/* Enlaces de Navegación */}
+              <nav className="mt-6 flex flex-col gap-1.5">
+                {NAV_ITEMS.map((item) => {
+                  const active =
+                    item.href === '/dashboard'
+                      ? pathname === '/dashboard' || pathname === '/'
+                      : pathname.startsWith(item.href);
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsMobileDrawerOpen(false)}
+                      className={`h-[42px] px-3 rounded-[10px] flex items-center gap-3 text-[14px] transition-colors select-none ${
+                        active
+                          ? 'bg-[var(--brand-bg)] text-[var(--brand-solid)] font-[600]'
+                          : 'text-[var(--text-secondary)] font-[400] hover:bg-[var(--card-subtle)] hover:text-[var(--text)]'
+                      }`}
+                    >
+                      <Icon size={20} className="shrink-0" stroke={1.75} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Perfil en el pie del Drawer */}
+            <div className="pt-4 border-t border-[var(--border)] flex items-center justify-between">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Avatar initials="LN" size={36} />
+                <div className="min-w-0">
+                  <div className="text-[13px] font-[600] text-[var(--text)] truncate leading-tight">
+                    Laura Nutricionista
+                  </div>
+                  <div className="text-[11px] text-[var(--text-muted)] truncate">
+                    laura@nutriapp.es
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)] transition-colors cursor-pointer"
+                aria-label="Cerrar sesión"
+              >
+                <IconLogout size={18} stroke={1.5} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ─────────────────────────────────────────────────────────────
           BARRA LATERAL FIJA (Escritorio >= 1024px: 232px | Tablet >= 768px: 64px)
           ───────────────────────────────────────────────────────────── */}
@@ -153,12 +279,7 @@ export function AppShell({ children }: AppShellProps) {
           ÁREA DE CONTENIDO (Scroll vertical independiente)
           ───────────────────────────────────────────────────────────── */}
       <main className="flex-1 h-full overflow-y-auto pb-20 md:pb-0">
-        <div className="p-[20px_16px] sm:p-[24px_32px] max-w-[1200px] mx-auto min-h-full">
-          {/* Selector móvil de Modo */}
-          <div className="lg:hidden mb-3">
-            <ModeToggle />
-          </div>
-
+        <div className="p-[16px_12px] sm:p-[24px_32px] max-w-[1200px] mx-auto min-h-full">
           {/* Banner informativo de modo demostración */}
           <DemoNoticeBanner />
 
