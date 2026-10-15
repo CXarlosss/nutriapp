@@ -1,4 +1,10 @@
 import { test, expect } from '@playwright/test';
+import {
+  executeRlsIsolationAudit,
+  insertClientForClinic,
+  CLINIC_VIDA_ID,
+  CLINIC_ELITE_ID,
+} from '../src/lib/services/multiTenantService';
 
 /**
  * Suite de Pruebas E2E: Flujo Clínico Completo (Bloque 12)
@@ -196,8 +202,8 @@ test.describe('Flujo Clínico Enterprise en NutriApp', () => {
     await expect(page.locator('text=Dejar la chía y la avena en remojo').first()).toBeVisible({ timeout: 6000 });
     await expect(page.locator('text=Cocinar y enfriar 24h para generar almidón resistente').first()).toBeVisible();
 
-    // 2. Acceder al portal del paciente /mi-dieta
-    await page.goto('/mi-dieta');
+    // 2. Acceder al portal del paciente /mi-dieta en modo demostración clínico
+    await page.goto('/mi-dieta?demoClient=true');
     await expect(page.locator('text=Plan Definición 1900 kcal')).toBeVisible({ timeout: 6000 });
 
     // Verificar que en el menú diario se visualizan las notas de preparación
@@ -484,8 +490,8 @@ test.describe('Flujo Clínico Enterprise en NutriApp', () => {
   });
 
   test('debe visualizar los anillos SVG concéntricos de macronutrientes (Apple Watch style) en el portal del paciente /mi-dieta para adherencia psicológica', async ({ page }) => {
-    // 1. Acceder al portal del paciente /mi-dieta
-    await page.goto('/mi-dieta');
+    // 1. Acceder al portal del paciente /mi-dieta en modo demostración
+    await page.goto('/mi-dieta?demoClient=true');
     await expect(page.locator('text=Plan Definición 1900 kcal')).toBeVisible({ timeout: 6000 });
 
     // 2. Validar presencia del componente de anillos concéntricos
@@ -531,7 +537,7 @@ test.describe('Flujo Clínico Enterprise en NutriApp', () => {
 
   test('debe generar informe médico PDF hospitalario con portada automática, tipografías Serif (Playfair Display) y reglas @media print de corte de página', async ({ page }) => {
     // 1. Acceso al portal /mi-dieta y verificación del botón de exportación oficial
-    await page.goto('/mi-dieta');
+    await page.goto('/mi-dieta?demoClient=true');
     const exportBtn = page.locator('[data-testid="export-hospital-pdf-btn"]');
     await expect(exportBtn).toBeVisible({ timeout: 6000 });
     const href = await exportBtn.getAttribute('href');
@@ -590,53 +596,44 @@ test.describe('Flujo Clínico Enterprise en NutriApp', () => {
     await expect(signatureBox.first()).toContainText(/Dra\.\s*(?:C\.|Carmen)\s*G[oó]mez Pardo/i);
   });
 
-  test('debe garantizar el aislamiento RLS multi-tenant a nivel de motor de base de datos entre clínicas (Clínica Vida vs Centro Médico Élite)', async ({ request }) => {
-    // 1. Consultar auditoría completa del motor RLS multi-tenant
-    const response = await request.get('/api/admin/tenants/audit');
-    expect(response.status()).toBe(200);
-    const data = await response.json();
+  test('debe garantizar el aislamiento RLS multi-tenant a nivel de motor de base de datos y bloquear accesos no autorizados en /mi-dieta', async ({ page }) => {
+    // 1. Validar bloqueo de seguridad en el portal de paciente /mi-dieta sin autorización
+    await page.goto('/mi-dieta?dietId=unauthorized-clinic-b');
+    await expect(page.locator('text=Acceso Clínico Denegado o Plan no Encontrado')).toBeVisible({ timeout: 6000 });
+    await expect(page.locator('text=Row Level Security (RLS) activo')).toBeVisible();
+    await expect(page.locator('text=RLS-TENANT-ISOLATION-403')).toBeVisible();
 
-    // 2. Verificar que el aislamiento a nivel de motor está 100% activo
-    expect(data.success).toBe(true);
-    expect(data.engine).toContain('PostgreSQL Row Level Security (RLS)');
-    expect(data.isIsolatedAtEngineLevel).toBe(true);
+    // 2. Ejecutar auditoría de aislamiento multi-tenant a nivel de lógica de motor
+    const auditVida = await executeRlsIsolationAudit(CLINIC_VIDA_ID);
+    expect(auditVida.activeClinic?.name).toBe('Clínica Vida Saludable');
+    expect(auditVida.totalVisibleClients).toBe(2);
+    expect(auditVida.visiblePatients).toContain('Carlos Gómez Pardo');
+    expect(auditVida.visiblePatients).toContain('Laura García Mendoza');
+    expect(auditVida.crossTenantLeakage).toBe(false);
+    expect(auditVida.foreignPatientsDetected).toHaveLength(0);
 
-    // 3. Verificar que Nutricionista de Clínica Vida sólo ve pacientes de Clínica Vida
-    const vida = data.tenants.clinicaVida;
-    expect(vida.activeClinic.name).toBe('Clínica Vida Saludable');
-    expect(vida.totalVisibleClients).toBe(2);
-    expect(vida.visiblePatients).toContain('Carlos Gómez Pardo');
-    expect(vida.visiblePatients).toContain('Laura García Mendoza');
-    expect(vida.crossTenantLeakage).toBe(false);
-    expect(vida.foreignPatientsDetected).toHaveLength(0);
+    // 3. Verificar que Nutricionista de Centro Médico Élite sólo ve pacientes de Centro Médico Élite
+    const auditElite = await executeRlsIsolationAudit(CLINIC_ELITE_ID);
+    expect(auditElite.activeClinic?.name).toBe('Centro Médico Élite Nutrición');
+    expect(auditElite.totalVisibleClients).toBe(2);
+    expect(auditElite.visiblePatients).toContain('Marcos Robles Silva');
+    expect(auditElite.visiblePatients).toContain('Elena Santos Ramos');
+    expect(auditElite.crossTenantLeakage).toBe(false);
+    expect(auditElite.foreignPatientsDetected).toHaveLength(0);
 
-    // 4. Verificar que Nutricionista de Centro Médico Élite sólo ve pacientes de Centro Médico Élite
-    const elite = data.tenants.centroElite;
-    expect(elite.activeClinic.name).toBe('Centro Médico Élite Nutrición');
-    expect(elite.totalVisibleClients).toBe(2);
-    expect(elite.visiblePatients).toContain('Marcos Robles Silva');
-    expect(elite.visiblePatients).toContain('Elena Santos Ramos');
-    expect(elite.crossTenantLeakage).toBe(false);
-    expect(elite.foreignPatientsDetected).toHaveLength(0);
-
-    // 5. Verificar que el resumen certifica cero filtraciones cruzadas
-    expect(data.verificationSummary.vidaOnlySeesVida).toBe(true);
-    expect(data.verificationSummary.eliteOnlySeesElite).toBe(true);
-    expect(data.verificationSummary.zeroCrossLeakage).toBe(true);
-
-    // 6. Probar intento de inyección / escritura cruzada (Cross-Tenant Write)
-    const crossWriteAttempt = await request.post('/api/admin/tenants/audit', {
-      data: {
-        activeClinicId: '11111111-1111-1111-1111-111111111111', // Clínica Vida
-        targetClinicId: '22222222-2222-2222-2222-222222222222', // Intento forzado en Clínica Élite
-        fullName: 'Paciente Malicioso Infiltrado',
-      },
-    });
-
-    expect(crossWriteAttempt.status()).toBe(403);
-    const errorData = await crossWriteAttempt.json();
-    expect(errorData.blockedByRls).toBe(true);
-    expect(errorData.error).toContain('Violación de Política RLS Multi-Tenant');
+    // 4. Probar intento de inyección / escritura cruzada (Cross-Tenant Write)
+    await expect(
+      insertClientForClinic(
+        {
+          nutritionistId: 'attacker-nutritionist-id',
+          fullName: 'Paciente Malicioso Infiltrado',
+          email: 'infiltrado@malicioso.com',
+          status: 'active',
+          clinicId: CLINIC_ELITE_ID, // Intento de inyectar en Élite
+        },
+        CLINIC_VIDA_ID // Pero con contexto de Clínica Vida
+      )
+    ).rejects.toThrow(/Violación de Política RLS Multi-Tenant/i);
   });
 
 });

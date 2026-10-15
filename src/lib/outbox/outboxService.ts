@@ -37,11 +37,26 @@ export interface EnqueueOutboxResult {
 // Registro en memoria para desacoplamiento instantáneo y entornos de test/desarrollo
 const memoryOutboxStore = new Map<string, OutboxEventRecord>();
 
-function getSupabaseClient() {
+// Cliente de administración Supabase con privilegios service_role (bypasea RLS para colas asíncronas)
+export function getSupabaseAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    return null;
+  }
   return createSupabaseClient(url, key, {
+    auth: { persistSession: false },
+  });
+}
+
+function getSupabaseClient() {
+  const admin = getSupabaseAdminClient();
+  if (admin) return admin;
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) return null;
+  return createSupabaseClient(url, anonKey, {
     auth: { persistSession: false },
   });
 }
@@ -171,12 +186,46 @@ export async function dispatchPendingOutboxEvents(batchSize: number = 10): Promi
     process.env.N8N_WEBHOOK_URL ||
     'http://localhost:3000/api/webhooks/n8n-mock';
 
-  // Obtener eventos pendientes (de memoria y base de datos)
+  // Obtener eventos pendientes (de memoria y base de datos con service_role)
   const pendingEvents: OutboxEventRecord[] = [];
   for (const event of memoryOutboxStore.values()) {
     if (event.status === 'pending' || event.status === 'processing') {
       pendingEvents.push(event);
       if (pendingEvents.length >= batchSize) break;
+    }
+  }
+
+  // Consultar base de datos real con privilegios de administrador service_role (bypasea RLS)
+  const adminClient = getSupabaseAdminClient();
+  if (adminClient && pendingEvents.length < batchSize) {
+    try {
+      const remainingSlots = batchSize - pendingEvents.length;
+      const { data: dbEvents } = await adminClient
+        .from('outbox_events')
+        .select('*')
+        .in('status', ['pending', 'processing'])
+        .order('created_at', { ascending: true })
+        .limit(remainingSlots);
+
+      if (dbEvents && dbEvents.length > 0) {
+        for (const row of dbEvents) {
+          if (!pendingEvents.some((e) => e.id === row.id)) {
+            pendingEvents.push({
+              id: row.id,
+              eventType: row.event_type,
+              aggregateType: row.aggregate_type,
+              aggregateId: row.aggregate_id,
+              payload: row.payload,
+              status: row.status,
+              attempts: row.attempts,
+              maxAttempts: row.max_attempts,
+              createdAt: row.created_at,
+            });
+          }
+        }
+      }
+    } catch {
+      // Fallback transparente a cola en memoria
     }
   }
 
@@ -219,12 +268,16 @@ export async function dispatchPendingOutboxEvents(batchSize: number = 10): Promi
         succeeded++;
         results.push({ eventId: event.id, status: 'published' });
 
-        // Intentar actualizar también en Supabase
-        const supabase = getSupabaseClient();
-        if (supabase) {
+        // Actualizar en base de datos con service_role
+        if (adminClient) {
           try {
-            await supabase.rpc('mark_outbox_event_published', { p_event_id: event.id });
-          } catch {}
+            await adminClient.rpc('mark_outbox_event_published', { p_event_id: event.id });
+          } catch {
+            await adminClient
+              .from('outbox_events')
+              .update({ status: 'published', published_at: new Date().toISOString() })
+              .eq('id', event.id);
+          }
         }
       } else {
         const errorText = `HTTP ${response.status}: ${response.statusText}`;

@@ -22,7 +22,11 @@ export const metadata: Metadata = {
   description: "Plataforma SaaS para nutricionistas con soporte a la decisión clínica (CDSS), búsqueda semántica con pgvector y auditoría inmutable.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="es"
