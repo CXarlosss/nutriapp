@@ -211,6 +211,37 @@ export async function getClientByOnboardingToken(
     }
   }
 
+  // 3. Soporte para tokens dinámicos generados para clientes registrados
+  if (token.startsWith('token_client_') || token.startsWith('token_')) {
+    const rawId = token.replace('token_', '');
+    const profile: ClientOnboardingProfile = {
+      id: rawId,
+      fullName: 'Paciente',
+      email: '',
+      phone: '',
+      onboardingToken: token,
+      onboardingStatus: 'pending',
+      formData: {
+        fullName: '',
+        email: '',
+        phone: '',
+        heightCm: 170,
+        currentWeightKg: 70,
+        goal: 'Recomposición corporal y salud general',
+        dietaryPreference: 'omnivoro',
+        allergies: [],
+        pathologies: [],
+        foodAversions: [],
+        dailyRoutine: {},
+        digestiveBaseline: {},
+        medications: [],
+        generalNotes: '',
+      },
+    };
+    memoryOnboardingStore.set(token, profile);
+    return profile;
+  }
+
   return null;
 }
 
@@ -384,7 +415,7 @@ export async function getClientOnboardingData(
 ): Promise<ClientOnboardingProfile | null> {
   // Buscar por clientId
   for (const profile of memoryOnboardingStore.values()) {
-    if (profile.id === clientId || profile.id.startsWith(clientId)) {
+    if (profile.id === clientId || profile.id.startsWith(clientId) || (profile.onboardingToken && profile.onboardingToken.includes(clientId))) {
       return profile;
     }
   }

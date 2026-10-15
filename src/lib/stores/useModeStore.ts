@@ -15,12 +15,62 @@ export interface RealClient {
   createdAt?: string;
 }
 
+export const DEMO_CLIENTS: RealClient[] = [
+  { id: 'c1', name: 'Marta Morales Sánchez', email: 'marta.morales@example.com', phone: '+34 611 223 344', plan: 'Plan Definición 8S', status: 'Activo', lastAppointment: '06 oct, 09:00', nextAppointment: '20 oct, 09:00', hasDiet: true },
+  { id: 'c2', name: 'Carlos Gómez Pardo', email: 'carlos.paciente@example.com', phone: '+34 600 112 233', plan: 'Recomposición', status: 'Activo', lastAppointment: '29 sep, 11:30', nextAppointment: '13 oct, 11:30', hasDiet: true },
+  { id: 'c3', name: 'Lucía Fernández Díaz', email: 'lucia.fernandez@example.com', phone: '+34 622 334 455', plan: 'Pérdida de Grasa', status: 'Activo', lastAppointment: '15 sep, 16:00', nextAppointment: '13 oct, 16:00', hasDiet: true },
+  { id: 'c4', name: 'Javier Navarro Soler', email: 'javier.navarro@example.com', phone: '+34 633 445 566', plan: 'Salud Intestinal', status: 'Pendiente de revisión', lastAppointment: 'Sin citas', nextAppointment: '13 oct, 18:15', hasDiet: false },
+  { id: 'c5', name: 'Elena Ramos Vidal', email: 'elena.ramos@example.com', phone: '+34 644 556 677', plan: 'Rendimiento Running', status: 'Activo', lastAppointment: '01 oct, 10:00', nextAppointment: '22 oct, 10:00', hasDiet: true },
+  { id: 'c6', name: 'David Torres Marín', email: 'david.torres@example.com', phone: '+34 655 667 788', plan: 'Recomposición', status: 'Activo', lastAppointment: '24 sep, 17:00', nextAppointment: '24 oct, 17:00', hasDiet: true },
+  { id: 'c7', name: 'Patricia Ortiz Cano', email: 'patricia.ortiz@example.com', phone: '+34 666 778 899', plan: 'Plan Definición 8S', status: 'Activo', lastAppointment: '10 oct, 09:30', nextAppointment: '27 oct, 09:30', hasDiet: true },
+  { id: 'c8', name: 'Andrés Gil Velasco', email: 'andres.gil@example.com', phone: '+34 677 889 900', plan: 'Pérdida de Grasa', status: 'Inactivo', lastAppointment: '12 ago, 12:00', nextAppointment: 'Sin agendar', hasDiet: false },
+  // Alias de compatibilidad para id 'client-1'
+  { id: 'client-1', name: 'Carlos Gómez Pardo', email: 'carlos.paciente@example.com', phone: '+34 600 112 233', plan: 'Recomposición', status: 'Activo', lastAppointment: '29 sep, 11:30', nextAppointment: '13 oct, 11:30', hasDiet: true },
+];
+
+export function findClientById(id: string, realClients?: RealClient[]): RealClient | null {
+  if (!id) return null;
+
+  // 1. Buscar primero en los clientes reales pasados por prop/estado
+  if (realClients && realClients.length > 0) {
+    const found = realClients.find((c) => c.id === id);
+    if (found) return found;
+  }
+
+  // 2. Buscar en localStorage de clientes reales
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('nutriapp_real_clients');
+      if (saved) {
+        const parsed: RealClient[] = JSON.parse(saved);
+        const match = parsed.find((c) => c.id === id);
+        if (match) return match;
+      }
+    } catch {
+      // Ignorar error de lectura de localStorage
+    }
+  }
+
+  // 3. Buscar en el catálogo de clientes demo
+  const foundDemo = DEMO_CLIENTS.find((c) => c.id === id);
+  if (foundDemo) return foundDemo;
+
+  // 4. Aliases para Carlos Gómez Pardo
+  if (id === 'client-1' || id === 'c2') {
+    return DEMO_CLIENTS.find((c) => c.id === 'client-1') || null;
+  }
+
+  return null;
+}
+
 interface ModeState {
   mode: AppMode;
   realClients: RealClient[];
   setMode: (mode: AppMode) => void;
   toggleMode: () => void;
   addRealClient: (client: Omit<RealClient, 'id' | 'lastAppointment' | 'nextAppointment' | 'hasDiet'>) => void;
+  updateRealClient: (id: string, updates: Partial<RealClient>) => void;
+  getClient: (id: string) => RealClient | undefined;
 }
 
 const STORAGE_KEY = 'nutriapp_app_mode';
@@ -90,5 +140,21 @@ export const useModeStore = create<ModeState>((set, get) => ({
       }
     }
     set({ realClients: updated });
+  },
+
+  updateRealClient: (id, updates) => {
+    const updated = get().realClients.map((c) => (c.id === id ? { ...c, ...updates } : c));
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.warn('No se pudieron actualizar los clientes reales:', e);
+      }
+    }
+    set({ realClients: updated });
+  },
+
+  getClient: (id: string) => {
+    return findClientById(id, get().realClients) || undefined;
   },
 }));

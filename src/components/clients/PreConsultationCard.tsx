@@ -40,7 +40,11 @@ export const PreConsultationCard: React.FC<PreConsultationCardProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
 
-  const token = onboardingData?.onboardingToken || 'token_carlos_gomez_2026';
+  const token =
+    onboardingData?.onboardingToken ||
+    (clientId === 'client-1' || clientId === 'c2'
+      ? 'token_carlos_gomez_2026'
+      : `token_${clientId.replace(/[^a-zA-Z0-9_]/g, '')}`);
   const appBaseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
   const preConsultationUrl = `${appBaseUrl}/pre-consulta/${token}`;
 
