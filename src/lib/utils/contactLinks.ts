@@ -44,6 +44,22 @@ export const contactTemplates = {
     };
   },
 
+  quinceDaysReviewReminder: (
+    clientName: string,
+    daysElapsed: number = 12,
+    planName?: string,
+    bookingUrl?: string
+  ) => {
+    const firstName = clientName.trim().split(/\s+/)[0] || 'Hola';
+    const planText = planName ? ` de ${planName}` : 'nutricional';
+    const url = bookingUrl || 'https://nutriapp-cyan.vercel.app/appointments';
+    return {
+      whatsapp: `¡Hola ${firstName}! 👋 ¿Cómo vas con tu pauta estos días?\n\nYa llevas ${daysElapsed} días con tu plan ${planText} y estamos llegando al final de tus primeras dos semanas. ¡Es el momento perfecto para agendar tu próxima consulta de revisión! 🗓️✨\n\nEn esta sesión mediremos tu evolución (peso, medidas corporales, sensaciones digestivas y energía) y ajustaremos tus platos y calorías para la siguiente fase.\n\n👉 Puedes elegir el hueco que mejor te venga aquí:\n${url}\n\nO si lo prefieres, dime qué día y hora te va mejor y te la anoto yo misma. ¡A seguir sumando! 💪🥗`,
+      emailSubject: `Hora de agendar tu próxima revisión de nutrición (Día ${daysElapsed} de tu plan) - ${clientName}`,
+      emailBody: `Hola ${firstName},\n\nEspero que estés teniendo una excelente semana.\n\nLlevas ya ${daysElapsed} días siguiendo tu plan nutricional ${planText} y nos acercamos al cierre de tu ciclo de dos semanas. Este es un punto clave para consolidar tus resultados y asegurar tu progreso.\n\nEn la próxima sesión de revisión:\n1. Evaluaremos tus cambios corporales y métricas de composición.\n2. Revisaremos tus niveles de saciedad, digestión y energía diaria.\n3. Ajustaremos tus recetas, porciones y menús para la siguiente etapa.\n\nTe recomiendo reservar tu hueco en la agenda para estos próximos días:\n👉 Agendar mi cita de revisión: ${url}\n\nSi prefieres coordinarlo directamente, solo responde a este correo o escríbeme por WhatsApp con tu disponibilidad y lo fijamos.\n\n¡Mucho ánimo con estos días y seguimos avanzando!\n\nUn saludo cordial,\nTu Nutricionista Clínica`,
+    };
+  },
+
   quickFollowUp: (clientName: string, planName?: string, nextAppointment?: string) => {
     const firstName = clientName.trim().split(/\s+/)[0] || 'Hola';
     const planText = planName ? ` de ${planName}` : 'nutricional';
@@ -106,6 +122,8 @@ export function getSmartClientContact(
     lastAppointment?: string;
     nextAppointment?: string;
     hasDiet?: boolean;
+    daysInPlan?: number;
+    createdAt?: string;
   },
   origin?: string
 ) {
@@ -114,32 +132,53 @@ export function getSmartClientContact(
   const token = `token_${(client.id || 'client').replace(/[^a-zA-Z0-9_]/g, '')}`;
   const intakeUrl = `${appBaseUrl}/pre-consulta/${token}`;
   const dietUrl = `${appBaseUrl}/mi-dieta`;
+  const bookingUrl = `${appBaseUrl}/appointments`;
 
   const isNewOrNoAppointments =
-    !client.lastAppointment ||
-    client.lastAppointment === 'Sin citas' ||
-    !client.nextAppointment ||
-    client.nextAppointment === 'Sin agendar';
+    (!client.lastAppointment || client.lastAppointment === 'Sin citas') &&
+    (!client.nextAppointment || client.nextAppointment === 'Sin agendar');
 
+  // Días transcurridos en el ciclo quincenal (por defecto 12 si está activo)
+  const daysElapsed = client.daysInPlan || 12;
+
+  // 1. Paciente nuevo sin citas ni dieta: Bienvenida + Cuestionario digital previo
   if (isNewOrNoAppointments && !client.hasDiet) {
     return {
       type: 'welcome' as const,
       tooltip: 'Enviar bienvenida y cuestionario pre-consulta',
       intakeUrl,
+      daysElapsed,
       ...contactTemplates.welcomeWithIntake(client.name, intakeUrl, client.plan),
     };
-  } else if (client.hasDiet) {
+  }
+
+  // 2. Paciente en seguimiento sin próxima cita agendada (ej. día 10-15 del plan): Recordatorio de cita quincenal
+  if (!client.nextAppointment || client.nextAppointment === 'Sin agendar') {
+    return {
+      type: 'rebook_reminder' as const,
+      tooltip: `Recordatorio de agendar cita de revisión (Día ${daysElapsed} de 15)`,
+      bookingUrl,
+      daysElapsed,
+      ...contactTemplates.quinceDaysReviewReminder(client.name, daysElapsed, client.plan, bookingUrl),
+    };
+  }
+
+  // 3. Paciente con dieta activa: Entrega de pauta nutricional
+  if (client.hasDiet) {
     return {
       type: 'diet' as const,
       tooltip: 'Enviar enlace a su pauta nutricional',
       dietUrl,
+      daysElapsed,
       ...contactTemplates.dietDelivery(client.name, dietUrl, client.plan),
     };
-  } else {
-    return {
-      type: 'followup' as const,
-      tooltip: 'Enviar mensaje de seguimiento clínico',
-      ...contactTemplates.quickFollowUp(client.name, client.plan, client.nextAppointment),
-    };
   }
+
+  // 4. Seguimiento regular
+  return {
+    type: 'followup' as const,
+    tooltip: 'Enviar mensaje de seguimiento clínico',
+    daysElapsed,
+    ...contactTemplates.quickFollowUp(client.name, client.plan, client.nextAppointment),
+  };
 }

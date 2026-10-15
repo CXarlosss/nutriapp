@@ -13,19 +13,20 @@ export interface RealClient {
   nextAppointment: string;
   hasDiet: boolean;
   createdAt?: string;
+  daysInPlan?: number;
 }
 
 export const DEMO_CLIENTS: RealClient[] = [
-  { id: 'c1', name: 'Marta Morales Sánchez', email: 'marta.morales@example.com', phone: '+34 611 223 344', plan: 'Plan Definición 8S', status: 'Activo', lastAppointment: '06 oct, 09:00', nextAppointment: '20 oct, 09:00', hasDiet: true },
-  { id: 'c2', name: 'Carlos Gómez Pardo', email: 'carlos.paciente@example.com', phone: '+34 600 112 233', plan: 'Recomposición', status: 'Activo', lastAppointment: '29 sep, 11:30', nextAppointment: '13 oct, 11:30', hasDiet: true },
-  { id: 'c3', name: 'Lucía Fernández Díaz', email: 'lucia.fernandez@example.com', phone: '+34 622 334 455', plan: 'Pérdida de Grasa', status: 'Activo', lastAppointment: '15 sep, 16:00', nextAppointment: '13 oct, 16:00', hasDiet: true },
-  { id: 'c4', name: 'Javier Navarro Soler', email: 'javier.navarro@example.com', phone: '+34 633 445 566', plan: 'Salud Intestinal', status: 'Pendiente de revisión', lastAppointment: 'Sin citas', nextAppointment: '13 oct, 18:15', hasDiet: false },
-  { id: 'c5', name: 'Elena Ramos Vidal', email: 'elena.ramos@example.com', phone: '+34 644 556 677', plan: 'Rendimiento Running', status: 'Activo', lastAppointment: '01 oct, 10:00', nextAppointment: '22 oct, 10:00', hasDiet: true },
-  { id: 'c6', name: 'David Torres Marín', email: 'david.torres@example.com', phone: '+34 655 667 788', plan: 'Recomposición', status: 'Activo', lastAppointment: '24 sep, 17:00', nextAppointment: '24 oct, 17:00', hasDiet: true },
-  { id: 'c7', name: 'Patricia Ortiz Cano', email: 'patricia.ortiz@example.com', phone: '+34 666 778 899', plan: 'Plan Definición 8S', status: 'Activo', lastAppointment: '10 oct, 09:30', nextAppointment: '27 oct, 09:30', hasDiet: true },
-  { id: 'c8', name: 'Andrés Gil Velasco', email: 'andres.gil@example.com', phone: '+34 677 889 900', plan: 'Pérdida de Grasa', status: 'Inactivo', lastAppointment: '12 ago, 12:00', nextAppointment: 'Sin agendar', hasDiet: false },
+  { id: 'c1', name: 'Marta Morales Sánchez', email: 'marta.morales@example.com', phone: '+34 611 223 344', plan: 'Plan Definición 8S', status: 'Activo', lastAppointment: '06 oct, 09:00', nextAppointment: '20 oct, 09:00', hasDiet: true, daysInPlan: 9 },
+  { id: 'c2', name: 'Carlos Gómez Pardo', email: 'carlos.paciente@example.com', phone: '+34 600 112 233', plan: 'Recomposición', status: 'Activo', lastAppointment: '29 sep, 11:30', nextAppointment: 'Sin agendar', hasDiet: true, daysInPlan: 12 },
+  { id: 'c3', name: 'Lucía Fernández Díaz', email: 'lucia.fernandez@example.com', phone: '+34 622 334 455', plan: 'Pérdida de Grasa', status: 'Activo', lastAppointment: '15 sep, 16:00', nextAppointment: '13 oct, 16:00', hasDiet: true, daysInPlan: 14 },
+  { id: 'c4', name: 'Javier Navarro Soler', email: 'javier.navarro@example.com', phone: '+34 633 445 566', plan: 'Salud Intestinal', status: 'Pendiente de revisión', lastAppointment: 'Sin citas', nextAppointment: 'Sin agendar', hasDiet: false, daysInPlan: 3 },
+  { id: 'c5', name: 'Elena Ramos Vidal', email: 'elena.ramos@example.com', phone: '+34 644 556 677', plan: 'Rendimiento Running', status: 'Activo', lastAppointment: '01 oct, 10:00', nextAppointment: '22 oct, 10:00', hasDiet: true, daysInPlan: 7 },
+  { id: 'c6', name: 'David Torres Marín', email: 'david.torres@example.com', phone: '+34 655 667 788', plan: 'Recomposición', status: 'Activo', lastAppointment: '24 sep, 17:00', nextAppointment: '24 oct, 17:00', hasDiet: true, daysInPlan: 10 },
+  { id: 'c7', name: 'Patricia Ortiz Cano', email: 'patricia.ortiz@example.com', phone: '+34 666 778 899', plan: 'Plan Definición 8S', status: 'Activo', lastAppointment: '10 oct, 09:30', nextAppointment: '27 oct, 09:30', hasDiet: true, daysInPlan: 5 },
+  { id: 'c8', name: 'Andrés Gil Velasco', email: 'andres.gil@example.com', phone: '+34 677 889 900', plan: 'Pérdida de Grasa', status: 'Inactivo', lastAppointment: '12 ago, 12:00', nextAppointment: 'Sin agendar', hasDiet: false, daysInPlan: 25 },
   // Alias de compatibilidad para id 'client-1'
-  { id: 'client-1', name: 'Carlos Gómez Pardo', email: 'carlos.paciente@example.com', phone: '+34 600 112 233', plan: 'Recomposición', status: 'Activo', lastAppointment: '29 sep, 11:30', nextAppointment: '13 oct, 11:30', hasDiet: true },
+  { id: 'client-1', name: 'Carlos Gómez Pardo', email: 'carlos.paciente@example.com', phone: '+34 600 112 233', plan: 'Recomposición', status: 'Activo', lastAppointment: '29 sep, 11:30', nextAppointment: 'Sin agendar', hasDiet: true, daysInPlan: 12 },
 ];
 
 export function findClientById(id: string, realClients?: RealClient[]): RealClient | null {

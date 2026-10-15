@@ -15,6 +15,8 @@ import {
   IconX,
   IconBrandWhatsapp,
   IconMail,
+  IconMessageDots,
+  IconCalendarEvent,
 } from '@tabler/icons-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card, Badge, Button, Avatar } from '@/components/ui/nutri-ui';
@@ -23,6 +25,7 @@ import { DigestiveSymptomTracker } from '@/components/clients/DigestiveSymptomTr
 import { MedicationInteractionsPanel } from '@/components/clients/MedicationInteractionsPanel';
 import { PreConsultationCard } from '@/components/clients/PreConsultationCard';
 import { ClinicalVoiceAssistantModal } from '@/components/clients/ClinicalVoiceAssistantModal';
+import { ClientMessageTemplatesModal } from '@/components/clients/ClientMessageTemplatesModal';
 import { getClientOnboardingData } from '@/lib/services/onboardingService';
 import { ClientOnboardingProfile } from '@/types/diet';
 import { useModeStore, findClientById, RealClient } from '@/lib/stores/useModeStore';
@@ -30,6 +33,7 @@ import {
   generateWhatsAppLink,
   generateMailtoLink,
   getSmartClientContact,
+  contactTemplates,
 } from '@/lib/utils/contactLinks';
 
 export default function ClientDetailPage() {
@@ -60,10 +64,12 @@ function ClientDetailContent() {
       lastAppointment: 'Sin citas',
       nextAppointment: 'Sin agendar',
       hasDiet: false,
+      daysInPlan: 12,
     };
   }, [rawId, realClients]);
 
   const isCarlos = client.id === 'client-1' || client.id === 'c2';
+  const daysElapsed = client.daysInPlan || 12;
 
   const clientInitials = useMemo(() => {
     const parts = client.name.trim().split(/\s+/);
@@ -81,8 +87,11 @@ function ClientDetailContent() {
   const [clinicalSubTab, setClinicalSubTab] = useState<'analiticas' | 'digestiones' | 'farmacos'>('analiticas');
   const [onboardingData, setOnboardingData] = useState<ClientOnboardingProfile | null>(null);
 
-  // Estado Reactivo Asistido por Voz
+  // Modales
+  const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+
+  // Estado Asistido por Voz
   const [currentWeight, setCurrentWeight] = useState(76.4);
   const [voiceNotification, setVoiceNotification] = useState<string | null>(null);
   const [clientNotes, setClientNotes] = useState<string[]>([
@@ -186,6 +195,17 @@ function ClientDetailContent() {
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            {/* Botón rápido para abrir catálogo completo de mensajes */}
+            <Button
+              variant="secondary"
+              onClick={() => setIsTemplatesModalOpen(true)}
+              className="h-[34px] px-3 text-[13px] flex items-center gap-1.5 border-amber-500/30 text-amber-800 dark:text-amber-200 bg-amber-50/60 dark:bg-amber-950/30 hover:bg-amber-100/70"
+              title="Abrir catálogo de mensajes clínicos y recordatorios de cita"
+            >
+              <IconMessageDots size={16} className="text-amber-600 dark:text-amber-400" />
+              <span>Plantillas</span>
+            </Button>
+
             {client.phone ? (
               <a
                 href={generateWhatsAppLink(client.phone, contact.whatsapp)}
@@ -262,6 +282,67 @@ function ClientDetailContent() {
             >
               <IconX size={14} />
             </button>
+          </div>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────
+            BANNER INTELIGENTE DE RETENCIÓN CLÍNICA (DÍA 12)
+            ───────────────────────────────────────────────────────────── */}
+        {client.nextAppointment === 'Sin agendar' && (
+          <div className="p-4 rounded-[12px] bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 flex flex-col md:flex-row md:items-center justify-between gap-3 text-[13px] animate-fadeIn">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                <IconCalendarEvent size={20} stroke={1.75} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-[14px] font-[600] text-[var(--text)]">
+                    Día {daysElapsed} de 15 · Cita de revisión quincenal sin agendar
+                  </h3>
+                  <Badge variant="warning">Acción clínica recomendada</Badge>
+                </div>
+                <p className="text-[12px] text-[var(--text-secondary)] mt-0.5 max-w-xl">
+                  {client.name} lleva {daysElapsed} días con su plan {client.plan}. Es el momento idóneo para recordarle que reserve su próxima sesión antes de agotar la quincena y asegurar su adherencia.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 self-end md:self-auto flex-wrap">
+              <a
+                href={generateWhatsAppLink(
+                  client.phone || '',
+                  contactTemplates.quinceDaysReviewReminder(client.name, daysElapsed, client.plan).whatsapp
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 h-[32px] px-3 text-[12px] font-medium rounded-[8px] text-emerald-800 dark:text-emerald-200 bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-950/60 border border-emerald-500/30 transition-colors shadow-sm"
+                title="Avisar por WhatsApp para agendar revisión"
+              >
+                <IconBrandWhatsapp size={15} />
+                <span>Avisar por WhatsApp</span>
+              </a>
+
+              <a
+                href={generateMailtoLink(
+                  client.email || '',
+                  contactTemplates.quinceDaysReviewReminder(client.name, daysElapsed, client.plan).emailSubject,
+                  contactTemplates.quinceDaysReviewReminder(client.name, daysElapsed, client.plan).emailBody
+                )}
+                className="inline-flex items-center gap-1.5 h-[32px] px-3 text-[12px] font-medium rounded-[8px] text-blue-800 dark:text-blue-200 bg-blue-100 hover:bg-blue-200 dark:bg-blue-950/60 border border-blue-500/30 transition-colors shadow-sm"
+                title="Avisar por Email para agendar revisión"
+              >
+                <IconMail size={15} />
+                <span>Avisar por Email</span>
+              </a>
+
+              <Button
+                variant="ghost"
+                onClick={() => setIsTemplatesModalOpen(true)}
+                className="h-[32px] px-2.5 text-[12px]"
+              >
+                Ver plantillas
+              </Button>
+            </div>
           </div>
         )}
 
@@ -357,26 +438,39 @@ function ClientDetailContent() {
                 </div>
               </Card>
 
-              {/* Derecha: Suscripción activa */}
+              {/* Derecha: Suscripción activa con seguimiento de días */}
               <Card className="space-y-4">
-                <h2 className="text-[14px] font-[500] text-[var(--text)]">Suscripción activa</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[14px] font-[500] text-[var(--text)]">Suscripción activa</h2>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-[6px] bg-[var(--card-subtle)] border border-[var(--border)] text-[var(--text-secondary)]">
+                    Ciclo 15 días
+                  </span>
+                </div>
 
                 <div>
                   <div className="flex items-center justify-between text-[12px] text-[var(--text-secondary)] mb-1.5">
-                    <span>Estado del plan</span>
-                    <span className="font-[500] text-[var(--text)]">{client.plan}</span>
+                    <span>Días consumidos del ciclo</span>
+                    <span className="font-[600] text-[var(--brand-solid)] tabular-nums font-mono">
+                      Día {daysElapsed} de 15
+                    </span>
                   </div>
-                  <div className="w-full h-[6px] rounded-full bg-[#F1EFE8] overflow-hidden">
+                  <div className="w-full h-[6px] rounded-full bg-[#F1EFE8] dark:bg-stone-800 overflow-hidden">
                     <div
-                      className="h-full bg-[var(--brand-solid)] transition-all"
-                      style={{ width: client.status === 'Activo' ? '65%' : '20%' }}
+                      className={`h-full transition-all ${daysElapsed >= 11 ? 'bg-amber-500' : 'bg-[var(--brand-solid)]'}`}
+                      style={{ width: `${Math.min(100, (daysElapsed / 15) * 100)}%` }}
                     />
                   </div>
                 </div>
 
                 <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between text-[13px]">
                   <span className="text-[var(--text-secondary)]">Próxima cita</span>
-                  <span className="font-[500] text-[var(--warning-text)]">
+                  <span
+                    className={`font-[500] ${
+                      client.nextAppointment === 'Sin agendar'
+                        ? 'text-amber-600 dark:text-amber-400 font-semibold'
+                        : 'text-[var(--text)]'
+                    }`}
+                  >
                     {client.nextAppointment || 'Sin agendar'}
                   </span>
                 </div>
@@ -578,6 +672,14 @@ function ClientDetailContent() {
           </Card>
         )}
       </div>
+
+      {/* Modal Catálogo de Plantillas Clínicas */}
+      <ClientMessageTemplatesModal
+        isOpen={isTemplatesModalOpen}
+        onClose={() => setIsTemplatesModalOpen(false)}
+        client={client}
+        daysElapsed={daysElapsed}
+      />
 
       {/* Modal Asistente de Consulta por Voz (Cero Pantallas) */}
       <ClinicalVoiceAssistantModal
