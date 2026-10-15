@@ -139,56 +139,61 @@ CREATE POLICY "medications_access" ON public.client_medications FOR ALL TO anon,
 CREATE POLICY "interactions_read_all" ON public.drug_nutrient_interactions FOR SELECT TO anon, authenticated USING (true);
 
 -- 7. Datos Semilla para Carlos Gómez Pardo ('a0000000-0000-0000-0000-000000000001')
-INSERT INTO public.client_blood_tests 
-(client_id, test_date, laboratory_name, notes, ferritina_ug_l, hierro_serico_ug_dl, vitamina_d_ng_ml, vitamina_b12_pg_ml, hba1c_porcentaje, glucosa_basal_mg_dl, colesterol_total_mg_dl, colesterol_ldl_mg_dl, colesterol_hdl_mg_dl, trigliceridos_mg_dl, tsh_uiu_ml, t4_libre_ng_dl, t3_libre_pg_ml)
-VALUES
-(
-    'a0000000-0000-0000-0000-000000000001',
-    '2026-06-15',
-    'Laboratorio Clínico Sanitas',
-    'Analítica basal pre-temporada de fuerza y recomposición',
-    28.5, 62, 22.4, 380, 5.5, 92, 218, 134, 52, 160, 4.82, 0.95, 2.6
-),
-(
-    'a0000000-0000-0000-0000-000000000001',
-    '2026-09-20',
-    'Laboratorio Clínico Sanitas',
-    'Control trimestral tras suplementación de Vit D3 y ajuste proteico',
-    54.0, 98, 42.0, 420, 5.2, 86, 188, 108, 58, 110, 2.45, 1.25, 3.1
-)
-ON CONFLICT DO NOTHING;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM public.clients WHERE id = 'a0000000-0000-0000-0000-000000000001') THEN
+    INSERT INTO public.client_blood_tests 
+    (client_id, test_date, laboratory_name, notes, ferritina_ug_l, hierro_serico_ug_dl, vitamina_d_ng_ml, vitamina_b12_pg_ml, hba1c_porcentaje, glucosa_basal_mg_dl, colesterol_total_mg_dl, colesterol_ldl_mg_dl, colesterol_hdl_mg_dl, trigliceridos_mg_dl, tsh_uiu_ml, t4_libre_ng_dl, t3_libre_pg_ml)
+    VALUES
+    (
+        'a0000000-0000-0000-0000-000000000001',
+        '2026-06-15',
+        'Laboratorio Clínico Sanitas',
+        'Analítica basal pre-temporada de fuerza y recomposición',
+        28.5, 62, 22.4, 380, 5.5, 92, 218, 134, 52, 160, 4.82, 0.95, 2.6
+    ),
+    (
+        'a0000000-0000-0000-0000-000000000001',
+        '2026-09-20',
+        'Laboratorio Clínico Sanitas',
+        'Control trimestral tras suplementación de Vit D3 y ajuste proteico',
+        54.0, 98, 42.0, 420, 5.2, 86, 188, 108, 58, 110, 2.45, 1.25, 3.1
+    )
+    ON CONFLICT DO NOTHING;
 
-INSERT INTO public.client_digestive_logs
-(client_id, week_start_date, evaluation_date, bloating_score, reflux_score, bristol_stool_type, chronic_fatigue_score, notes, correlation_tags)
-VALUES
-(
-    'a0000000-0000-0000-0000-000000000001',
-    '2026-09-28',
-    '2026-10-04',
-    4, 2, 2, 3,
-    'Distensión notable por las tardes tras comida con legumbres sin triturar. Estreñimiento moderado.',
-    ARRAY['FODMAPs', 'Legumbres', 'Estreñimiento']
-),
-(
-    'a0000000-0000-0000-0000-000000000001',
-    '2026-10-05',
-    '2026-10-11',
-    1, 0, 4, 1,
-    'Gran mejoría tras introducir alimentos de fácil digestión, hidratación matutina y cocción lenta. Tránsito regularizado a tipo 4.',
-    ARRAY['Digestión Óptima', 'Buena tolerancia']
-)
-ON CONFLICT DO NOTHING;
+    INSERT INTO public.client_digestive_logs
+    (client_id, week_start_date, evaluation_date, bloating_score, reflux_score, bristol_stool_type, chronic_fatigue_score, notes, correlation_tags)
+    VALUES
+    (
+        'a0000000-0000-0000-0000-000000000001',
+        '2026-09-28',
+        '2026-10-04',
+        4, 2, 2, 3,
+        'Distensión notable por las tardes tras comida con legumbres sin triturar. Estreñimiento moderado.',
+        ARRAY['FODMAPs', 'Legumbres', 'Estreñimiento']
+    ),
+    (
+        'a0000000-0000-0000-0000-000000000001',
+        '2026-10-05',
+        '2026-10-11',
+        1, 0, 4, 1,
+        'Gran mejoría tras introducir alimentos de fácil digestión, hidratación matutina y cocción lenta. Tránsito regularizado a tipo 4.',
+        ARRAY['Digestión Óptima', 'Buena tolerancia']
+    )
+    ON CONFLICT DO NOTHING;
 
-INSERT INTO public.client_medications
-(client_id, drug_name, active_ingredient, dosage, timing_slot, indication, active)
-VALUES
-(
-    'a0000000-0000-0000-0000-000000000001',
-    'Levotiroxina',
-    'Levothyroxine Sodium',
-    '75 mcg',
-    'desayuno',
-    'Hipotiroidismo subclínico / Tiroiditis de Hashimoto',
-    true
-)
-ON CONFLICT DO NOTHING;
+    INSERT INTO public.client_medications
+    (client_id, drug_name, active_ingredient, dosage, timing_slot, indication, active)
+    VALUES
+    (
+        'a0000000-0000-0000-0000-000000000001',
+        'Levotiroxina',
+        'Levothyroxine Sodium',
+        '75 mcg',
+        'desayuno',
+        'Hipotiroidismo subclínico / Tiroiditis de Hashimoto',
+        true
+    )
+    ON CONFLICT DO NOTHING;
+  END IF;
+END $$;
