@@ -1,5 +1,10 @@
 import { create } from 'zustand';
 import { DietItem, DayCyclingConfig } from '@/types/diet';
+import {
+  safeLocalStorageGet,
+  resilientSave,
+  resilientSyncWithIndexedDb,
+} from '@/lib/storage/resilientStorage';
 
 export interface SavedTemplate {
   id: string;
@@ -27,71 +32,45 @@ interface TemplateStoreState {
   getTemplateById: (id: string) => SavedTemplate | undefined;
 }
 
-const STORAGE_KEY = 'nutriapp_saved_templates';
+const STORAGE_KEY = 'nutriapp_custom_templates';
 
+// Plantillas clínicas base de alta adherencia
 const DEFAULT_TEMPLATES: SavedTemplate[] = [
   {
-    id: 't1',
-    name: 'Déficit Calórico Moderado',
-    description: 'Estructura equilibrada con alta saciedad, rica en proteínas y verduras fibrosas para mantenimiento muscular.',
+    id: 'tmpl-hipertrofia-2400',
+    name: 'Hipertrofia Limpia 2.400 kcal',
+    description: 'Protocolo de superávit controlado (+250 kcal) con 2.0g/kg de proteína y ciclado de carbohidratos en días de pierna/espalda.',
+    targetKcal: 2400,
+    tags: ['Deportiva', 'Hipertrofia', 'Ciclado Carbs'],
+    version: 1,
+    createdAt: '2026-10-10T10:00:00Z',
+    items: [],
+  },
+  {
+    id: 'tmpl-fodmap-antiinflamatoria',
+    name: 'Baja en FODMAPs (Fase Eliminación)',
+    description: 'Pauta clínica estricta de 4 semanas para SIBO y colon irritable. Exclusión de fructanos, GOS, lactosa y polioles.',
+    targetKcal: 1900,
+    tags: ['Clínica', 'Salud Intestinal', 'FODMAP', 'SIBO'],
+    version: 1,
+    createdAt: '2026-10-11T09:30:00Z',
+    items: [],
+  },
+  {
+    id: 'tmpl-recomposicion-1800',
+    name: 'Recomposición Corporal Femenina 1.800 kcal',
+    description: 'Enfoque metabólico para pérdida de grasa preservando masa magra. Alta saciedad con almidón resistente y grasas saludables.',
     targetKcal: 1800,
-    tags: ['Pérdida de Grasa', 'Alta Proteína'],
-    version: 2,
-    createdAt: '2026-10-01T10:00:00Z',
-    items: [],
-  },
-  {
-    id: 't2',
-    name: 'Recomposición Normocalórica',
-    description: 'Distribución ciclada de carbohidratos en días de entrenamiento de fuerza para máxima recuperación.',
-    targetKcal: 2200,
-    tags: ['Recomposición', 'Fuerza'],
-    version: 3,
-    createdAt: '2026-10-05T12:30:00Z',
-    items: [],
-  },
-  {
-    id: 't3',
-    name: 'Superávit Hipertrofia Limpia',
-    description: 'Enfoque denso nutricionalmente con grasas monoinsaturadas y carbohidratos de fácil asimilación.',
-    targetKcal: 2750,
-    tags: ['Volumen', 'Alta Proteína'],
+    tags: ['Pérdida Grasa', 'Recomposición', 'Mujer'],
     version: 1,
-    createdAt: '2026-10-08T09:15:00Z',
-    items: [],
-  },
-  {
-    id: 't4',
-    name: 'Pauta Antiinflamatoria FODMAP',
-    description: 'Fase de eliminación de hidratos de carbono fermentables para sintomatología de disbiosis o colon irritable.',
-    targetKcal: 1950,
-    tags: ['Salud Intestinal', 'Bajo FODMAP', 'Sin Gluten'],
-    version: 1,
-    createdAt: '2026-10-10T16:45:00Z',
-    items: [],
-  },
-  {
-    id: 't5',
-    name: 'Pauta Vegetariana Rendimiento',
-    description: 'Combinaciones de legumbres, cereales y frutos secos para aminograma completo en deportistas.',
-    targetKcal: 2100,
-    tags: ['Vegetariano', 'Alta Proteína'],
-    version: 2,
     createdAt: '2026-10-12T11:20:00Z',
     items: [],
   },
 ];
 
 function getInitialTemplates(): SavedTemplate[] {
-  if (typeof window === 'undefined') return DEFAULT_TEMPLATES;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_TEMPLATES;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_TEMPLATES;
-  } catch {
-    return DEFAULT_TEMPLATES;
-  }
+  const parsed = safeLocalStorageGet<SavedTemplate[]>(STORAGE_KEY, DEFAULT_TEMPLATES);
+  return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_TEMPLATES;
 }
 
 export const useTemplateStore = create<TemplateStoreState>((set, get) => ({
@@ -129,13 +108,8 @@ export const useTemplateStore = create<TemplateStoreState>((set, get) => ({
 
     set((state) => {
       const updated = [newTemplate, ...state.templates];
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-        } catch (e) {
-          console.error('Error guardando plantilla en localStorage:', e);
-        }
-      }
+      // Persistencia híbrida a prueba de QuotaExceededError (IndexedDB + localStorage)
+      resilientSave(STORAGE_KEY, updated);
       return { templates: updated };
     });
 
@@ -145,13 +119,8 @@ export const useTemplateStore = create<TemplateStoreState>((set, get) => ({
   deleteTemplate: (id: string) => {
     set((state) => {
       const updated = state.templates.filter((t) => t.id !== id);
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-        } catch (e) {
-          console.error('Error borrando plantilla de localStorage:', e);
-        }
-      }
+      // Persistencia híbrida a prueba de QuotaExceededError (IndexedDB + localStorage)
+      resilientSave(STORAGE_KEY, updated);
       return { templates: updated };
     });
   },
@@ -160,3 +129,16 @@ export const useTemplateStore = create<TemplateStoreState>((set, get) => ({
     return get().templates.find((t) => t.id === id);
   },
 }));
+
+// Sincronización transparente con IndexedDB (capacidad ilimitada) en cliente
+if (typeof window !== 'undefined') {
+  resilientSyncWithIndexedDb<SavedTemplate[]>(
+    STORAGE_KEY,
+    getInitialTemplates(),
+    (idbTemplates) => {
+      if (Array.isArray(idbTemplates) && idbTemplates.length > 0) {
+        useTemplateStore.setState({ templates: idbTemplates });
+      }
+    }
+  );
+}

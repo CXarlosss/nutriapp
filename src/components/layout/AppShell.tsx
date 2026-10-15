@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -13,6 +13,7 @@ import {
   IconLogout,
   IconMenu2,
   IconX,
+  IconDatabase,
 } from '@tabler/icons-react';
 import { Avatar } from '@/components/ui/nutri-ui';
 import { ModeToggle, DemoNoticeBanner } from './ModeToggle';
@@ -98,7 +99,24 @@ function MobileNavLinks() {
 
 export function AppShell({ children }: AppShellProps) {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [quotaWarning, setQuotaWarning] = useState<string | null>(null);
   const pathname = usePathname();
+
+  useEffect(() => {
+    const handleQuotaWarning = (e: Event) => {
+      const customEvent = e as CustomEvent<{ message?: string }>;
+      setQuotaWarning(
+        customEvent.detail?.message ||
+          'Capacidad de almacenamiento local ampliada: tus datos se han respaldado en la base de datos de alta capacidad (IndexedDB).'
+      );
+      setTimeout(() => setQuotaWarning(null), 8000);
+    };
+
+    window.addEventListener('nutriapp:storage-quota-warning', handleQuotaWarning);
+    return () => {
+      window.removeEventListener('nutriapp:storage-quota-warning', handleQuotaWarning);
+    };
+  }, []);
 
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col md:flex-row bg-[var(--bg)] font-sans antialiased text-[var(--text)]">
@@ -293,6 +311,33 @@ export function AppShell({ children }: AppShellProps) {
       <Suspense fallback={null}>
         <MobileNavLinks />
       </Suspense>
+
+      {/* ─────────────────────────────────────────────────────────────
+          TOAST RESILIENTE DE ALMACENAMIENTO DE ALTA CAPACIDAD (INDEXEDDB)
+          ───────────────────────────────────────────────────────────── */}
+      {quotaWarning && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-50 max-w-md bg-[var(--card)] border border-emerald-500/40 text-[var(--text)] px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md flex items-start gap-3 animate-scaleUp"
+        >
+          <div className="shrink-0 mt-0.5 p-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            <IconDatabase size={18} stroke={1.75} />
+          </div>
+          <div className="text-[13px] leading-snug font-[400] text-[var(--text-secondary)]">
+            <span className="font-[600] text-[var(--text)] block mb-0.5">Almacenamiento Ampliado</span>
+            {quotaWarning}
+          </div>
+          <button
+            type="button"
+            onClick={() => setQuotaWarning(null)}
+            className="text-[var(--text-muted)] hover:text-[var(--text)] ml-auto shrink-0 text-sm font-semibold cursor-pointer p-0.5"
+            aria-label="Cerrar aviso"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }

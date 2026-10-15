@@ -5,6 +5,8 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Card, Button, Input } from '@/components/ui/nutri-ui';
 import { IconSettings, IconClock, IconBrandGoogleFilled, IconCheck, IconDeviceFloppy } from '@tabler/icons-react';
 
+import { safeLocalStorageGet, resilientSave } from '@/lib/storage/resilientStorage';
+
 interface ProfessionalSettings {
   fullName: string;
   licenseNumber: string;
@@ -32,14 +34,9 @@ export default function SettingsPage() {
 
   // Cargar ajustes guardados del almacenamiento local en el navegador
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setSettings((prev) => ({ ...prev, ...parsed }));
-      }
-    } catch (e) {
-      console.warn('No se pudieron cargar los ajustes locales:', e);
+    const parsed = safeLocalStorageGet<Partial<ProfessionalSettings>>(STORAGE_KEY, {});
+    if (parsed && Object.keys(parsed).length > 0) {
+      setSettings((prev) => ({ ...prev, ...parsed }));
     }
   }, []);
 
@@ -51,10 +48,10 @@ export default function SettingsPage() {
     setIsSaved(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      await resilientSave(STORAGE_KEY, settings);
       setIsSaved(true);
       setTimeout(() => {
         setIsSaved(false);

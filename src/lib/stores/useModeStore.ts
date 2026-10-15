@@ -1,4 +1,10 @@
 import { create } from 'zustand';
+import {
+  safeLocalStorageGet,
+  safeLocalStorageSet,
+  resilientSave,
+  resilientSyncWithIndexedDb,
+} from '@/lib/storage/resilientStorage';
 
 export type AppMode = 'real' | 'demo';
 export type PaymentMethod = 'cash' | 'bizum' | 'transfer' | 'stripe';
@@ -199,13 +205,7 @@ export const DEMO_CLIENTS: RealClient[] = [
 ];
 
 function getClientOverrides(): Record<string, Partial<RealClient>> {
-  if (typeof window === 'undefined') return {};
-  try {
-    const raw = localStorage.getItem('nutriapp_client_overrides');
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+  return safeLocalStorageGet<Record<string, Partial<RealClient>>>('nutriapp_client_overrides', {});
 }
 
 export function findClientById(id: string, realClients?: RealClient[]): RealClient | null {
@@ -224,18 +224,11 @@ export function findClientById(id: string, realClients?: RealClient[]): RealClie
     if (found) return getMerged(found);
   }
 
-  // 2. Buscar en localStorage de clientes reales
+  // 2. Buscar en almacenamiento local resiliente de clientes reales
   if (typeof window !== 'undefined') {
-    try {
-      const saved = localStorage.getItem('nutriapp_real_clients');
-      if (saved) {
-        const parsed: RealClient[] = JSON.parse(saved);
-        const match = parsed.find((c) => c.id === id);
-        if (match) return getMerged(match);
-      }
-    } catch {
-      // Ignorar error de lectura de localStorage
-    }
+    const parsed = safeLocalStorageGet<RealClient[]>('nutriapp_real_clients', []);
+    const match = parsed.find((c) => c.id === id);
+    if (match) return getMerged(match);
   }
 
   // 3. Buscar en el catálogo de clientes demo
@@ -275,23 +268,12 @@ const CLIENTS_STORAGE_KEY = 'nutriapp_real_clients';
 
 // Obtener modo inicial seguro para SSR (por defecto 'demo' para exploración inicial y tests E2E)
 function getInitialMode(): AppMode {
-  if (typeof window === 'undefined') return 'demo';
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved === 'real' ? 'real' : 'demo';
-  } catch {
-    return 'demo';
-  }
+  const saved = safeLocalStorageGet<string>(STORAGE_KEY, 'demo');
+  return saved === 'real' ? 'real' : 'demo';
 }
 
 function getInitialRealClients(): RealClient[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const saved = localStorage.getItem(CLIENTS_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
+  return safeLocalStorageGet<RealClient[]>(CLIENTS_STORAGE_KEY, []);
 }
 
 export const useModeStore = create<ModeState>((set, get) => ({
@@ -299,13 +281,7 @@ export const useModeStore = create<ModeState>((set, get) => ({
   realClients: getInitialRealClients(),
 
   setMode: (mode: AppMode) => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(STORAGE_KEY, mode);
-      } catch (e) {
-        console.warn('No se pudo guardar nutriapp_app_mode:', e);
-      }
-    }
+    safeLocalStorageSet(STORAGE_KEY, mode);
     set({ mode });
   },
 
@@ -329,25 +305,15 @@ export const useModeStore = create<ModeState>((set, get) => ({
     };
 
     const updated = [newClient, ...get().realClients];
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(updated));
-      } catch (e) {
-        console.warn('No se pudieron guardar los clientes reales:', e);
-      }
-    }
+    // Persistencia híbrida a prueba de QuotaExceededError (IndexedDB + localStorage)
+    resilientSave(CLIENTS_STORAGE_KEY, updated);
     set({ realClients: updated });
   },
 
   updateRealClient: (id, updates) => {
     const updated = get().realClients.map((c) => (c.id === id ? { ...c, ...updates } : c));
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(updated));
-      } catch (e) {
-        console.warn('No se pudieron actualizar los clientes reales:', e);
-      }
-    }
+    // Persistencia híbrida a prueba de QuotaExceededError (IndexedDB + localStorage)
+    resilientSave(CLIENTS_STORAGE_KEY, updated);
     set({ realClients: updated });
   },
 
@@ -386,17 +352,13 @@ export const useModeStore = create<ModeState>((set, get) => ({
       paymentHistory: [newRecord, ...existingHistory],
     };
 
-    // 1. Guardar en overrides para demo y persistencia
+    // 1. Guardar en overrides para demo y persistencia resiliente
     if (typeof window !== 'undefined') {
-      try {
-        const overrides = getClientOverrides();
-        overrides[clientId] = { ...(overrides[clientId] || {}), ...updates };
-        if (clientId === 'client-1') overrides['c2'] = overrides[clientId];
-        if (clientId === 'c2') overrides['client-1'] = overrides[clientId];
-        localStorage.setItem('nutriapp_client_overrides', JSON.stringify(overrides));
-      } catch (e) {
-        console.warn('Error guardando overrides de clientes:', e);
-      }
+      const overrides = getClientOverrides();
+      overrides[clientId] = { ...(overrides[clientId] || {}), ...updates };
+      if (clientId === 'client-1') overrides['c2'] = overrides[clientId];
+      if (clientId === 'c2') overrides['client-1'] = overrides[clientId];
+      resilientSave('nutriapp_client_overrides', overrides);
     }
 
     // 2. Si existe en realClients, actualizarlo en la lista
@@ -413,3 +375,16 @@ export const useModeStore = create<ModeState>((set, get) => ({
     return findClientById(id, get().realClients) || undefined;
   },
 }));
+
+// Sincronización transparente con IndexedDB (capacidad ilimitada) en cliente
+if (typeof window !== 'undefined') {
+  resilientSyncWithIndexedDb<RealClient[]>(
+    CLIENTS_STORAGE_KEY,
+    getInitialRealClients(),
+    (idbClients) => {
+      if (Array.isArray(idbClients) && idbClients.length > 0) {
+        useModeStore.setState({ realClients: idbClients });
+      }
+    }
+  );
+}
