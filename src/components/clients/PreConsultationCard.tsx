@@ -9,6 +9,7 @@ import {
   IconCopy,
   IconCheck,
   IconBrandWhatsapp,
+  IconMail,
   IconAlertTriangle,
   IconAlertCircle,
   IconActivity,
@@ -20,20 +21,24 @@ import {
   IconExternalLink,
 } from '@tabler/icons-react';
 import { BRISTOL_DESCRIPTIONS } from '@/components/clients/DigestiveSymptomTracker';
+import { generateWhatsAppLink, generateMailtoLink, contactTemplates } from '@/lib/utils/contactLinks';
 
 interface PreConsultationCardProps {
   onboardingData?: ClientOnboardingProfile | null;
   clientId?: string;
   clientName?: string;
+  clientPhone?: string;
+  clientEmail?: string;
 }
 
 export const PreConsultationCard: React.FC<PreConsultationCardProps> = ({
   onboardingData,
   clientId = 'client-1',
   clientName = 'Carlos Gómez Pardo',
+  clientPhone = '+34 600 11 22 33',
+  clientEmail = 'carlos.paciente@example.com',
 }) => {
   const [copied, setCopied] = useState(false);
-  const [simulatedSent, setSimulatedSent] = useState(false);
 
   const token = onboardingData?.onboardingToken || 'token_carlos_gomez_2026';
   const appBaseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
@@ -48,10 +53,9 @@ export const PreConsultationCard: React.FC<PreConsultationCardProps> = ({
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const handleSimulateN8nWhatsApp = () => {
-    setSimulatedSent(true);
-    setTimeout(() => setSimulatedSent(false), 3000);
-  };
+  const template = contactTemplates.preConsultation(clientName, preConsultationUrl);
+  const whatsappUrl = generateWhatsAppLink(clientPhone, template.whatsapp);
+  const mailtoUrl = generateMailtoLink(clientEmail, template.emailSubject, template.emailBody);
 
   return (
     <Card className="space-y-4 border-[var(--border)] overflow-hidden">
@@ -93,7 +97,7 @@ export const PreConsultationCard: React.FC<PreConsultationCardProps> = ({
         </div>
 
         {/* Acciones de enlace rápido */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
           <Button
             variant="secondary"
             onClick={handleCopyLink}
@@ -104,15 +108,25 @@ export const PreConsultationCard: React.FC<PreConsultationCardProps> = ({
             <span>{copied ? '¡Copiado!' : 'Copiar enlace'}</span>
           </Button>
 
-          <Button
-            variant="ghost"
-            onClick={handleSimulateN8nWhatsApp}
-            className="h-[30px] px-2.5 text-[12px] text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-950/50"
-            title="Simular disparo de n8n por WhatsApp"
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 h-[30px] px-2.5 text-[12px] font-medium rounded-[8px] text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-950/70 border border-emerald-500/20 transition-colors"
+            title="Abrir WhatsApp con el cuestionario listo para enviar"
           >
             <IconBrandWhatsapp size={14} />
-            <span>{simulatedSent ? 'Enviado vía n8n' : 'WhatsApp'}</span>
-          </Button>
+            <span>Enviar por WhatsApp</span>
+          </a>
+
+          <a
+            href={mailtoUrl}
+            className="inline-flex items-center gap-1.5 h-[30px] px-2.5 text-[12px] font-medium rounded-[8px] text-blue-700 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-950/70 border border-blue-500/20 transition-colors"
+            title="Abrir correo con el cuestionario listo para enviar"
+          >
+            <IconMail size={14} />
+            <span>Enviar por Email</span>
+          </a>
         </div>
       </div>
 

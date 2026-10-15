@@ -11,14 +11,19 @@ import {
   IconX,
   IconUserPlus,
   IconUsers,
+  IconBrandWhatsapp,
+  IconMail,
 } from '@tabler/icons-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card, Badge, Button, Input } from '@/components/ui/nutri-ui';
 import { useModeStore, RealClient } from '@/lib/stores/useModeStore';
+import { generateWhatsAppLink, generateMailtoLink, contactTemplates } from '@/lib/utils/contactLinks';
 
 interface ClientItem {
   id: string;
   name: string;
+  email?: string;
+  phone?: string;
   plan: string;
   status: 'Activo' | 'Pendiente de revisión' | 'Inactivo';
   lastAppointment: string;
@@ -27,14 +32,14 @@ interface ClientItem {
 }
 
 const DEMO_CLIENTS: ClientItem[] = [
-  { id: 'c1', name: 'Marta Morales Sánchez', plan: 'Plan Definición 8S', status: 'Activo', lastAppointment: '06 oct, 09:00', nextAppointment: '20 oct, 09:00', hasDiet: true },
-  { id: 'c2', name: 'Carlos Gómez Pardo', plan: 'Recomposición', status: 'Activo', lastAppointment: '29 sep, 11:30', nextAppointment: '13 oct, 11:30', hasDiet: true },
-  { id: 'c3', name: 'Lucía Fernández Díaz', plan: 'Pérdida de Grasa', status: 'Activo', lastAppointment: '15 sep, 16:00', nextAppointment: '13 oct, 16:00', hasDiet: true },
-  { id: 'c4', name: 'Javier Navarro Soler', plan: 'Salud Intestinal', status: 'Pendiente de revisión', lastAppointment: 'Sin citas', nextAppointment: '13 oct, 18:15', hasDiet: false },
-  { id: 'c5', name: 'Elena Ramos Vidal', plan: 'Rendimiento Running', status: 'Activo', lastAppointment: '01 oct, 10:00', nextAppointment: '22 oct, 10:00', hasDiet: true },
-  { id: 'c6', name: 'David Torres Marín', plan: 'Recomposición', status: 'Activo', lastAppointment: '24 sep, 17:00', nextAppointment: '24 oct, 17:00', hasDiet: true },
-  { id: 'c7', name: 'Patricia Ortiz Cano', plan: 'Plan Definición 8S', status: 'Activo', lastAppointment: '10 oct, 09:30', nextAppointment: '27 oct, 09:30', hasDiet: true },
-  { id: 'c8', name: 'Andrés Gil Velasco', plan: 'Pérdida de Grasa', status: 'Inactivo', lastAppointment: '12 ago, 12:00', nextAppointment: 'Sin agendar', hasDiet: false },
+  { id: 'c1', name: 'Marta Morales Sánchez', email: 'marta.morales@example.com', phone: '+34 611 223 344', plan: 'Plan Definición 8S', status: 'Activo', lastAppointment: '06 oct, 09:00', nextAppointment: '20 oct, 09:00', hasDiet: true },
+  { id: 'c2', name: 'Carlos Gómez Pardo', email: 'carlos.paciente@example.com', phone: '+34 600 112 233', plan: 'Recomposición', status: 'Activo', lastAppointment: '29 sep, 11:30', nextAppointment: '13 oct, 11:30', hasDiet: true },
+  { id: 'c3', name: 'Lucía Fernández Díaz', email: 'lucia.fernandez@example.com', phone: '+34 622 334 455', plan: 'Pérdida de Grasa', status: 'Activo', lastAppointment: '15 sep, 16:00', nextAppointment: '13 oct, 16:00', hasDiet: true },
+  { id: 'c4', name: 'Javier Navarro Soler', email: 'javier.navarro@example.com', phone: '+34 633 445 566', plan: 'Salud Intestinal', status: 'Pendiente de revisión', lastAppointment: 'Sin citas', nextAppointment: '13 oct, 18:15', hasDiet: false },
+  { id: 'c5', name: 'Elena Ramos Vidal', email: 'elena.ramos@example.com', phone: '+34 644 556 677', plan: 'Rendimiento Running', status: 'Activo', lastAppointment: '01 oct, 10:00', nextAppointment: '22 oct, 10:00', hasDiet: true },
+  { id: 'c6', name: 'David Torres Marín', email: 'david.torres@example.com', phone: '+34 655 667 788', plan: 'Recomposición', status: 'Activo', lastAppointment: '24 sep, 17:00', nextAppointment: '24 oct, 17:00', hasDiet: true },
+  { id: 'c7', name: 'Patricia Ortiz Cano', email: 'patricia.ortiz@example.com', phone: '+34 666 778 899', plan: 'Plan Definición 8S', status: 'Activo', lastAppointment: '10 oct, 09:30', nextAppointment: '27 oct, 09:30', hasDiet: true },
+  { id: 'c8', name: 'Andrés Gil Velasco', email: 'andres.gil@example.com', phone: '+34 677 889 900', plan: 'Pérdida de Grasa', status: 'Inactivo', lastAppointment: '12 ago, 12:00', nextAppointment: 'Sin agendar', hasDiet: false },
 ];
 
 export default function ClientsPage() {
@@ -236,13 +241,45 @@ export default function ClientsPage() {
                             )}
                           </td>
                           <td className="p-[8px_12px] text-right">
-                            <button
-                              type="button"
-                              className="p-1 rounded-[6px] text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)]"
-                              aria-label="Acciones de cliente"
-                            >
-                              <IconDots size={16} stroke={1.5} />
-                            </button>
+                            <div className="flex items-center justify-end gap-1">
+                              {client.phone && (
+                                <a
+                                  href={generateWhatsAppLink(
+                                    client.phone,
+                                    `¡Hola ${client.name.split(' ')[0]}! Te escribo de la consulta de nutrición.`
+                                  )}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1.5 rounded-[6px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+                                  title={`Enviar WhatsApp a ${client.name} (${client.phone})`}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <IconBrandWhatsapp size={16} stroke={1.75} />
+                                </a>
+                              )}
+                              {client.email && (
+                                <a
+                                  href={generateMailtoLink(
+                                    client.email,
+                                    `Consulta de Nutrición - ${client.name}`,
+                                    `Hola ${client.name.split(' ')[0]},\n\n`
+                                  )}
+                                  className="p-1.5 rounded-[6px] text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
+                                  title={`Enviar email a ${client.email}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <IconMail size={16} stroke={1.75} />
+                                </a>
+                              )}
+                              <Link
+                                href={`/clients/${client.id}`}
+                                className="p-1.5 rounded-[6px] text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)] transition-colors inline-flex"
+                                title="Ver ficha médica completa"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <IconDots size={16} stroke={1.5} />
+                              </Link>
+                            </div>
                           </td>
                         </tr>
                       );

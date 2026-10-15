@@ -8,10 +8,13 @@ import {
   IconClock,
   IconUser,
   IconVideo,
+  IconBrandWhatsapp,
+  IconMail,
 } from '@tabler/icons-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card, Badge, Button, Input } from '@/components/ui/nutri-ui';
 import { useModeStore } from '@/lib/stores/useModeStore';
+import { generateWhatsAppLink, generateMailtoLink, contactTemplates } from '@/lib/utils/contactLinks';
 
 interface CalendarEvent {
   id: string;
@@ -283,8 +286,48 @@ export default function AppointmentsPage() {
             <div className="pt-4 border-t border-[var(--border)] flex flex-col gap-2">
               {selectedEvent ? (
                 <>
-                  <Button variant="primary">Marcar como completada</Button>
-                  <Button variant="secondary">Reprogramar cita</Button>
+                  <a
+                    href={generateWhatsAppLink(
+                      '+34600112233',
+                      contactTemplates.appointmentReminder(
+                        selectedEvent.clientName,
+                        'esta semana',
+                        `${selectedEvent.startHour}:00`
+                      ).whatsapp
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 h-[36px] px-3 rounded-[8px] font-medium text-[13px] text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition-colors"
+                    title="Abrir WhatsApp con recordatorio personalizado de cita"
+                  >
+                    <IconBrandWhatsapp size={16} />
+                    <span>Recordar por WhatsApp</span>
+                  </a>
+
+                  <a
+                    href={generateMailtoLink(
+                      'paciente@example.com',
+                      contactTemplates.appointmentReminder(
+                        selectedEvent.clientName,
+                        'esta semana',
+                        `${selectedEvent.startHour}:00`
+                      ).emailSubject,
+                      contactTemplates.appointmentReminder(
+                        selectedEvent.clientName,
+                        'esta semana',
+                        `${selectedEvent.startHour}:00`
+                      ).emailBody
+                    )}
+                    className="flex items-center justify-center gap-2 h-[36px] px-3 rounded-[8px] font-medium text-[13px] text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-950/70 border border-blue-500/20 transition-colors"
+                    title="Enviar recordatorio por correo electrónico"
+                  >
+                    <IconMail size={16} />
+                    <span>Recordar por Email</span>
+                  </a>
+
+                  <div className="h-[1px] bg-[var(--border)] my-1" />
+
+                  <Button variant="secondary">Marcar como completada</Button>
                   <Button variant="ghost" className="text-[var(--danger-text)]">
                     Cancelar cita
                   </Button>

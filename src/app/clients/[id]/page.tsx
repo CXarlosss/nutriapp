@@ -14,6 +14,8 @@ import {
   IconMicrophone,
   IconSparkles,
   IconX,
+  IconBrandWhatsapp,
+  IconMail,
 } from '@tabler/icons-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card, Badge, Button, Avatar } from '@/components/ui/nutri-ui';
@@ -25,6 +27,7 @@ import { ClinicalVoiceAssistantModal } from '@/components/clients/ClinicalVoiceA
 import { getClientOnboardingData } from '@/lib/services/onboardingService';
 import { ClientOnboardingProfile } from '@/types/diet';
 import { ClinicalStructuredExtraction } from '@/types/clinicalVoice';
+import { generateWhatsAppLink, generateMailtoLink, contactTemplates } from '@/lib/utils/contactLinks';
 
 export default function ClientDetailPage() {
   return (
@@ -82,10 +85,26 @@ function ClientDetailContent() {
                 </span>
                 <Badge variant="success">Activo</Badge>
               </div>
-              <div className="text-[13px] text-[var(--text-secondary)] font-[400] flex flex-wrap gap-x-3 gap-y-1">
-                <span>carlos.paciente@example.com</span>
+              <div className="text-[13px] text-[var(--text-secondary)] font-[400] flex flex-wrap items-center gap-x-3 gap-y-1">
+                <a
+                  href="mailto:carlos.paciente@example.com?subject=Consulta%20Nutrici%C3%B3n%20Carlos%20G%C3%B3mez"
+                  className="hover:text-[var(--brand-solid)] hover:underline inline-flex items-center gap-1"
+                  title="Abrir correo electrónico"
+                >
+                  <IconMail size={14} className="text-[var(--text-muted)]" />
+                  <span>carlos.paciente@example.com</span>
+                </a>
                 <span>•</span>
-                <span className="tabular-nums font-mono">+34 600 11 22 33</span>
+                <a
+                  href={generateWhatsAppLink('+34600112233', contactTemplates.appointmentReminder('Carlos', 'este jueves', '17:00').whatsapp)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="tabular-nums font-mono hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline inline-flex items-center gap-1"
+                  title="Abrir chat en WhatsApp"
+                >
+                  <IconBrandWhatsapp size={14} className="text-emerald-600 dark:text-emerald-400" />
+                  <span>+34 600 11 22 33</span>
+                </a>
                 <span>•</span>
                 <span>Plan Recomposición</span>
               </div>
@@ -93,14 +112,34 @@ function ClientDetailContent() {
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            <a
+              href={generateWhatsAppLink('+34600112233', contactTemplates.dietDelivery('Carlos').whatsapp)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 h-[34px] px-3 text-[13px] font-medium rounded-[8px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-950/70 border border-emerald-500/30 transition-colors"
+              title="Abrir WhatsApp con mensaje personalizado"
+            >
+              <IconBrandWhatsapp size={16} />
+              <span>WhatsApp</span>
+            </a>
+
+            <a
+              href="mailto:carlos.paciente@example.com?subject=Seguimiento%20Nutricional%20-%20Carlos%20G%C3%B3mez&body=Hola%20Carlos,%0A%0A%C2%BFC%C3%B3mo%20llevas%20las%20pautas%20de%20esta%20semana?%20Cualquier%20duda%20estoy%20a%20tu%20disposici%C3%B3n.%0A%0AUn%20saludo!"
+              className="inline-flex items-center gap-1.5 h-[34px] px-3 text-[13px] font-medium rounded-[8px] text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-950/70 border border-blue-500/30 transition-colors"
+              title="Enviar correo electrónico"
+            >
+              <IconMail size={16} />
+              <span>Email</span>
+            </a>
+
             <Button
               variant="secondary"
               data-testid="voice-assistant-trigger-btn"
               onClick={() => setIsVoiceModalOpen(true)}
-              className="border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/60 flex items-center gap-1.5 text-[13px]"
+              className="border-purple-500/40 text-purple-700 dark:text-purple-300 bg-purple-50/50 dark:bg-purple-950/30 hover:bg-purple-100/60 dark:hover:bg-purple-950/60 flex items-center gap-1.5 text-[13px]"
               title="Iniciar consulta asistida por voz con Whisper y extracción SOAP"
             >
-              <IconMicrophone size={16} className="text-emerald-500 animate-pulse" />
+              <IconMicrophone size={16} className="text-purple-500 animate-pulse" />
               <span>Dictado Clínico IA</span>
             </Button>
             <Link href="/appointments">
