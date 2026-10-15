@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/retention-check",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/outbox/dispatch",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
