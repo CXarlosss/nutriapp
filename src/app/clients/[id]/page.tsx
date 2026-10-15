@@ -18,6 +18,13 @@ import {
   IconMail,
   IconMessageDots,
   IconCalendarEvent,
+  IconCoins,
+  IconDeviceMobile,
+  IconBuildingBank,
+  IconReceipt,
+  IconCreditCard,
+  IconSend,
+  IconCheck,
 } from '@tabler/icons-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card, Badge, Button, Avatar } from '@/components/ui/nutri-ui';
@@ -27,6 +34,8 @@ import { MedicationInteractionsPanel } from '@/components/clients/MedicationInte
 import { PreConsultationCard } from '@/components/clients/PreConsultationCard';
 import { ClinicalVoiceAssistantModal } from '@/components/clients/ClinicalVoiceAssistantModal';
 import { ClientMessageTemplatesModal } from '@/components/clients/ClientMessageTemplatesModal';
+import { ManualPaymentModal } from '@/components/clients/ManualPaymentModal';
+import { requestPaymentForClientAction } from '@/app/actions/billingOutboxActions';
 import { getClientOnboardingData } from '@/lib/services/onboardingService';
 import { ClientOnboardingProfile } from '@/types/diet';
 import { useModeStore, findClientById, RealClient } from '@/lib/stores/useModeStore';
@@ -91,6 +100,33 @@ function ClientDetailContent() {
   // Modales
   const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [isManualPaymentModalOpen, setIsManualPaymentModalOpen] = useState(false);
+  const [paymentSuccessToast, setPaymentSuccessToast] = useState<string | null>(null);
+  const [isStripeLoading, setIsStripeLoading] = useState(false);
+  const [stripeLinkGenerated, setStripeLinkGenerated] = useState<string | null>(null);
+
+  const handleGenerateStripeLink = async () => {
+    setIsStripeLoading(true);
+    try {
+      const res = await requestPaymentForClientAction({
+        clientId: client.id,
+        clientName: client.name,
+        clientEmail: client.email,
+      });
+      if (res.success && res.checkoutUrl) {
+        setStripeLinkGenerated(res.checkoutUrl);
+        navigator.clipboard.writeText(res.checkoutUrl);
+        setPaymentSuccessToast('Enlace de Stripe Checkout copiado al portapapeles y registrado en Outbox para n8n.');
+        setTimeout(() => setPaymentSuccessToast(null), 6000);
+      } else {
+        alert(res.error || 'No se pudo generar el enlace de Stripe Checkout');
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Error al conectar con Stripe');
+    } finally {
+      setIsStripeLoading(false);
+    }
+  };
 
   // Estado Asistido por Voz
   const [currentWeight, setCurrentWeight] = useState(76.4);
@@ -261,6 +297,23 @@ function ClientDetailContent() {
               <IconMicrophone size={16} className="text-purple-500 animate-pulse" />
               <span>Dictado Clínico IA</span>
             </Button>
+
+            {/* Botón Mágico: Marcar pago manual (Bizum / Efectivo / Transferencia - 0% comisión) */}
+            <Button
+              variant="secondary"
+              data-testid="manual-payment-btn"
+              onClick={() => setIsManualPaymentModalOpen(true)}
+              className={`h-[34px] px-3 text-[13px] flex items-center gap-1.5 transition-all cursor-pointer ${
+                client.status !== 'Activo'
+                  ? 'border-emerald-500/60 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200 font-semibold ring-2 ring-emerald-500/30 shadow-sm'
+                  : 'border-emerald-500/30 text-emerald-800 dark:text-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20 hover:bg-emerald-100/60'
+              }`}
+              title="Registrar cobro presencial (Bizum, Efectivo, Banco) sin comisiones de Stripe"
+            >
+              <IconCoins size={16} className="text-emerald-600 dark:text-emerald-400" />
+              <span>{client.status !== 'Activo' ? '💰 Cobrar y Activar' : '💰 Marcar Pago'}</span>
+            </Button>
+
             <Link href="/appointments">
               <Button variant="secondary">Agendar cita</Button>
             </Link>
@@ -701,17 +754,242 @@ function ClientDetailContent() {
         )}
 
         {/* ─────────────────────────────────────────────────────────────
-            PESTAÑA PAGOS
+            PESTAÑA PAGOS (Centro de Facturación Híbrido: Presencial + Online)
             ───────────────────────────────────────────────────────────── */}
         {activeTab === 'Pagos' && (
-          <Card className="space-y-3">
-            <h2 className="text-[14px] font-[500] text-[var(--text)]">Historial de pagos</h2>
-            <div className="text-[13px] text-[var(--text-secondary)]">
-              Suscripción para {client.name} ({client.plan}) gestionada de forma directa. Estado: {client.status}.
+          <div className="space-y-4">
+            {/* Métricas y Estado Actual */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <Card className="p-4 space-y-1">
+                <span className="text-[11px] text-[var(--text-secondary)] uppercase font-semibold tracking-wider">
+                  Estado de Suscripción
+                </span>
+                <div className="flex items-center gap-2 pt-1">
+                  <Badge variant={client.status === 'Activo' ? 'success' : client.status === 'Pendiente de revisión' ? 'warning' : 'neutral'}>
+                    {client.status}
+                  </Badge>
+                  {client.status === 'Activo' && (
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Al día</span>
+                  )}
+                </div>
+              </Card>
+
+              <Card className="p-4 space-y-1">
+                <span className="text-[11px] text-[var(--text-secondary)] uppercase font-semibold tracking-wider">
+                  Método de Pago Habitual
+                </span>
+                <div className="flex items-center gap-2 pt-1">
+                  {client.paymentMethod === 'bizum' && (
+                    <span className="inline-flex items-center gap-1.5 font-medium text-[13px] text-emerald-700 dark:text-emerald-300">
+                      <IconDeviceMobile size={16} className="text-emerald-500" /> Bizum (0% comisión)
+                    </span>
+                  )}
+                  {client.paymentMethod === 'cash' && (
+                    <span className="inline-flex items-center gap-1.5 font-medium text-[13px] text-emerald-700 dark:text-emerald-300">
+                      <IconCoins size={16} className="text-emerald-500" /> Efectivo (0% comisión)
+                    </span>
+                  )}
+                  {client.paymentMethod === 'transfer' && (
+                    <span className="inline-flex items-center gap-1.5 font-medium text-[13px] text-blue-700 dark:text-blue-300">
+                      <IconBuildingBank size={16} className="text-blue-500" /> Transferencia SEPA
+                    </span>
+                  )}
+                  {(!client.paymentMethod || client.paymentMethod === 'stripe') && (
+                    <span className="inline-flex items-center gap-1.5 font-medium text-[13px] text-purple-700 dark:text-purple-300">
+                      <IconCreditCard size={16} className="text-purple-500" /> Tarjeta Stripe Online
+                    </span>
+                  )}
+                </div>
+              </Card>
+
+              <Card className="p-4 space-y-1">
+                <span className="text-[11px] text-[var(--text-secondary)] uppercase font-semibold tracking-wider">
+                  Último Pago Registrado
+                </span>
+                <div className="text-[14px] font-mono font-medium text-[var(--text)] pt-1">
+                  {client.lastPaymentAt || 'Sin registros'}
+                </div>
+              </Card>
+
+              <Card className="p-4 space-y-1">
+                <span className="text-[11px] text-[var(--text-secondary)] uppercase font-semibold tracking-wider">
+                  Próxima Renovación
+                </span>
+                <div className="text-[14px] font-mono font-medium text-[var(--brand-solid)] pt-1">
+                  {client.renewalDate || (client.status === 'Activo' ? '30 días desde último pago' : 'Pendiente de cobro')}
+                </div>
+              </Card>
             </div>
-          </Card>
+
+            {/* Opciones de Cobro: Presencial vs Online */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Opción A: Cobro en Mano o Bizum (Presencial - 0% comisiones) */}
+              <Card className="p-5 border-emerald-500/30 bg-emerald-50/20 dark:bg-emerald-950/10 space-y-3 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-semibold text-[15px]">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                        <IconCoins size={18} />
+                      </div>
+                      <span>Cobro en Consulta (Presencial)</span>
+                    </div>
+                    <Badge variant="success">0% Comisión</Badge>
+                  </div>
+                  <p className="text-[12px] text-[var(--text-secondary)] leading-relaxed">
+                    Registra un pago recibido en metálico o por Bizum directamente en clínica. El paciente se reactiva al instante sin pagar comisiones a pasarelas bancarias externas.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <Button
+                    variant="primary"
+                    onClick={() => setIsManualPaymentModalOpen(true)}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 h-[36px]"
+                  >
+                    <IconCoins size={16} />
+                    <span>Marcar Cobro Manual (Efectivo / Bizum)</span>
+                  </Button>
+                </div>
+              </Card>
+
+              {/* Opción B: Cobro Automatizado Online (Stripe) */}
+              <Card className="p-5 border-[var(--border)] bg-[var(--card-subtle)] space-y-3 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-[var(--text)] font-semibold text-[15px]">
+                      <div className="w-8 h-8 rounded-lg bg-[var(--brand-bg)] text-[var(--brand-solid)] flex items-center justify-center">
+                        <IconCreditCard size={18} />
+                      </div>
+                      <span>Cobro Automatizado (Online)</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-[var(--text-muted)]">Stripe Checkout</span>
+                  </div>
+                  <p className="text-[12px] text-[var(--text-secondary)] leading-relaxed">
+                    Para pacientes online o a distancia. Genera un enlace de pago seguro cifrado con tarjeta bancaria que se envía automáticamente por WhatsApp o email.
+                  </p>
+                </div>
+                <div className="pt-2 flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={handleGenerateStripeLink}
+                    disabled={isStripeLoading}
+                    className="flex-1 flex items-center justify-center gap-2 h-[36px]"
+                  >
+                    <IconSend size={15} />
+                    <span>{isStripeLoading ? 'Generando...' : 'Generar Link Stripe'}</span>
+                  </Button>
+                  {client.phone && stripeLinkGenerated && (
+                    <a
+                      href={generateWhatsAppLink(
+                        client.phone,
+                        `¡Hola ${client.name.split(' ')[0]}! Puedes renovar tu suscripción de ${client.plan} de forma rápida y segura desde este enlace: ${stripeLinkGenerated}`
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-[36px] px-3 rounded-lg bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center justify-center"
+                      title="Enviar enlace Stripe por WhatsApp"
+                    >
+                      <IconBrandWhatsapp size={16} />
+                    </a>
+                  )}
+                </div>
+              </Card>
+            </div>
+
+            {/* Historial de Transacciones */}
+            <Card className="space-y-3">
+              <div className="flex items-center justify-between border-b border-[var(--border)] pb-2.5">
+                <div className="flex items-center gap-2">
+                  <IconReceipt size={17} className="text-[var(--text-secondary)]" />
+                  <h2 className="text-[14px] font-[500] text-[var(--text)]">
+                    Historial de Transacciones y Recibos
+                  </h2>
+                </div>
+                <span className="text-[11px] text-[var(--text-muted)] font-mono">
+                  {client.paymentHistory?.length || 1} registros
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-[12px] text-left">
+                  <thead>
+                    <tr className="border-b border-[var(--border)] text-[var(--text-secondary)] text-[11px]">
+                      <th className="py-2 px-3 font-semibold">Fecha</th>
+                      <th className="py-2 px-3 font-semibold">Concepto</th>
+                      <th className="py-2 px-3 font-semibold">Método</th>
+                      <th className="py-2 px-3 font-semibold">Periodo</th>
+                      <th className="py-2 px-3 font-semibold text-right">Importe</th>
+                      <th className="py-2 px-3 font-semibold text-right">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border)]">
+                    {(client.paymentHistory && client.paymentHistory.length > 0
+                      ? client.paymentHistory
+                      : [
+                          {
+                            id: 'p-initial',
+                            date: client.lastPaymentAt || '29 sep 2026',
+                            amountEur: client.lastPaymentAmountEur || 79,
+                            method: client.paymentMethod || 'cash',
+                            periodDays: 30,
+                            concept: `Plan ${client.plan} - Renovación Mensual`,
+                            notes: 'Cobro registrado en clínica.',
+                          },
+                        ]
+                    ).map((p, idx) => (
+                      <tr key={p.id || idx} className="hover:bg-[var(--card-subtle)] transition-colors">
+                        <td className="py-2.5 px-3 font-mono text-[11px] text-[var(--text)]">{p.date}</td>
+                        <td className="py-2.5 px-3">
+                          <div className="font-medium text-[var(--text)]">{p.concept}</div>
+                          {p.notes && <div className="text-[10px] text-[var(--text-secondary)]">{p.notes}</div>}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className="inline-flex items-center gap-1 font-mono uppercase text-[10px] px-2 py-0.5 rounded-full bg-[var(--card-subtle)] border border-[var(--border)]">
+                            {p.method === 'bizum' && '📱 Bizum'}
+                            {p.method === 'cash' && '💵 Efectivo'}
+                            {p.method === 'transfer' && '🏦 Banco'}
+                            {p.method === 'stripe' && '💳 Stripe'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-[var(--text-secondary)]">{p.periodDays} días</td>
+                        <td className="py-2.5 px-3 font-mono font-semibold text-right text-[var(--text)] tabular-nums">
+                          {p.amountEur} €
+                        </td>
+                        <td className="py-2.5 px-3 text-right">
+                          <Badge variant="success">Completado</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </div>
         )}
       </div>
+
+      {/* Toast de Éxito de Pago */}
+      {paymentSuccessToast && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-emerald-900 text-white shadow-2xl border border-emerald-500/40 flex items-center gap-3 animate-fadeIn">
+          <div className="w-8 h-8 rounded-full bg-emerald-500/30 flex items-center justify-center text-emerald-300 shrink-0">
+            <IconCheck size={18} />
+          </div>
+          <div>
+            <span className="font-semibold text-[13px] block">Cobro Registrado</span>
+            <span className="text-[12px] text-emerald-200">{paymentSuccessToast}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cobro Manual en Consulta (Bizum / Efectivo / Transferencia) */}
+      <ManualPaymentModal
+        isOpen={isManualPaymentModalOpen}
+        onClose={() => setIsManualPaymentModalOpen(false)}
+        client={client}
+        onSuccess={(msg) => {
+          setPaymentSuccessToast(msg);
+          setTimeout(() => setPaymentSuccessToast(null), 6000);
+        }}
+      />
 
       {/* Modal Catálogo de Plantillas Clínicas */}
       <ClientMessageTemplatesModal

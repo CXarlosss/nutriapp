@@ -14,10 +14,13 @@ import {
   IconUsers,
   IconBrandWhatsapp,
   IconMail,
+  IconCoins,
+  IconCheck,
 } from '@tabler/icons-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card, Badge, Button, Input } from '@/components/ui/nutri-ui';
 import { useModeStore, DEMO_CLIENTS, RealClient } from '@/lib/stores/useModeStore';
+import { ManualPaymentModal } from '@/components/clients/ManualPaymentModal';
 import { generateWhatsAppLink, generateMailtoLink, contactTemplates, getSmartClientContact } from '@/lib/utils/contactLinks';
 
 export default function ClientsPage() {
@@ -34,6 +37,8 @@ export default function ClientsPage() {
   const [newClientEmail, setNewClientEmail] = useState('');
   const [newClientPhone, setNewClientPhone] = useState('');
   const [newClientPlan, setNewClientPlan] = useState('Plan Nutricional Estándar');
+  const [clientForPayment, setClientForPayment] = useState<RealClient | null>(null);
+  const [paymentToast, setPaymentToast] = useState<string | null>(null);
 
   const activeClients = mode === 'demo' ? DEMO_CLIENTS : realClients;
 
@@ -245,6 +250,17 @@ export default function ClientsPage() {
                               const contact = getSmartClientContact(client);
                               return (
                                 <div className="flex items-center justify-end gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setClientForPayment(client);
+                                    }}
+                                    className="p-1.5 rounded-[6px] text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
+                                    title={`Registrar cobro manual para ${client.name} (Bizum / Efectivo / Banco)`}
+                                  >
+                                    <IconCoins size={16} stroke={1.75} />
+                                  </button>
                                   {client.phone && (
                                     <a
                                       href={generateWhatsAppLink(client.phone, contact.whatsapp)}
@@ -359,6 +375,32 @@ export default function ClientsPage() {
                   </Button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Cobro Manual en Consulta (Bizum / Efectivo / Banco) */}
+        {clientForPayment && (
+          <ManualPaymentModal
+            isOpen={!!clientForPayment}
+            onClose={() => setClientForPayment(null)}
+            client={clientForPayment}
+            onSuccess={(msg) => {
+              setPaymentToast(msg);
+              setTimeout(() => setPaymentToast(null), 5000);
+            }}
+          />
+        )}
+
+        {/* Toast de Éxito de Cobro */}
+        {paymentToast && (
+          <div className="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-emerald-900 text-white shadow-2xl border border-emerald-500/40 flex items-center gap-3 animate-fadeIn">
+            <div className="w-8 h-8 rounded-full bg-emerald-500/30 flex items-center justify-center text-emerald-300 shrink-0">
+              <IconCheck size={18} />
+            </div>
+            <div>
+              <span className="font-semibold text-[13px] block">Cobro Registrado</span>
+              <span className="text-[12px] text-emerald-200">{paymentToast}</span>
             </div>
           </div>
         )}

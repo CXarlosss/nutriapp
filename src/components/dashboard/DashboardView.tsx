@@ -18,11 +18,13 @@ import {
   IconX,
   IconStethoscope,
   IconChartLine,
+  IconCoins,
 } from '@tabler/icons-react';
 import { Card, MetricCard, Badge, Button, Input } from '@/components/ui/nutri-ui';
 import { requestPaymentForClientAction } from '@/app/actions/billingOutboxActions';
+import { ManualPaymentModal } from '@/components/clients/ManualPaymentModal';
 import { RetentionBusinessDashboard } from './RetentionBusinessDashboard';
-import { useModeStore } from '@/lib/stores/useModeStore';
+import { useModeStore, findClientById, RealClient } from '@/lib/stores/useModeStore';
 
 interface AppointmentItem {
   id: string;
@@ -92,6 +94,8 @@ export function DashboardView() {
     checkoutUrl: string;
     eventId: string;
   } | null>(null);
+  const [clientForManualPayment, setClientForManualPayment] = useState<RealClient | null>(null);
+  const [manualPaymentToast, setManualPaymentToast] = useState<string | null>(null);
 
   const activeClientsData: ClientRow[] = useMemo(() => {
     if (mode === 'demo') return ALL_CLIENTS;
@@ -436,16 +440,38 @@ export function DashboardView() {
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <Badge variant={statusVariant}>{client.status}</Badge>
                           {client.status !== 'Activo' && (
-                            <button
-                              type="button"
-                              onClick={() => handleRequestPayment(client)}
-                              disabled={checkoutLoading === client.id}
-                              className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-colors inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                              title="Generar enlace de pago seguro y registrar en Outbox para n8n"
-                            >
-                              <IconSend size={11} />
-                              <span>{checkoutLoading === client.id ? 'Generando...' : 'Solicitar Pago'}</span>
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const resolved = findClientById(client.id, realClients) || {
+                                    id: client.id,
+                                    name: client.name,
+                                    plan: client.plan,
+                                    status: 'Pendiente de revisión',
+                                    lastAppointment: 'Sin citas',
+                                    nextAppointment: client.nextAppointment,
+                                    hasDiet: client.hasDiet,
+                                  };
+                                  setClientForManualPayment(resolved);
+                                }}
+                                className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-400/40 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                                title="Registrar cobro manual (Bizum / Efectivo / Banco) al 0% de comisión"
+                              >
+                                <IconCoins size={11} className="text-emerald-600 dark:text-emerald-400" />
+                                <span>💰 Cobrado</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRequestPayment(client)}
+                                disabled={checkoutLoading === client.id}
+                                className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700 transition-colors inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                title="Generar enlace de Stripe Checkout y registrar en Outbox para n8n"
+                              >
+                                <IconSend size={11} />
+                                <span>{checkoutLoading === client.id ? '...' : 'Stripe'}</span>
+                              </button>
+                            </div>
                           )}
                         </div>
                       </td>
@@ -603,6 +629,32 @@ export function DashboardView() {
                 Cerrar
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cobro Manual (Bizum / Efectivo / Banco) */}
+      {clientForManualPayment && (
+        <ManualPaymentModal
+          isOpen={!!clientForManualPayment}
+          onClose={() => setClientForManualPayment(null)}
+          client={clientForManualPayment}
+          onSuccess={(msg) => {
+            setManualPaymentToast(msg);
+            setTimeout(() => setManualPaymentToast(null), 5000);
+          }}
+        />
+      )}
+
+      {/* Toast de Éxito de Cobro */}
+      {manualPaymentToast && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-emerald-900 text-white shadow-2xl border border-emerald-500/40 flex items-center gap-3 animate-fadeIn">
+          <div className="w-8 h-8 rounded-full bg-emerald-500/30 flex items-center justify-center text-emerald-300 shrink-0">
+            <IconCheck size={18} />
+          </div>
+          <div>
+            <span className="font-semibold text-[13px] block">Cobro Registrado</span>
+            <span className="text-[12px] text-emerald-200">{manualPaymentToast}</span>
           </div>
         </div>
       )}
