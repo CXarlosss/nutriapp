@@ -59,7 +59,7 @@ export const PublishedDietModal: React.FC<PublishedDietModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 top-[56px] z-40 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
       <div className="bg-[var(--card)] border border-[var(--border)] rounded-[16px] shadow-2xl max-w-lg w-full overflow-hidden animate-scaleUp">
         {/* Cabecera de Éxito */}
         <div className="p-5 bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-transparent border-b border-[var(--border)] flex items-start justify-between">

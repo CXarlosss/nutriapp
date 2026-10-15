@@ -22,15 +22,15 @@ import { Badge, Button } from '@/components/ui/nutri-ui';
 import { RecipeBankPanel } from './RecipeBankPanel';
 
 export const ClinicalAuditScorecard: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-      setIsOpen(true);
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setIsOpen(false);
     }
   }, []);
 
-  const [activeTab, setActiveTab] = useState<'recipes' | 'cdss'>('recipes');
+  const [activeTab, setActiveTab] = useState<'recipes' | 'cdss'>('cdss');
   const [selectedAlert, setSelectedAlert] = useState<any | null>(null);
   const {
     items,

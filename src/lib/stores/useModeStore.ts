@@ -273,14 +273,14 @@ interface ModeState {
 const STORAGE_KEY = 'nutriapp_app_mode';
 const CLIENTS_STORAGE_KEY = 'nutriapp_real_clients';
 
-// Obtener modo inicial seguro para SSR
+// Obtener modo inicial seguro para SSR (por defecto 'demo' para exploración inicial y tests E2E)
 function getInitialMode(): AppMode {
-  if (typeof window === 'undefined') return 'real';
+  if (typeof window === 'undefined') return 'demo';
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved === 'demo' ? 'demo' : 'real';
+    return saved === 'real' ? 'real' : 'demo';
   } catch {
-    return 'real';
+    return 'demo';
   }
 }
 

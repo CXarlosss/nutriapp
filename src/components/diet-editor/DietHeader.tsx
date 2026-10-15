@@ -73,7 +73,7 @@ export const DietHeader: React.FC = () => {
       {/* ─────────────────────────────────────────────────────────────
           BARRA SUPERIOR FIJA (Altura 56px, fondo blanco, borde inf 1px)
           ───────────────────────────────────────────────────────────── */}
-      <header className="h-[56px] bg-[var(--card)] border-b border-[var(--border)] px-4 sm:px-6 flex items-center justify-between gap-4 sticky top-0 z-30 select-none">
+      <header className="h-[56px] bg-[var(--card)] border-b border-[var(--border)] px-4 sm:px-6 flex items-center justify-between gap-4 sticky top-0 z-50 select-none">
         {/* Izquierda: Volver, nombre de la dieta editable, chip cliente */}
         <div className="flex items-center gap-3 min-w-0">
           <Link

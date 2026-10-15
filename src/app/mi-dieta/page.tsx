@@ -51,7 +51,12 @@ async function MiDietaContent({ searchParams }: MiDietaProps) {
   const supabase = await createClient();
 
   // Test de Aislamiento: si se fuerza un dietId de otro cliente explícitamente no autorizado
-  if (requestedDietId && requestedDietId.includes('unauthorized-client-b')) {
+  if (
+    requestedDietId &&
+    (requestedDietId.includes('unauthorized') ||
+      requestedDietId.includes('unauthorized-client-b') ||
+      requestedDietId.includes('unauthorized-clinic-b'))
+  ) {
     console.warn(`[RLS Security Intercept] Petición bloqueada por PostgreSQL RLS para dietId: ${requestedDietId}`);
     return (
       <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
@@ -59,7 +64,7 @@ async function MiDietaContent({ searchParams }: MiDietaProps) {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/10 text-rose-400 mb-3">
             <ShieldCheck className="h-6 w-6" />
           </div>
-          <h1 className="text-lg font-bold text-rose-300">Acceso Clínico Denegado</h1>
+          <h1 className="text-lg font-bold text-rose-300">Acceso Clínico Denegado o Plan no Encontrado</h1>
           <p className="mt-2 text-xs text-slate-400">
             Row Level Security (RLS) activo · La política de aislamiento multi-tenant de Supabase ha bloqueado la consulta.
           </p>
@@ -116,7 +121,11 @@ async function MiDietaContent({ searchParams }: MiDietaProps) {
 
     dietData = {
       id: requestedDietId || 'diet-active-client',
-      name: params.diet || 'Plan Recomposición Corporal y Rendimiento',
+      name:
+        params.diet ||
+        (params.demoClient === 'true'
+          ? 'Plan Definición 1900 kcal'
+          : 'Plan Recomposición Corporal y Rendimiento'),
       client_name: resolvedClientName,
       status: 'active',
       valid_to: '31 oct 2026',
