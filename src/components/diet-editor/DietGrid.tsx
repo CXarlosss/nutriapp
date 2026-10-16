@@ -77,6 +77,7 @@ export const DietGrid: React.FC = () => {
   const [dragOverCell, setDragOverCell] = useState<{ dayIndex: number; mealSlot: MealSlotType } | null>(null);
   const [recipeSlotToSave, setRecipeSlotToSave] = useState<{ dayIndex: number; mealSlot: MealSlotType; items: DietItem[] } | null>(null);
   const [activeMobileDay, setActiveMobileDay] = useState<number>(1);
+  const [unpackedSlotKey, setUnpackedSlotKey] = useState<string | null>(null);
 
   const scrollToDay = (dayIndex: number) => {
     setActiveMobileDay(dayIndex);
@@ -138,6 +139,20 @@ export const DietGrid: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isEditingCell, moveFocus, startEditing, stopEditing]);
+
+  // Listener para animación de desempaquetado disparada desde el panel lateral de recetas
+  useEffect(() => {
+    const handleUnpackEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ dayIndex: number; mealSlot: MealSlotType }>;
+      if (customEvent.detail) {
+        setUnpackedSlotKey(`${customEvent.detail.dayIndex}-${customEvent.detail.mealSlot}`);
+        setTimeout(() => setUnpackedSlotKey(null), 1800);
+      }
+    };
+
+    window.addEventListener('nutriapp:recipe-unpacked', handleUnpackEvent);
+    return () => window.removeEventListener('nutriapp:recipe-unpacked', handleUnpackEvent);
+  }, []);
 
   return (
     <div className="w-full space-y-3 pb-8">
@@ -414,6 +429,8 @@ export const DietGrid: React.FC = () => {
                           if (payload.type === 'RECIPE') {
                             // Desempaquetado Mágico de Receta a Alimentos Atómicos
                             unpackRecipeToSlot(day.index, slot.key, payload);
+                            setUnpackedSlotKey(`${day.index}-${slot.key}`);
+                            setTimeout(() => setUnpackedSlotKey(null), 1800);
                             setDraggingItemId(null);
                             setDragOverCell(null);
                             return;
@@ -458,209 +475,267 @@ export const DietGrid: React.FC = () => {
                         <div className="h-2.5 bg-slate-800/40 rounded-[4px] w-1/2" />
                       </div>
                     ) : (
-                      /* Chips apilados (radio 6px, 12px) con soporte Meal Prep y Drag Magnético */
-                      <div className="space-y-1.5">
-                        <AnimatePresence>
+                      /* Lista de Alimentos con Desempaquetado Cinético y Cascada a 60 FPS (Framer Motion) */
+                      <motion.ul
+                        layout
+                        className="space-y-1.5 list-none p-0 m-0"
+                        transition={{ layout: { type: 'spring', stiffness: 380, damping: 28 } }}
+                      >
+                        <AnimatePresence mode="popLayout" initial={false}>
                           {isDragTarget && (
-                            <motion.div
+                            <motion.li
+                              key="drag-indicator"
+                              layout
                               initial={{ opacity: 0, scale: 0.95, height: 0 }}
                               animate={{ opacity: 1, scale: 1, height: 'auto' }}
                               exit={{ opacity: 0, scale: 0.95, height: 0 }}
                               transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-                              className="border-2 border-dashed border-emerald-500 rounded-[6px] py-1 px-1.5 text-center text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 mb-1.5 shadow-xs"
+                              className="border-2 border-dashed border-emerald-500 rounded-[6px] py-1 px-1.5 text-center text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 mb-1.5 shadow-xs list-none"
                             >
                               🧲 Soltar alimento (Snap Magnético)
-                            </motion.div>
+                            </motion.li>
                           )}
-                        </AnimatePresence>
 
-                        {items.map((item, idx) => {
-                          const isModified = Boolean(item.isModified);
-                          const isAdded = !item.foodId;
-                          const hasNotes = Boolean(item.notes || item.mealPrepNotes);
-                          const isEditingNote = editingPrepNoteItemId === item.id;
-                          const isBeingDragged = draggingItemId === item.id;
-
-                          let chipStyle = 'bg-white border border-[var(--border)] text-[var(--text)]';
-                          if (isModified || isAdded) {
-                            chipStyle = 'bg-[var(--brand-bg)] text-[var(--brand-text)] border border-[var(--brand-border)]';
-                          }
-
-                          return (
-                            <motion.div
-                              key={item.id || idx}
+                          {unpackedSlotKey === `${day.index}-${slot.key}` && (
+                            <motion.li
+                              key="unpacked-banner"
                               layout
-                              layoutId={`diet-item-${item.id}`}
-                              transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-                              draggable={!isAiLoading}
-                              onDragStart={(e: any) => {
-                                e.dataTransfer.setData('text/plain', item.id);
-                                e.dataTransfer.effectAllowed = 'move';
-                                setDraggingItemId(item.id);
-                              }}
-                              onDragEnd={() => {
-                                setDraggingItemId(null);
-                                setDragOverCell(null);
-                              }}
-                              whileHover={{ scale: 1.015 }}
-                              whileTap={{ scale: 0.98 }}
-                              className={`space-y-1 cursor-grab active:cursor-grabbing select-none ${
-                                isBeingDragged ? 'opacity-35 scale-95' : ''
-                              }`}
+                              initial={{ opacity: 0, y: -10, scale: 0.92 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -6, scale: 0.9, height: 0, marginBottom: 0, overflow: 'hidden' }}
+                              transition={{ duration: 0.25 }}
+                              className="list-none text-[10px] font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-700/60 rounded px-1.5 py-0.5 flex items-center justify-between gap-1 shadow-xs"
                             >
-                              <div
-                                className={`group px-2 py-1 rounded-[6px] text-[12px] font-[400] flex items-center justify-between gap-1 transition-all ${chipStyle}`}
+                              <span className="flex items-center gap-1">
+                                <span className="text-[11px]">✨</span>
+                                <span>Receta desempaquetada</span>
+                              </span>
+                              <span className="text-[9px] opacity-70">60 FPS</span>
+                            </motion.li>
+                          )}
+
+                          {items.map((item, idx) => {
+                            const isModified = Boolean(item.isModified);
+                            const isAdded = !item.foodId;
+                            const hasNotes = Boolean(item.notes || item.mealPrepNotes);
+                            const isEditingNote = editingPrepNoteItemId === item.id;
+                            const isBeingDragged = draggingItemId === item.id;
+
+                            let chipStyle = 'bg-white border border-[var(--border)] text-[var(--text)]';
+                            if (isModified || isAdded) {
+                              chipStyle = 'bg-[var(--brand-bg)] text-[var(--brand-text)] border border-[var(--brand-border)]';
+                            }
+
+                            return (
+                              <motion.li
+                                key={item.id}
+                                layout
+                                initial={{ opacity: 0, y: -18, scale: 0.92 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{
+                                  opacity: 0,
+                                  scale: 0.85,
+                                  height: 0,
+                                  marginTop: 0,
+                                  marginBottom: 0,
+                                  overflow: 'hidden',
+                                  transition: { duration: 0.2, ease: 'easeOut' },
+                                }}
+                                transition={{
+                                  layout: { type: 'spring', stiffness: 400, damping: 28 },
+                                  opacity: { duration: 0.25 },
+                                  y: {
+                                    type: 'spring',
+                                    stiffness: 420,
+                                    damping: 22,
+                                    mass: 0.75,
+                                    delay: (idx % 8) * 0.045, // Cascada matemática: cada ingrediente cae con un ligero rebote
+                                  },
+                                  scale: {
+                                    type: 'spring',
+                                    stiffness: 420,
+                                    damping: 22,
+                                    delay: (idx % 8) * 0.045,
+                                  },
+                                }}
+                                draggable={!isAiLoading}
+                                onDragStart={(e: any) => {
+                                  e.dataTransfer.setData('text/plain', item.id);
+                                  e.dataTransfer.effectAllowed = 'move';
+                                  setDraggingItemId(item.id);
+                                }}
+                                onDragEnd={() => {
+                                  setDraggingItemId(null);
+                                  setDragOverCell(null);
+                                }}
+                                whileHover={{ scale: 1.015 }}
+                                whileTap={{ scale: 0.98 }}
+                                className={`space-y-1 cursor-grab active:cursor-grabbing select-none list-none ${
+                                  isBeingDragged ? 'opacity-35 scale-95' : ''
+                                }`}
                               >
-                                <span className="truncate flex-1" title={`${item.foodName} (${item.quantity} ${item.unit || 'g'})`}>
-                                  <span className="clinical-reading">{item.foodName}</span> · <span className="tabular-nums font-mono font-medium">{item.quantity} {item.unit || 'g'}</span>
-                                </span>
-
-                                <div className="flex items-center gap-1 shrink-0">
-                                  {/* Botón de Nota de Preparación (Meal Prep) */}
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (isEditingNote) {
-                                        setEditingPrepNoteItemId(null);
-                                      } else {
-                                        setEditingPrepNoteItemId(item.id);
-                                        setPrepNoteInput(item.mealPrepNotes || item.notes || '');
-                                      }
-                                    }}
-                                    className={`p-0.5 rounded transition-colors ${
-                                      hasNotes
-                                        ? 'text-amber-500 hover:text-amber-600'
-                                        : 'opacity-0 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--text)]'
-                                    }`}
-                                    title={hasNotes ? `Meal Prep: ${item.mealPrepNotes || item.notes}` : 'Añadir nota de preparación (Meal Prep)'}
-                                  >
-                                    <IconNote size={13} stroke={hasNotes ? 2 : 1.5} />
-                                  </button>
-
-                                  {/* Botón Eliminar */}
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      removeItem(item.id);
-                                    }}
-                                    className="opacity-0 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--danger-text)] transition-opacity"
-                                    title="Eliminar alimento"
-                                  >
-                                    <IconTrash size={12} />
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* Badge visible de Meal Prep en la celda */}
-                              {hasNotes && !isEditingNote && (
                                 <div
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingPrepNoteItemId(item.id);
-                                    setPrepNoteInput(item.mealPrepNotes || item.notes || '');
-                                  }}
-                                  className="text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-300/60 dark:border-amber-700/50 rounded px-1.5 py-0.5 flex items-center gap-1 cursor-pointer hover:bg-amber-100/60 dark:hover:bg-amber-900/40 transition-colors"
-                                  title="Clic para editar instrucción de Meal Prep"
+                                  className={`group px-2 py-1 rounded-[6px] text-[12px] font-[400] flex items-center justify-between gap-1 transition-all ${chipStyle}`}
                                 >
-                                  <span className="shrink-0 text-[11px]">🥣</span>
-                                  <span className="truncate">{item.mealPrepNotes || item.notes}</span>
-                                </div>
-                              )}
+                                  <span className="truncate flex-1" title={`${item.foodName} (${item.quantity} ${item.unit || 'g'})`}>
+                                    <span className="clinical-reading">{item.foodName}</span> · <span className="tabular-nums font-mono font-medium">{item.quantity} {item.unit || 'g'}</span>
+                                  </span>
 
-                              {/* Editor interactivo de Nota de Meal Prep */}
-                              {isEditingNote && (
-                                <div
-                                  className="p-1.5 rounded-[6px] bg-[var(--card)] border border-amber-400 shadow-md space-y-1 text-[11px] animate-fadeIn"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <div className="flex items-center justify-between text-[10px] font-[500] text-amber-600 dark:text-amber-400">
-                                    <span>Instrucción Meal Prep:</span>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {/* Botón de Nota de Preparación (Meal Prep) */}
                                     <button
                                       type="button"
-                                      onClick={() => setEditingPrepNoteItemId(null)}
-                                      className="text-[var(--text-muted)] hover:text-[var(--text)]"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (isEditingNote) {
+                                          setEditingPrepNoteItemId(null);
+                                        } else {
+                                          setEditingPrepNoteItemId(item.id);
+                                          setPrepNoteInput(item.mealPrepNotes || item.notes || '');
+                                        }
+                                      }}
+                                      className={`p-0.5 rounded transition-colors ${
+                                        hasNotes
+                                          ? 'text-amber-500 hover:text-amber-600'
+                                          : 'opacity-0 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--text)]'
+                                      }`}
+                                      title={hasNotes ? `Meal Prep: ${item.mealPrepNotes || item.notes}` : 'Añadir nota de preparación (Meal Prep)'}
                                     >
-                                      <IconX size={12} />
+                                      <IconNote size={13} stroke={hasNotes ? 2 : 1.5} />
+                                    </button>
+
+                                    {/* Botón Eliminar */}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeItem(item.id);
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--danger-text)] transition-opacity"
+                                      title="Eliminar alimento"
+                                    >
+                                      <IconTrash size={12} />
                                     </button>
                                   </div>
+                                </div>
 
-                                  <input
-                                    type="text"
-                                    autoFocus
-                                    placeholder="ej. Dejar en remojo la noche anterior..."
-                                    value={prepNoteInput}
-                                    onChange={(e) => setPrepNoteInput(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        updateItemNotes(item.id, prepNoteInput);
-                                        setEditingPrepNoteItemId(null);
-                                      } else if (e.key === 'Escape') {
-                                        setEditingPrepNoteItemId(null);
-                                      }
+                                {/* Badge visible de Meal Prep en la celda */}
+                                {hasNotes && !isEditingNote && (
+                                  <div
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingPrepNoteItemId(item.id);
+                                      setPrepNoteInput(item.mealPrepNotes || item.notes || '');
                                     }}
-                                    className="w-full px-1.5 py-1 text-[11px] rounded border border-[var(--border)] bg-[var(--card-subtle)] text-[var(--text)] focus:border-amber-500"
-                                  />
+                                    className="text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-300/60 dark:border-amber-700/50 rounded px-1.5 py-0.5 flex items-center gap-1 cursor-pointer hover:bg-amber-100/60 dark:hover:bg-amber-900/40 transition-colors"
+                                    title="Clic para editar instrucción de Meal Prep"
+                                  >
+                                    <span className="shrink-0 text-[11px]">🥣</span>
+                                    <span className="truncate">{item.mealPrepNotes || item.notes}</span>
+                                  </div>
+                                )}
 
-                                  {/* Sugerencias clínicas rápidas */}
-                                  <div className="flex flex-wrap gap-1 pt-0.5">
-                                    {[
-                                      'Dejar en remojo 8h',
-                                      'Cocinar y enfriar 24h',
-                                      'Consumir al instante',
-                                    ].map((sug) => (
+                                {/* Editor interactivo de Nota de Meal Prep */}
+                                {isEditingNote && (
+                                  <div
+                                    className="p-1.5 rounded-[6px] bg-[var(--card)] border border-amber-400 shadow-md space-y-1 text-[11px] animate-fadeIn"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <div className="flex items-center justify-between text-[10px] font-[500] text-amber-600 dark:text-amber-400">
+                                      <span>Instrucción Meal Prep:</span>
                                       <button
-                                        key={sug}
+                                        type="button"
+                                        onClick={() => setEditingPrepNoteItemId(null)}
+                                        className="text-[var(--text-muted)] hover:text-[var(--text)]"
+                                      >
+                                        <IconX size={12} />
+                                      </button>
+                                    </div>
+
+                                    <input
+                                      type="text"
+                                      autoFocus
+                                      placeholder="ej. Dejar en remojo la noche anterior..."
+                                      value={prepNoteInput}
+                                      onChange={(e) => setPrepNoteInput(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          updateItemNotes(item.id, prepNoteInput);
+                                          setEditingPrepNoteItemId(null);
+                                        } else if (e.key === 'Escape') {
+                                          setEditingPrepNoteItemId(null);
+                                        }
+                                      }}
+                                      className="w-full px-1.5 py-1 text-[11px] rounded border border-[var(--border)] bg-[var(--card-subtle)] text-[var(--text)] focus:border-amber-500"
+                                    />
+
+                                    {/* Sugerencias clínicas rápidas */}
+                                    <div className="flex flex-wrap gap-1 pt-0.5">
+                                      {[
+                                        'Dejar en remojo 8h',
+                                        'Cocinar y enfriar 24h',
+                                        'Consumir al instante',
+                                      ].map((sug) => (
+                                        <button
+                                          key={sug}
+                                          type="button"
+                                          onClick={() => {
+                                            setPrepNoteInput(sug);
+                                            updateItemNotes(item.id, sug);
+                                            setEditingPrepNoteItemId(null);
+                                          }}
+                                          className="text-[9px] px-1 py-0.2 bg-[var(--card-subtle)] hover:bg-amber-100/50 dark:hover:bg-amber-950/60 rounded border border-[var(--border)] text-[var(--text-secondary)]"
+                                        >
+                                          +{sug}
+                                        </button>
+                                      ))}
+                                    </div>
+
+                                    <div className="flex justify-end gap-1 pt-1 border-t border-[var(--border)]">
+                                      <button
                                         type="button"
                                         onClick={() => {
-                                          setPrepNoteInput(sug);
-                                          updateItemNotes(item.id, sug);
+                                          updateItemNotes(item.id, prepNoteInput);
                                           setEditingPrepNoteItemId(null);
                                         }}
-                                        className="text-[9px] px-1 py-0.2 bg-[var(--card-subtle)] hover:bg-amber-100/50 dark:hover:bg-amber-950/60 rounded border border-[var(--border)] text-[var(--text-secondary)]"
+                                        className="px-2 py-0.5 text-[10px] font-[500] bg-amber-500 hover:bg-amber-600 text-slate-950 rounded flex items-center gap-0.5"
                                       >
-                                        +{sug}
+                                        <IconCheck size={11} stroke={2} /> Guardar
                                       </button>
-                                    ))}
+                                    </div>
                                   </div>
+                                )}
+                              </motion.li>
+                            );
+                          })}
 
-                                  <div className="flex justify-end gap-1 pt-1 border-t border-[var(--border)]">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        updateItemNotes(item.id, prepNoteInput);
-                                        setEditingPrepNoteItemId(null);
-                                      }}
-                                      className="px-2 py-0.5 text-[10px] font-[500] bg-amber-500 hover:bg-amber-600 text-slate-950 rounded flex items-center gap-0.5"
-                                    >
-                                      <IconCheck size={11} stroke={2} /> Guardar
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </motion.div>
-                          );
-                        })}
-
-                        {items.length >= 2 && (
-                          <div className="pt-0.5 flex items-center justify-end">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setRecipeSlotToSave({ dayIndex: day.index, mealSlot: slot.key, items });
-                              }}
-                              className="text-[10px] text-purple-600 dark:text-purple-400 hover:text-purple-700 hover:underline flex items-center gap-0.5 opacity-40 hover:opacity-100 transition-opacity"
-                              title="Guardar estos alimentos como una nueva receta reutilizable"
+                          {items.length >= 2 && (
+                            <motion.li
+                              key="save-recipe-action"
+                              layout
+                              initial={{ opacity: 0, y: -4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="pt-0.5 flex items-center justify-end list-none"
                             >
-                              <IconToolsKitchen2 size={11} />
-                              <span>Guardar receta</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRecipeSlotToSave({ dayIndex: day.index, mealSlot: slot.key, items });
+                                }}
+                                className="text-[10px] text-purple-600 dark:text-purple-400 hover:text-purple-700 hover:underline flex items-center gap-0.5 opacity-40 hover:opacity-100 transition-opacity cursor-pointer"
+                                title="Guardar estos alimentos como una nueva receta reutilizable"
+                              >
+                                <IconToolsKitchen2 size={11} />
+                                <span>Guardar receta</span>
+                              </button>
+                            </motion.li>
+                          )}
+                        </AnimatePresence>
+                      </motion.ul>
                     )}
 
                     {/* Popover de edición rápida (ancho 280px) */}

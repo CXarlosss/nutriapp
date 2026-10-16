@@ -100,6 +100,13 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
     };
 
     unpackRecipeToSlot(targetDay, targetSlot, payload);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('nutriapp:recipe-unpacked', {
+          detail: { dayIndex: targetDay, mealSlot: targetSlot, name: recipe.name },
+        })
+      );
+    }
     setAddedRecipeId(recipe.id);
     if (onRecipeAdded) onRecipeAdded(recipe.name);
     setTimeout(() => setAddedRecipeId(null), 1500);
