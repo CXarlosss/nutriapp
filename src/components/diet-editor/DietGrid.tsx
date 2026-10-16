@@ -193,7 +193,7 @@ export const DietGrid: React.FC = () => {
               CABECERA DEL GRID (Columna fija sticky 100/120px + 7 Días)
               ───────────────────────────────────────────────────────────── */}
           <div className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] border-b border-[var(--border)] bg-[var(--card-subtle)]">
-            <div className="sticky left-0 z-20 bg-[var(--card-subtle)] p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)] text-[12px] font-[500] text-[var(--text-secondary)] flex items-center">
+            <div className="sticky left-0 z-20 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)] text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center">
               Comida
             </div>
 
@@ -208,8 +208,10 @@ export const DietGrid: React.FC = () => {
                   key={day.index}
                   className="snap-start scroll-ml-[100px] md:scroll-ml-0 p-[8px_10px] border-r border-[var(--border)] last:border-r-0 flex flex-col justify-between gap-1.5 relative"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[12px] font-[600] text-[var(--text)]">{day.name}</span>
+                  <div className="flex items-center justify-between pb-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      {day.name}
+                    </span>
                     <button
                       type="button"
                       onClick={() => setDayMenuOpen(dayMenuOpen === day.index ? null : day.index)}
@@ -359,10 +361,10 @@ export const DietGrid: React.FC = () => {
               key={slot.key}
               className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] border-b border-[var(--border)] min-h-[72px]"
             >
-              {/* Columna fija sticky 100px / 120px */}
-              <div className="sticky left-0 z-20 bg-[var(--card-subtle)] p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)] flex flex-col justify-center">
-                <div className="flex items-center gap-1.5 text-[11px] md:text-[12px] font-[500] text-[var(--text)]">
-                  <span className="text-[var(--text-secondary)] shrink-0">{slot.icon}</span>
+              {/* Columna fija sticky 100px / 120px con efecto cristal iOS */}
+              <div className="sticky left-0 z-20 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)] flex flex-col justify-center">
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  <span className="text-slate-500 dark:text-slate-400 shrink-0">{slot.icon}</span>
                   <span className="truncate">{slot.label}</span>
                 </div>
               </div>
@@ -763,7 +765,7 @@ export const DietGrid: React.FC = () => {
               FILA FINAL DE RESUMEN (Kcal y Macros P / C / G)
               ───────────────────────────────────────────────────────────── */}
           <div className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] bg-[var(--card-subtle)] border-t border-[var(--border)]">
-            <div className="sticky left-0 z-20 bg-[var(--card-subtle)] p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)] text-[12px] font-[500] text-[var(--text-secondary)] flex items-center">
+            <div className="sticky left-0 z-20 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)] text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center">
               Total día
             </div>
 
