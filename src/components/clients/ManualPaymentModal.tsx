@@ -11,7 +11,7 @@ import {
   IconReceipt,
   IconSparkles,
 } from '@tabler/icons-react';
-import { Button, Badge } from '@/components/ui/nutri-ui';
+import { Button, Badge, AnimatedCheckmark, fireCelebrationConfetti } from '@/components/ui/nutri-ui';
 import { recordManualPaymentAction } from '@/app/actions/manualPaymentActions';
 import { useModeStore, PaymentMethod, RealClient } from '@/lib/stores/useModeStore';
 
@@ -37,6 +37,8 @@ export const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
   const [notes, setNotes] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [confirmedAmount, setConfirmedAmount] = useState<number>(79);
 
   if (!isOpen) return null;
 
@@ -92,7 +94,9 @@ export const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
       });
 
       setLoading(false);
-      onClose();
+      setConfirmedAmount(finalAmount);
+      setIsSuccess(true);
+      fireCelebrationConfetti({ type: 'payment' });
 
       if (onSuccess) {
         onSuccess(result.message || `¡Cobro de ${finalAmount}€ registrado con éxito! Paciente activado.`);
@@ -101,6 +105,11 @@ export const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
       setError(err?.message || 'Error inesperado al registrar el cobro');
       setLoading(false);
     }
+  };
+
+  const handleCloseModal = () => {
+    setIsSuccess(false);
+    onClose();
   };
 
   return (
@@ -115,7 +124,7 @@ export const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-[16px] font-[600] text-[var(--text)]">
-                  Registrar Cobro Manual
+                  {isSuccess ? '¡Cobro Confirmado!' : 'Registrar Cobro Manual'}
                 </h2>
                 <Badge variant="success">0% Comisión</Badge>
               </div>
@@ -126,20 +135,56 @@ export const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleCloseModal}
             className="p-1 rounded-md text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)] transition-colors cursor-pointer"
           >
             <IconX size={18} />
           </button>
         </div>
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-[13px]">
-          {error && (
-            <div className="p-3 rounded-lg bg-[var(--danger-bg)] text-[var(--danger-text)] text-[12px] border border-[var(--danger-text)]/30">
-              {error}
+        {isSuccess ? (
+          /* Pantalla de Celebración & Dopamina del Cobro */
+          <div className="p-8 flex flex-col items-center justify-center text-center space-y-4 animate-scaleUp">
+            <AnimatedCheckmark size="lg" variant="gold" />
+
+            <div className="space-y-1.5">
+              <h3 className="text-[19px] font-[700] text-[var(--text)] tracking-tight">
+                ¡Cobro Registrado con Éxito! 🎉
+              </h3>
+              <p className="text-[13px] text-[var(--text-secondary)] max-w-sm mx-auto leading-relaxed">
+                Has cobrado <strong className="text-[var(--text)] font-[600]">{confirmedAmount} €</strong> a{' '}
+                <strong className="text-[var(--text)] font-[600]">{client.name}</strong> vía{' '}
+                <span className="uppercase font-mono font-semibold text-emerald-600 dark:text-emerald-400">{selectedMethod}</span>.
+              </p>
             </div>
-          )}
+
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[12px] font-[600]">
+              <span>💰 Te has ahorrado ~{stripeCommissionSaved} € en comisiones de Stripe</span>
+            </div>
+
+            <p className="text-[11.5px] text-[var(--text-muted)]">
+              Paciente activo por {periodDays} días. Registro sincronizado en tiempo real con el Outbox.
+            </p>
+
+            <div className="pt-2 w-full">
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleCloseModal}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-[600] h-[40px] shadow-sm cursor-pointer"
+              >
+                Listo, volver al panel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          /* Formulario */
+          <form onSubmit={handleSubmit} className="p-5 space-y-4 text-[13px]">
+            {error && (
+              <div className="p-3 rounded-lg bg-[var(--danger-bg)] text-[var(--danger-text)] text-[12px] border border-[var(--danger-text)]/30">
+                {error}
+              </div>
+            )}
 
           {/* 1. Selección de Método de Pago */}
           <div>
@@ -334,7 +379,8 @@ export const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
             </Button>
           </div>
         </form>
-      </div>
+      )}
     </div>
+  </div>
   );
 };

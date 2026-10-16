@@ -14,7 +14,7 @@ import {
   IconPrinter,
   IconExternalLink,
 } from '@tabler/icons-react';
-import { Button, Badge } from '@/components/ui/nutri-ui';
+import { Button, Badge, AnimatedCheckmark, fireCelebrationConfetti } from '@/components/ui/nutri-ui';
 import {
   generateWhatsAppLink,
   generateMailtoLink,
@@ -42,6 +42,12 @@ export const PublishedDietModal: React.FC<PublishedDietModalProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
 
+  React.useEffect(() => {
+    if (isOpen) {
+      fireCelebrationConfetti({ type: 'publish' });
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const appBaseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://nutriapp-cyan.vercel.app';
@@ -64,9 +70,7 @@ export const PublishedDietModal: React.FC<PublishedDietModalProps> = ({
         {/* Cabecera de Éxito */}
         <div className="p-5 bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-transparent border-b border-[var(--border)] flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <IconCircleCheck size={24} stroke={2} />
-            </div>
+            <AnimatedCheckmark size="sm" variant="brand" showSparkles={true} className="shrink-0" />
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-[16px] font-[600] text-[var(--text)]">

@@ -165,3 +165,9 @@ export function Skeleton({ className = '' }: { className?: string }) {
 
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps, EmptyStatePreset } from './EmptyState';
+
+export { AnimatedCheckmark } from './AnimatedCheckmark';
+export type { AnimatedCheckmarkProps } from './AnimatedCheckmark';
+
+export { fireCelebrationConfetti, firePaymentCelebration, firePublishCelebration } from '@/lib/ui/confetti';
+export type { ConfettiOptions } from '@/lib/ui/confetti';

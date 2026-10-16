@@ -20,7 +20,7 @@ import {
   IconDeviceFloppy,
   IconBookmark,
 } from '@tabler/icons-react';
-import { Button, Badge } from '@/components/ui/nutri-ui';
+import { Button, Badge, fireCelebrationConfetti } from '@/components/ui/nutri-ui';
 import { SaveAsTemplateModal } from './SaveAsTemplateModal';
 import { PublishedDietModal } from './PublishedDietModal';
 
@@ -63,6 +63,8 @@ export const DietHeader: React.FC = () => {
     }
     flushPendingMutations();
     setPublishSuccess(true);
+    setShowPublishedModal(true);
+    fireCelebrationConfetti({ type: 'publish' });
     setTimeout(() => setPublishSuccess(false), 5000);
   };
 
@@ -374,6 +376,8 @@ export const DietHeader: React.FC = () => {
                   setShowBlockerModal(false);
                   flushPendingMutations();
                   setPublishSuccess(true);
+                  setShowPublishedModal(true);
+                  fireCelebrationConfetti({ type: 'publish' });
                   setTimeout(() => setPublishSuccess(false), 5000);
                 }}
               >
