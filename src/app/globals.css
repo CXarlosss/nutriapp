@@ -2,9 +2,9 @@
 
 :root {
   /* Fondos y Superficies */
-  --bg: #F8FAFC;
+  --bg: #F5F4EF;
   --card: #FFFFFF;
-  --card-subtle: #F1F5F9;
+  --card-subtle: #FAFAF7;
 
   /* Bordes */
   --border: rgba(0, 0, 0, 0.10);

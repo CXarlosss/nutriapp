@@ -97,12 +97,12 @@ function DietDetailContent(props: {
       {/* Contenido Principal */}
       <div className="flex-1 flex overflow-hidden">
         {activeTab === 'plan' ? (
-          <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 bg-slate-50/50 dark:bg-[#151513]">
+          <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4">
             <NutrientCyclingBar />
             <DietGrid />
           </main>
         ) : (
-          <main className="flex-1 p-4 sm:p-6 overflow-y-auto max-w-4xl mx-auto w-full bg-slate-50/50 dark:bg-[#151513]">
+          <main className="flex-1 p-4 sm:p-6 overflow-y-auto max-w-4xl mx-auto w-full">
             <Card className="p-6 bg-white border border-slate-200 shadow-xs rounded-xl">
               <ClinicalAuditTimeline
                 streamId={streamId}

@@ -57,7 +57,7 @@ function DietCreatorContent() {
       {/* Área de trabajo: Cuadrícula Excel a la izquierda + Copiloto Científico CDSS a la derecha */}
       <div className="flex-1 flex overflow-hidden">
         {/* Hoja de cálculo limpia */}
-        <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 bg-slate-50/50 dark:bg-[#151513]">
+        <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4">
           <NutrientCyclingBar />
           <DietGrid />
         </main>
