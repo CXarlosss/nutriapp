@@ -10,10 +10,10 @@
   --border: rgba(0, 0, 0, 0.10);
   --border-strong: rgba(0, 0, 0, 0.20);
 
-  /* Textos */
-  --text: #1F1F1D;
-  --text-secondary: #5F5E5A;
-  --text-muted: #888780;
+  /* Textos de Alto Contraste y Máxima Legibilidad */
+  --text: #0F172A;
+  --text-secondary: #334155;
+  --text-muted: #475569;
 
   /* Marca / Acento */
   --brand-bg: #E1F5EE;

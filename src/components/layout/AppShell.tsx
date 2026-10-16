@@ -52,12 +52,12 @@ function NavLinks() {
             href={item.href}
             className={`h-[36px] px-[10px] rounded-[8px] flex items-center gap-[10px] text-[14px] transition-colors select-none ${
               active
-                ? 'bg-[rgba(0,0,0,0.06)] text-[var(--text)] font-[500]'
-                : 'text-[var(--text-secondary)] font-[400] hover:bg-[var(--card-subtle)] hover:text-[var(--text)]'
+                ? 'bg-slate-100 text-slate-950 font-bold border border-slate-200/60 shadow-xs'
+                : 'text-slate-800 font-medium hover:bg-slate-100 hover:text-slate-950'
             }`}
             title={item.label}
           >
-            <Icon size={18} className="shrink-0" stroke={1.5} />
+            <Icon size={19} className="shrink-0" stroke={1.75} />
             <span className="hidden lg:inline">{item.label}</span>
           </Link>
         );
@@ -86,10 +86,10 @@ function MobileNavLinks() {
             key={item.href}
             href={item.href}
             className={`flex flex-col items-center justify-center py-1 px-2 rounded-[8px] transition-colors ${
-              active ? 'text-[var(--brand-solid)] font-[500]' : 'text-[var(--text-secondary)] font-[400]'
+              active ? 'text-[var(--brand-solid)] font-bold' : 'text-slate-800 font-medium hover:text-slate-950'
             }`}
           >
-            <Icon size={20} stroke={1.5} />
+            <Icon size={20} stroke={1.75} />
             <span className="text-[11px] leading-tight mt-0.5">{item.label}</span>
           </Link>
         );
@@ -206,8 +206,8 @@ export function AppShell({ children }: AppShellProps) {
                       onClick={() => setIsMobileDrawerOpen(false)}
                       className={`h-[42px] px-3 rounded-[10px] flex items-center gap-3 text-[14px] transition-colors select-none ${
                         active
-                          ? 'bg-[var(--brand-bg)] text-[var(--brand-solid)] font-[600]'
-                          : 'text-[var(--text-secondary)] font-[400] hover:bg-[var(--card-subtle)] hover:text-[var(--text)]'
+                          ? 'bg-[var(--brand-bg)] text-[var(--brand-solid)] font-bold'
+                          : 'text-slate-800 font-semibold hover:bg-slate-100 hover:text-slate-950'
                       }`}
                     >
                       <Icon size={20} className="shrink-0" stroke={1.75} />
@@ -223,10 +223,10 @@ export function AppShell({ children }: AppShellProps) {
               <div className="flex items-center gap-2.5 min-w-0">
                 <Avatar initials={initials} size={36} />
                 <div className="min-w-0">
-                  <div className="text-[13px] font-[600] text-[var(--text)] truncate leading-tight">
+                  <div className="text-[13px] font-bold text-slate-950 truncate leading-tight">
                     {profile.fullName || 'Elena Pérez'}
                   </div>
-                  <div className="text-[11px] text-[var(--text-muted)] truncate">
+                  <div className="text-[11.5px] font-medium text-slate-700 truncate">
                     {profile.email || 'elenap.nutricionista@gmail.com'}
                   </div>
                 </div>
@@ -275,10 +275,10 @@ export function AppShell({ children }: AppShellProps) {
           <div className="flex items-center gap-2.5 min-w-0">
             <Avatar initials={initials} size={32} />
             <div className="hidden lg:block min-w-0">
-              <div className="text-[13px] font-[500] text-[var(--text)] truncate leading-none mb-1">
+              <div className="text-[13px] font-bold text-slate-950 truncate leading-none mb-1">
                 {profile.fullName || 'Elena Pérez'}
               </div>
-              <div className="text-[12px] text-[var(--text-muted)] truncate leading-none">
+              <div className="text-[12px] font-medium text-slate-700 truncate leading-none">
                 {profile.email || 'elenap.nutricionista@gmail.com'}
               </div>
             </div>

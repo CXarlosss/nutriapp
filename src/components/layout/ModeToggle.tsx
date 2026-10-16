@@ -20,32 +20,32 @@ export function ModeToggle() {
 
   return (
     <div className="flex flex-col gap-1.5 w-full">
-      <div className="flex items-center justify-between p-1 bg-[var(--bg)] border border-[var(--border)] rounded-lg text-xs">
+      <div className="flex items-center justify-between p-1 bg-slate-100/80 border border-slate-200 rounded-lg text-xs">
         <button
           type="button"
           onClick={() => setMode('real')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md font-medium transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md font-semibold transition-all ${
             mode === 'real'
-              ? 'bg-[var(--card)] text-[var(--text)] shadow-xs border border-[var(--border)]'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text)]'
+              ? 'bg-white text-slate-950 shadow-xs border border-slate-300'
+              : 'text-slate-700 hover:text-slate-950 hover:bg-slate-200/50'
           }`}
           title="Consulta Real: sin pacientes falsos, lista para tus pacientes propios"
         >
-          <IconBuildingHospital size={14} className={mode === 'real' ? 'text-emerald-500' : ''} />
+          <IconBuildingHospital size={14} className={mode === 'real' ? 'text-emerald-600' : 'text-slate-600'} />
           <span className="truncate">Mi Consulta</span>
         </button>
 
         <button
           type="button"
           onClick={() => setMode('demo')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md font-medium transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md font-semibold transition-all ${
             mode === 'demo'
-              ? 'bg-amber-500/15 text-amber-500 shadow-xs border border-amber-500/30 font-semibold'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text)]'
+              ? 'bg-amber-500/20 text-amber-900 shadow-xs border border-amber-500/40 font-bold'
+              : 'text-slate-700 hover:text-slate-950 hover:bg-slate-200/50'
           }`}
           title="Modo Demo: pacientes ficticios para probar y explorar"
         >
-          <IconFlask size={14} className={mode === 'demo' ? 'text-amber-500' : ''} />
+          <IconFlask size={14} className={mode === 'demo' ? 'text-amber-700' : 'text-slate-600'} />
           <span className="truncate">Modo Demo</span>
         </button>
       </div>

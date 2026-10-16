@@ -193,7 +193,7 @@ export const DietGrid: React.FC = () => {
               CABECERA DEL GRID (Columna fija sticky 100/120px + 7 Días)
               ───────────────────────────────────────────────────────────── */}
           <div className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] border-b border-[var(--border)] bg-white">
-            <div className="sticky left-0 z-20 bg-white p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center">
+            <div className="sticky left-0 z-20 bg-white p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center">
               Comida
             </div>
 
@@ -209,7 +209,7 @@ export const DietGrid: React.FC = () => {
                   className="snap-start scroll-ml-[100px] md:scroll-ml-0 p-[8px_10px] border-r border-[var(--border)] last:border-r-0 flex flex-col justify-between gap-1.5 relative"
                 >
                   <div className="flex items-center justify-between pb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
                       {day.name}
                     </span>
                     <button
@@ -363,8 +363,8 @@ export const DietGrid: React.FC = () => {
             >
               {/* Columna fija sticky 100px / 120px limpia y simple */}
               <div className="sticky left-0 z-20 bg-white p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] flex flex-col justify-center">
-                <div className="text-sm font-semibold text-slate-700 bg-white pb-2 flex items-center gap-1.5">
-                  <span className="text-slate-500 shrink-0">{slot.icon}</span>
+                <div className="text-sm font-bold text-slate-950 bg-white pb-2 flex items-center gap-1.5">
+                  <span className="text-slate-800 shrink-0">{slot.icon}</span>
                   <span className="truncate">{slot.label}</span>
                 </div>
               </div>
@@ -569,11 +569,11 @@ export const DietGrid: React.FC = () => {
                               >
                                 <div className="flex items-center justify-between gap-1.5">
                                   <span
-                                    className="truncate flex-1 text-[12px] font-medium text-slate-800 dark:text-slate-100 leading-snug"
+                                    className="truncate flex-1 text-[12.5px] font-semibold text-slate-950 dark:text-slate-100 leading-snug"
                                     title={`${item.foodName} (${item.quantity} ${item.unit || 'g'})`}
                                   >
-                                    <span className="clinical-reading font-medium">{item.foodName}</span> ·{' '}
-                                    <span className="tabular-nums font-mono font-semibold text-slate-500 dark:text-slate-400">
+                                    <span className="clinical-reading font-bold text-slate-950 dark:text-slate-50">{item.foodName}</span> ·{' '}
+                                    <span className="tabular-nums font-mono font-bold text-slate-800 dark:text-slate-200">
                                       {item.quantity} {item.unit || 'g'}
                                     </span>
                                   </span>
@@ -770,7 +770,7 @@ export const DietGrid: React.FC = () => {
               FILA FINAL DE RESUMEN (Kcal y Macros P / C / G)
               ───────────────────────────────────────────────────────────── */}
           <div className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] bg-white border-t border-[var(--border)]">
-            <div className="sticky left-0 z-20 bg-white p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center">
+            <div className="sticky left-0 z-20 bg-white p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center">
               Total día
             </div>
 
@@ -811,10 +811,10 @@ export const DietGrid: React.FC = () => {
                         : `${compliance.kcalDiff > 0 ? `+${compliance.kcalDiff}` : compliance.kcalDiff}k`}
                     </span>
                   </div>
-                  <div className="text-[10px] text-[var(--text-secondary)] font-mono tabular-nums">
+                  <div className="text-[10px] text-slate-900 font-bold font-mono tabular-nums">
                     P:{Math.round(totals.protein)} · C:{Math.round(totals.carbs)} · G:{Math.round(totals.fat)}
                   </div>
-                  <div className="text-[9px] text-[var(--text-muted)] font-mono tabular-nums truncate mt-0.5">
+                  <div className="text-[9px] text-slate-700 font-semibold font-mono tabular-nums truncate mt-0.5">
                     Obj: {dayConfig.targetCarbsG}g carb
                   </div>
                 </div>
@@ -827,7 +827,7 @@ export const DietGrid: React.FC = () => {
       {/* ─────────────────────────────────────────────────────────────
           LEYENDA Y ATAJOS INFERIORES
           ───────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[12px] text-[var(--text-secondary)] px-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[12px] text-slate-800 font-semibold px-1">
         {/* Leyenda de 3 cuadraditos de 10px */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
@@ -845,7 +845,7 @@ export const DietGrid: React.FC = () => {
         </div>
 
         {/* Atajos de teclado */}
-        <div className="flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
+        <div className="flex items-center gap-1 text-[11px] text-slate-700 font-medium">
           <IconInfoCircle size={14} />
           <span>Tab / Flechas para navegar · Enter para editar · Ctrl+C / Ctrl+V · Ctrl+Z deshacer</span>
         </div>
