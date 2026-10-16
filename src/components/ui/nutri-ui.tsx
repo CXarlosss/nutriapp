@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { motion } from 'framer-motion';
 
 // ==============================================================================
 // NUTRIAPP DESIGN SYSTEM COMPONENTS (Fidelidad 100% tokens oficiales)
@@ -91,26 +94,37 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   children: React.ReactNode;
 }
 
-export function Button({ variant = 'secondary', type = 'button', children, className = '', ...props }: ButtonProps) {
-  const baseStyles =
-    'h-[36px] px-3.5 rounded-[8px] text-[14px] font-[500] inline-flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] select-none';
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ variant = 'secondary', type = 'button', children, className = '', ...props }, ref) => {
+    const baseStyles =
+      'h-[36px] px-3.5 rounded-[8px] text-[14px] font-[500] inline-flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:pointer-events-none select-none';
 
-  let variantStyles = '';
-  if (variant === 'primary') {
-    variantStyles = 'bg-[var(--brand-solid)] text-[var(--brand-solid-text)] hover:opacity-95';
-  } else if (variant === 'secondary') {
-    variantStyles =
-      'bg-transparent border border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--card-subtle)]';
-  } else if (variant === 'ghost') {
-    variantStyles = 'bg-transparent text-[var(--text-secondary)] hover:bg-[var(--card-subtle)] hover:text-[var(--text)]';
+    let variantStyles = '';
+    if (variant === 'primary') {
+      variantStyles = 'bg-[var(--brand-solid)] text-[var(--brand-solid-text)] hover:opacity-95';
+    } else if (variant === 'secondary') {
+      variantStyles =
+        'bg-transparent border border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--card-subtle)]';
+    } else if (variant === 'ghost') {
+      variantStyles = 'bg-transparent text-[var(--text-secondary)] hover:bg-[var(--card-subtle)] hover:text-[var(--text)]';
+    }
+
+    return (
+      <motion.button
+        ref={ref}
+        type={type}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.95 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+        className={`${baseStyles} ${variantStyles} ${className}`}
+        {...(props as any)}
+      >
+        {children}
+      </motion.button>
+    );
   }
-
-  return (
-    <button type={type} className={`${baseStyles} ${variantStyles} ${className}`} {...props}>
-      {children}
-    </button>
-  );
-}
+);
+Button.displayName = 'Button';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;

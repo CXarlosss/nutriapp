@@ -530,11 +530,11 @@ export const DietGrid: React.FC = () => {
                               <motion.li
                                 key={item.id}
                                 layout
-                                initial={{ opacity: 0, y: -18, scale: 0.92 }}
+                                initial={{ opacity: 0, y: -20, scale: 0.9 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{
                                   opacity: 0,
-                                  scale: 0.85,
+                                  scale: 0.8,
                                   height: 0,
                                   marginTop: 0,
                                   marginBottom: 0,
@@ -542,21 +542,11 @@ export const DietGrid: React.FC = () => {
                                   transition: { duration: 0.2, ease: 'easeOut' },
                                 }}
                                 transition={{
-                                  layout: { type: 'spring', stiffness: 400, damping: 28 },
-                                  opacity: { duration: 0.25 },
-                                  y: {
-                                    type: 'spring',
-                                    stiffness: 420,
-                                    damping: 22,
-                                    mass: 0.75,
-                                    delay: (idx % 8) * 0.045, // Cascada matemática: cada ingrediente cae con un ligero rebote
-                                  },
-                                  scale: {
-                                    type: 'spring',
-                                    stiffness: 420,
-                                    damping: 22,
-                                    delay: (idx % 8) * 0.045,
-                                  },
+                                  layout: { type: 'spring', stiffness: 400, damping: 25 },
+                                  type: 'spring',
+                                  stiffness: 400,
+                                  damping: 25,
+                                  delay: (idx % 8) * 0.045, // Cascada matemática: cada ingrediente cae con un ligero rebote
                                 }}
                                 draggable={!isAiLoading}
                                 onDragStart={(e: any) => {
@@ -568,7 +558,7 @@ export const DietGrid: React.FC = () => {
                                   setDraggingItemId(null);
                                   setDragOverCell(null);
                                 }}
-                                whileHover={{ scale: 1.015 }}
+                                whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 className={`space-y-1 cursor-grab active:cursor-grabbing select-none list-none ${
                                   isBeingDragged ? 'opacity-35 scale-95' : ''
@@ -583,7 +573,9 @@ export const DietGrid: React.FC = () => {
 
                                   <div className="flex items-center gap-1 shrink-0">
                                     {/* Botón de Nota de Preparación (Meal Prep) */}
-                                    <button
+                                    <motion.button
+                                      whileHover={{ scale: 1.15 }}
+                                      whileTap={{ scale: 0.88 }}
                                       type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -594,7 +586,7 @@ export const DietGrid: React.FC = () => {
                                           setPrepNoteInput(item.mealPrepNotes || item.notes || '');
                                         }
                                       }}
-                                      className={`p-0.5 rounded transition-colors ${
+                                      className={`p-0.5 rounded transition-colors cursor-pointer ${
                                         hasNotes
                                           ? 'text-amber-500 hover:text-amber-600'
                                           : 'opacity-0 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--text)]'
@@ -602,20 +594,22 @@ export const DietGrid: React.FC = () => {
                                       title={hasNotes ? `Meal Prep: ${item.mealPrepNotes || item.notes}` : 'Añadir nota de preparación (Meal Prep)'}
                                     >
                                       <IconNote size={13} stroke={hasNotes ? 2 : 1.5} />
-                                    </button>
+                                    </motion.button>
 
                                     {/* Botón Eliminar */}
-                                    <button
+                                    <motion.button
+                                      whileHover={{ scale: 1.15 }}
+                                      whileTap={{ scale: 0.88 }}
                                       type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         removeItem(item.id);
                                       }}
-                                      className="opacity-0 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--danger-text)] transition-opacity"
+                                      className="opacity-0 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--danger-text)] transition-opacity cursor-pointer"
                                       title="Eliminar alimento"
                                     >
                                       <IconTrash size={12} />
-                                    </button>
+                                    </motion.button>
                                   </div>
                                 </div>
 
@@ -720,18 +714,21 @@ export const DietGrid: React.FC = () => {
                               transition={{ duration: 0.2 }}
                               className="pt-0.5 flex items-center justify-end list-none"
                             >
-                              <button
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.95 }}
+                                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setRecipeSlotToSave({ dayIndex: day.index, mealSlot: slot.key, items });
                                 }}
-                                className="text-[10px] text-purple-600 dark:text-purple-400 hover:text-purple-700 hover:underline flex items-center gap-0.5 opacity-40 hover:opacity-100 transition-opacity cursor-pointer"
+                                className="text-[10px] text-purple-600 dark:text-purple-400 hover:text-purple-700 hover:underline flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity cursor-pointer font-medium px-1.5 py-0.5 rounded bg-purple-50/50 dark:bg-purple-950/30 border border-purple-500/20 hover:border-purple-500/40"
                                 title="Guardar estos alimentos como una nueva receta reutilizable"
                               >
-                                <IconToolsKitchen2 size={11} />
-                                <span>Guardar receta</span>
-                              </button>
+                                <span className="text-[11px]">🥣</span>
+                                <span>Guardar como receta</span>
+                              </motion.button>
                             </motion.li>
                           )}
                         </AnimatePresence>

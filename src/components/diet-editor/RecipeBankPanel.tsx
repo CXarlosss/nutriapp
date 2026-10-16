@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import {
   IconSearch,
   IconClock,
@@ -194,10 +195,13 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
             const isCustom = recipe.id.startsWith('rec-custom-');
 
             return (
-              <div
+              <motion.div
                 key={recipe.id}
                 draggable
-                onDragStart={(e) => handleDragStart(e, recipe)}
+                onDragStart={(e: any) => handleDragStart(e, recipe)}
+                whileHover={{ scale: 1.018 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                 className="group relative p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] hover:border-purple-500/40 hover:shadow-md transition-all cursor-grab active:cursor-grabbing select-none"
               >
                 {/* Cabecera de la tarjeta */}
@@ -213,17 +217,19 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {isCustom && (
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.88 }}
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           deleteRecipe(recipe.id);
                         }}
-                        className="text-[var(--text-muted)] hover:text-[var(--danger-text)] p-0.5"
+                        className="text-[var(--text-muted)] hover:text-[var(--danger-text)] p-0.5 cursor-pointer"
                         title="Eliminar receta personalizada"
                       >
                         <IconTrash size={12} />
-                      </button>
+                      </motion.button>
                     )}
                     <Badge variant="brand" className="text-[10px] px-1.5 py-0.5 font-mono">
                       {kcal} kcal
@@ -272,13 +278,16 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
                 {/* Botón de Inserción Rápida con 1 clic al slot enfocado */}
                 <div className="flex items-center justify-between pt-1.5 border-t border-[var(--border)] text-[10px] text-[var(--text-muted)]">
                   <span>Arrastra o pulsa +</span>
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.92 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleAddDirectly(recipe);
                     }}
-                    className={`h-[22px] px-2 rounded-[5px] text-[10px] font-medium flex items-center gap-1 transition-colors ${
+                    className={`h-[22px] px-2 rounded-[5px] text-[10px] font-medium flex items-center gap-1 transition-colors cursor-pointer ${
                       isJustAdded
                         ? 'bg-emerald-600 text-white'
                         : 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 border border-purple-500/20'
@@ -296,9 +305,9 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
                         <span>Añadir a selección</span>
                       </>
                     )}
-                  </button>
+                  </motion.button>
                 </div>
-              </div>
+              </motion.div>
             );
           })
         )}

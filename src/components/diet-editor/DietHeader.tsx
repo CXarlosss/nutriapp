@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { useDietStore } from '@/lib/stores/useDietStore';
 import {
   IconArrowLeft,
@@ -153,30 +154,42 @@ export const DietHeader: React.FC = () => {
 
         {/* Derecha: Deshacer, Rehacer, Descargar PDF, Publicar */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             type="button"
             className="p-1.5 rounded-[6px] text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)] transition-colors cursor-pointer"
             title="Deshacer (Ctrl+Z)"
           >
             <IconArrowBackUp size={16} stroke={1.5} />
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             type="button"
             className="p-1.5 rounded-[6px] text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--card-subtle)] transition-colors cursor-pointer"
             title="Rehacer"
           >
             <IconArrowForwardUp size={16} stroke={1.5} />
-          </button>
+          </motion.button>
 
-          <Link
-            href="/dietas/diet-demo-1"
-            data-testid="audit-clinical-btn"
-            className="h-[32px] px-2.5 text-[12px] rounded-[8px] font-[500] inline-flex items-center justify-center gap-1.5 border border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--card-subtle)] transition-all cursor-pointer"
-            title="Ver historial de auditoría inmutable y Time Travel"
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           >
-            <IconHistory size={14} stroke={1.5} />
-            <span className="hidden sm:inline">Auditoría Clínica</span>
-          </Link>
+            <Link
+              href="/dietas/diet-demo-1"
+              data-testid="audit-clinical-btn"
+              className="h-[32px] px-2.5 text-[12px] rounded-[8px] font-[500] inline-flex items-center justify-center gap-1.5 border border-[var(--border-strong)] text-[var(--text)] hover:bg-[var(--card-subtle)] transition-all cursor-pointer"
+              title="Ver historial de auditoría inmutable y Time Travel"
+            >
+              <IconHistory size={14} stroke={1.5} />
+              <span className="hidden sm:inline">Auditoría Clínica</span>
+            </Link>
+          </motion.div>
 
           {/* Ver Dieta (Vista del paciente) */}
           <a
