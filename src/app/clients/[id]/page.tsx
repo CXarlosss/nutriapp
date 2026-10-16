@@ -27,7 +27,7 @@ import {
   IconCheck,
 } from '@tabler/icons-react';
 import { AppShell } from '@/components/layout/AppShell';
-import { Card, Badge, Button, Avatar } from '@/components/ui/nutri-ui';
+import { Card, Badge, Button, Avatar, EmptyState } from '@/components/ui/nutri-ui';
 import { BloodAnalyticsPanel } from '@/components/clients/BloodAnalyticsPanel';
 import { DigestiveSymptomTracker } from '@/components/clients/DigestiveSymptomTracker';
 import { MedicationInteractionsPanel } from '@/components/clients/MedicationInteractionsPanel';
@@ -668,16 +668,17 @@ function ClientDetailContent() {
                 </div>
               </Card>
             ) : (
-              <Card className="text-center py-10 space-y-3">
-                <div className="text-[14px] font-medium text-[var(--text)]">
-                  No hay pautas nutricionales asignadas a {client.name} todavía
-                </div>
-                <p className="text-[12px] text-[var(--text-secondary)] max-w-md mx-auto">
-                  Crea y personaliza un menú semanal adaptado a sus necesidades en el Creador de Dietas interactivo.
-                </p>
-                <Link href={`/dietas/creador?client=${client.id}`}>
-                  <Button variant="primary">Crear primera pauta en Diet Builder</Button>
-                </Link>
+              <Card className="p-4">
+                <EmptyState
+                  preset="template-search-empty"
+                  size="md"
+                  badge="Plan Nutricional 🥗"
+                  title={`No hay pautas nutricionales asignadas a ${client.name}`}
+                  description="Crea y personaliza un menú semanal adaptado a sus necesidades clínicas y objetivos metabólicos en el Diet Builder interactivo."
+                  actionLabel="Crear pauta en Diet Builder"
+                  actionHref={`/dietas/creador?client=${client.id}`}
+                  tip="Las comidas configuradas aquí se sincronizarán en tiempo real con el portal móvil /mi-dieta del paciente."
+                />
               </Card>
             )}
           </div>

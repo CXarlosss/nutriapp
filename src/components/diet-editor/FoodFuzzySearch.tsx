@@ -16,7 +16,7 @@ import {
   Brain,
   SlidersHorizontal,
 } from 'lucide-react';
-
+import { EmptyState } from '@/components/ui/nutri-ui';
 interface FoodFuzzySearchProps {
   onSelectFood: (food: Food) => void;
   onCancel: () => void;
@@ -217,8 +217,20 @@ export const FoodFuzzySearch: React.FC<FoodFuzzySearchProps> = ({
       {(results.length > 0 || (query.trim() && !loading)) && (
         <div className="absolute left-0 right-0 top-full mt-1.5 max-h-72 overflow-y-auto rounded-lg border border-slate-800 bg-slate-900/98 p-1.5 shadow-2xl backdrop-blur-xl z-50">
           {results.length === 0 ? (
-            <div className="py-4 text-center text-xs text-slate-400">
-              No se encontraron alimentos para &quot;{query}&quot;
+            <div className="p-2">
+              <EmptyState
+                preset="food-search-empty"
+                size="sm"
+                title={`Sin alimentos para "${query}"`}
+                description={
+                  !isSemanticMode
+                    ? '¿No encuentras el ingrediente exacto? Activa la búsqueda semántica con IA para encontrar equivalencias clínicas.'
+                    : 'Prueba con una descripción más genérica o términos culinarios comunes.'
+                }
+                actionLabel={!isSemanticMode ? 'Activar Búsqueda IA' : undefined}
+                onAction={!isSemanticMode ? () => setIsSemanticMode(true) : undefined}
+                className="bg-transparent"
+              />
             </div>
           ) : (
             results.map((food, idx) => {

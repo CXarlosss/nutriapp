@@ -3,6 +3,7 @@
 import React from 'react';
 import { FoodSwapResult, FoodSwapAlternative } from '@/types/diet';
 import { ArrowLeftRight, Check, X, Flame, ShieldAlert, Sparkles, Scale } from 'lucide-react';
+import { EmptyState } from '@/components/ui/nutri-ui';
 
 interface FoodSwapModalProps {
   isOpen: boolean;
@@ -83,8 +84,16 @@ export function FoodSwapModal({
         {/* Lista de alternativas equivalentes */}
         <div className="overflow-y-auto px-5 py-3 space-y-2.5 flex-1 max-h-[60vh]">
           {swapData.alternatives.length === 0 ? (
-            <div className="text-center py-8 text-xs text-slate-500">
-              No hay alternativas registradas en este grupo de intercambio.
+            <div className="py-4">
+              <EmptyState
+                size="sm"
+                icon={<Scale className="w-5 h-5 text-emerald-400" />}
+                badge="Equivalencias Dietéticas"
+                title="Sin alternativas automáticas"
+                description="No encontramos alimentos con biodisponibilidad y macronutrientes equivalentes en este grupo específico."
+                actionLabel="Mantener alimento original"
+                onAction={onClose}
+              />
             </div>
           ) : (
             swapData.alternatives.map((alt) => {

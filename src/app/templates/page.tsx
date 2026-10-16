@@ -12,7 +12,7 @@ import {
   IconSparkles,
 } from '@tabler/icons-react';
 import { AppShell } from '@/components/layout/AppShell';
-import { Card, Badge, Button, Input } from '@/components/ui/nutri-ui';
+import { Card, Badge, Button, Input, EmptyState } from '@/components/ui/nutri-ui';
 import { useTemplateStore, SavedTemplate } from '@/lib/stores/useTemplateStore';
 
 export default function TemplatesPage() {
@@ -91,14 +91,27 @@ export default function TemplatesPage() {
 
         {/* Rejilla de tarjetas */}
         {filtered.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-[var(--border)] rounded-2xl bg-[var(--card-subtle)] p-8">
-            <div className="w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-600 flex items-center justify-center mx-auto mb-3">
-              <IconToolsKitchen2 size={24} />
-            </div>
-            <h3 className="text-[15px] font-[500] text-[var(--text)]">No hay plantillas con estos filtros</h3>
-            <p className="text-[12px] text-[var(--text-secondary)] mt-1 max-w-sm mx-auto">
-              Guarda tus combinaciones de 7 días desde el Diet Builder pulsando &quot;Guardar como Plantilla&quot;.
-            </p>
+          <div className="border border-dashed border-[var(--border)] rounded-2xl bg-[var(--card)] p-4">
+            <EmptyState
+              preset="template-search-empty"
+              size="md"
+              title={search ? `Sin plantillas para "${search}"` : 'No hay plantillas con esta etiqueta'}
+              description={
+                search || selectedTag !== 'Todos'
+                  ? 'Prueba a restablecer la búsqueda para explorar todas tus pautas guardadas.'
+                  : 'Crea tu primera plantilla de 7 días desde el Diet Builder pulsando en "Guardar como Plantilla".'
+              }
+              actionLabel={search || selectedTag !== 'Todos' ? 'Restablecer filtros' : 'Ir al Diet Builder'}
+              actionHref={search || selectedTag !== 'Todos' ? undefined : '/diet-builder'}
+              onAction={
+                search || selectedTag !== 'Todos'
+                  ? () => {
+                      setSearch('');
+                      setSelectedTag('Todos');
+                    }
+                  : undefined
+              }
+            />
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]">

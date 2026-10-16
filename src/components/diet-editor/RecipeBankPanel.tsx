@@ -14,7 +14,7 @@ import {
   IconTrash,
   IconBookmarkPlus,
 } from '@tabler/icons-react';
-import { Badge, Button, Input } from '@/components/ui/nutri-ui';
+import { Badge, Button, Input, EmptyState } from '@/components/ui/nutri-ui';
 import { Recipe, RecipeDragPayload, DietItem } from '@/types/diet';
 import { useDietStore } from '@/lib/stores/useDietStore';
 import { useRecipeStore } from '@/lib/stores/useRecipeStore';
@@ -182,9 +182,25 @@ export const RecipeBankPanel: React.FC<RecipeBankPanelProps> = ({ onRecipeAdded 
       {/* Lista de Recetas Draggables */}
       <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5">
         {filteredRecipes.length === 0 ? (
-          <div className="text-center py-8 text-[var(--text-secondary)] text-[12px]">
-            No se encontraron platos que coincidan con la búsqueda.
-          </div>
+          <EmptyState
+            preset="recipe-search-empty"
+            size="sm"
+            title={search ? `Sin platos para "${search}"` : 'No hay recetas en esta categoría'}
+            description={
+              search
+                ? '¿Tienes una combinación favorita? Puedes crear una nueva receta personalizada o limpiar el buscador.'
+                : 'Añade tu primera receta personalizada para agilizar la planificación semanal.'
+            }
+            actionLabel="Crear receta personalizada"
+            onAction={() => {
+              setModalInitialItems(
+                focusedCell ? getItemsForSlot(focusedCell.dayIndex, focusedCell.mealSlot) : []
+              );
+              setIsSaveModalOpen(true);
+            }}
+            secondaryActionLabel={search ? 'Limpiar búsqueda' : undefined}
+            onSecondaryAction={search ? () => setSearch('') : undefined}
+          />
         ) : (
           filteredRecipes.map((recipe) => {
             const isJustAdded = addedRecipeId === recipe.id;

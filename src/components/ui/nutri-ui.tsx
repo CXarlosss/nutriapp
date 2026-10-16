@@ -162,3 +162,6 @@ export function Avatar({ initials, size = 32 }: { initials: string; size?: numbe
 export function Skeleton({ className = '' }: { className?: string }) {
   return <div className={`bg-[#EFEDE6] rounded-[8px] animate-pulse ${className}`} />;
 }
+
+export { EmptyState } from './EmptyState';
+export type { EmptyStateProps, EmptyStatePreset } from './EmptyState';

@@ -20,7 +20,7 @@ import {
   IconChartLine,
   IconCoins,
 } from '@tabler/icons-react';
-import { Card, MetricCard, Badge, Button, Input } from '@/components/ui/nutri-ui';
+import { Card, MetricCard, Badge, Button, Input, EmptyState } from '@/components/ui/nutri-ui';
 import { requestPaymentForClientAction } from '@/app/actions/billingOutboxActions';
 import { ManualPaymentModal } from '@/components/clients/ManualPaymentModal';
 import { RetentionBusinessDashboard } from './RetentionBusinessDashboard';
@@ -283,13 +283,14 @@ export function DashboardView() {
           </div>
 
           {activeAppointments.length === 0 ? (
-            <div className="py-8 flex flex-col items-center justify-center text-center">
-              <IconCalendarOff size={24} className="text-[var(--text-muted)] mb-2" stroke={1.5} />
-              <div className="text-[14px] font-[500] text-[var(--text)]">Hoy no tienes citas</div>
-              <div className="text-[12px] text-[var(--text-secondary)] mt-1">
-                Disfruta del día o revisa la agenda de la semana.
-              </div>
-            </div>
+            <EmptyState
+              preset="calendar-clean"
+              size="sm"
+              actionLabel="Investigar nuevas recetas"
+              actionHref="/templates"
+              secondaryActionLabel="Ver agenda de la semana"
+              secondaryActionHref="/appointments"
+            />
           ) : (
             <div className="divide-y divide-[var(--border)]">
               {activeAppointments.map((appt) => {
@@ -325,13 +326,11 @@ export function DashboardView() {
           </div>
 
           {activeReviews.length === 0 ? (
-            <div className="py-8 flex flex-col items-center justify-center text-center">
-              <IconCheck size={24} className="text-emerald-500 mb-2" stroke={1.5} />
-              <div className="text-[14px] font-[500] text-[var(--text)]">Todo al día</div>
-              <div className="text-[12px] text-[var(--text-secondary)] mt-1">
-                No hay pacientes con revisiones pendientes.
-              </div>
-            </div>
+            <EmptyState
+              preset="reviews-clean"
+              size="sm"
+              tip="Cartera al día: Consulta las métricas de adherencia en el panel financiero."
+            />
           ) : (
             <div className="divide-y divide-[var(--border)]">
               {activeReviews.map((rev) => (
@@ -404,8 +403,19 @@ export function DashboardView() {
             <tbody>
               {pagedClients.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-[13px] text-[var(--text-muted)]">
-                    No se han encontrado clientes con ese criterio.
+                  <td colSpan={5} className="p-4">
+                    <EmptyState
+                      preset="clients-empty"
+                      size="sm"
+                      title="No se encontraron clientes"
+                      description={
+                        search
+                          ? `No hay coincidencias para "${search}". Prueba a limpiar el término de búsqueda.`
+                          : 'No hay pacientes registrados con este estado.'
+                      }
+                      actionLabel={search ? 'Limpiar búsqueda' : undefined}
+                      onAction={search ? () => setSearch('') : undefined}
+                    />
                   </td>
                 </tr>
               ) : (

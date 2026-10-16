@@ -18,7 +18,7 @@ import {
   IconCheck,
 } from '@tabler/icons-react';
 import { AppShell } from '@/components/layout/AppShell';
-import { Card, Badge, Button, Input } from '@/components/ui/nutri-ui';
+import { Card, Badge, Button, Input, EmptyState } from '@/components/ui/nutri-ui';
 import { useModeStore, DEMO_CLIENTS, RealClient } from '@/lib/stores/useModeStore';
 import { ManualPaymentModal } from '@/components/clients/ManualPaymentModal';
 import { generateWhatsAppLink, generateMailtoLink, contactTemplates, getSmartClientContact } from '@/lib/utils/contactLinks';
@@ -153,19 +153,18 @@ export default function ClientsPage() {
 
         {/* Tabla de clientes o Empty State */}
         {mode === 'real' && activeClients.length === 0 ? (
-          <div className="text-center py-16 px-4 bg-[var(--card)] rounded-xl border border-[var(--border)] animate-fadeIn">
-            <div className="mx-auto w-12 h-12 rounded-full bg-[var(--card-subtle)] flex items-center justify-center text-[var(--text-secondary)] mb-3">
-              <IconUsers size={24} />
-            </div>
-            <h3 className="text-base font-medium text-[var(--text)]">No tienes pacientes registrados todavía</h3>
-            <p className="text-sm text-[var(--text-secondary)] max-w-sm mx-auto mt-1 mb-5">
-              Tu consulta real está completamente limpia. Pulsa en el botón para registrar a tu primer paciente.
-            </p>
-            <Button variant="primary" onClick={() => setIsModalOpen(true)}>
-              <IconUserPlus size={16} stroke={1.5} />
-              <span>Añadir mi primer paciente</span>
-            </Button>
-          </div>
+          <EmptyState
+            preset="clients-empty"
+            size="lg"
+            badge="Consulta Real 🚀"
+            title="Tu consulta real está lista para su primer paciente"
+            description="Actualmente no tienes pacientes cargados en la base de datos real. Registra a tu primer paciente para asignarle una pauta y comenzar su seguimiento clínico."
+            actionLabel="Añadir mi primer paciente"
+            actionIcon={<IconUserPlus size={16} stroke={1.8} />}
+            onAction={() => setIsModalOpen(true)}
+            tip="Consejo: Puedes alternar en cualquier momento al Modo Demostración para explorar casos de ejemplo."
+            className="bg-[var(--card)] border border-[var(--border)]"
+          />
         ) : (
           <div className="border border-[var(--border)] rounded-[12px] overflow-hidden bg-[var(--card)]">
             <div className="overflow-x-auto scrollbar-thin">
@@ -184,8 +183,23 @@ export default function ClientsPage() {
                 <tbody className="divide-y divide-[var(--border)]">
                   {filteredClients.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="text-center py-8 text-[var(--text-muted)]">
-                        No se encontraron clientes con los filtros aplicados.
+                      <td colSpan={7} className="p-4">
+                        <EmptyState
+                          preset="clients-empty"
+                          size="md"
+                          title="No se encontraron clientes"
+                          description={
+                            search || statusFilter !== 'Todos' || planFilter !== 'Todos'
+                              ? 'Prueba a restablecer los filtros para volver a ver la lista completa de pacientes.'
+                              : 'Añade tu primer paciente para comenzar su seguimiento clínico y dietoterapia.'
+                          }
+                          actionLabel={
+                            hasActiveFilters ? 'Restablecer filtros' : 'Añadir nuevo paciente'
+                          }
+                          onAction={
+                            hasActiveFilters ? clearFilters : () => setIsModalOpen(true)
+                          }
+                        />
                       </td>
                     </tr>
                   ) : (

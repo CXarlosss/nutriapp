@@ -37,6 +37,7 @@ import {
   CronRetentionExecutionResult,
 } from '@/types/retentionAnalytics';
 import { useModeStore } from '@/lib/stores/useModeStore';
+import { EmptyState } from '@/components/ui/nutri-ui';
 
 export function RetentionBusinessDashboard() {
   const { mode, realClients } = useModeStore();
@@ -414,8 +415,12 @@ export function RetentionBusinessDashboard() {
         </div>
 
         {criticalClients.length === 0 ? (
-          <div className="p-8 text-center text-slate-400 text-xs">
-            🎉 ¡Excelente! No hay pacientes con más de 14 días de inactividad actualmente.
+          <div className="p-4">
+            <EmptyState
+              preset="retention-clean"
+              size="md"
+              tip="Protección anti-churn activa: El sistema monitoriza automáticamente el acceso diario a /mi-dieta."
+            />
           </div>
         ) : (
           <div className="divide-y divide-[var(--border)]">

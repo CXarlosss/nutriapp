@@ -6,7 +6,7 @@ import {
   BloodMarkerValue,
 } from '@/types/diet';
 import { MOCK_BLOOD_TESTS } from '@/lib/services/clinicalRecordsService';
-import { Card, Badge, Button } from '@/components/ui/nutri-ui';
+import { Card, Badge, Button, EmptyState } from '@/components/ui/nutri-ui';
 import {
   IconFlask,
   IconPlus,
@@ -203,8 +203,17 @@ export const BloodAnalyticsPanel: React.FC<BloodAnalyticsPanelProps> = ({
 
   if (!currentTest) {
     return (
-      <Card className="text-center py-8 text-[var(--text-secondary)]">
-        No hay analíticas registradas para este paciente.
+      <Card className="p-4">
+        <EmptyState
+          icon={<IconFlask size={28} stroke={1.6} />}
+          badge="Bioquímica Clínica 🔬"
+          title="Sin analíticas sanguíneas registradas"
+          description="Aún no se han introducido informes analíticos para este paciente. Registra los biomarcadores de laboratorio para activar la correlación automática con la pauta nutricional."
+          actionLabel="Registrar analítica médica"
+          actionIcon={<IconPlus size={16} stroke={1.8} />}
+          onAction={() => setIsModalOpen(true)}
+          tip="El motor CDSS alertará si algún ingrediente interfiere con biomarcadores como ferritina, TSH o glucosa."
+        />
       </Card>
     );
   }
