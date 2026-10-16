@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { useDietStore } from '@/lib/stores/useDietStore';
 import {
   IconShieldCheck,
@@ -20,6 +20,58 @@ import {
 } from '@tabler/icons-react';
 import { Badge, Button } from '@/components/ui/nutri-ui';
 import { RecipeBankPanel } from './RecipeBankPanel';
+
+// Variantes Framer Motion con deslizamiento elástico y micro-vibración táctil para alertas clínicas críticas
+const alertCardVariants: Variants = {
+  hidden: {
+    opacity: 0,
+    x: 48,
+    scale: 0.94,
+    filter: 'blur(1px)',
+  },
+  visible: (isCritical: boolean) => ({
+    opacity: 1,
+    scale: 1,
+    filter: 'blur(0px)',
+    x: isCritical
+      ? [48, 0, -3.5, 3.5, -2, 2, -1, 1, 0] // Deslizamiento elástico desde la derecha + micro-vibración sutil
+      : [48, 0],
+    transition: {
+      layout: { type: 'spring', stiffness: 380, damping: 28 },
+      opacity: { duration: 0.22 },
+      filter: { duration: 0.18 },
+      x: isCritical
+        ? {
+            duration: 0.68,
+            times: [0, 0.44, 0.56, 0.68, 0.78, 0.88, 0.94, 0.98, 1],
+            ease: 'easeOut' as const,
+          }
+        : {
+            type: 'spring',
+            stiffness: 420,
+            damping: 24,
+            mass: 0.8,
+          },
+      scale: {
+        type: 'spring',
+        stiffness: 420,
+        damping: 24,
+      },
+    },
+  }),
+  exit: {
+    opacity: 0,
+    x: 40,
+    scale: 0.9,
+    height: 0,
+    marginTop: 0,
+    marginBottom: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+    overflow: 'hidden',
+    transition: { duration: 0.24, ease: 'easeInOut' as const },
+  },
+};
 
 export const ClinicalAuditScorecard: React.FC = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -236,19 +288,43 @@ export const ClinicalAuditScorecard: React.FC = () => {
           </div>
 
           {/* Estado de Aprobación Científica */}
-          <div>
+          <AnimatePresence mode="wait">
             {audit.hasCriticalBlocker ? (
-              <div className="p-3 rounded-[8px] bg-[var(--danger-bg)] border border-[var(--danger-text)]/30 text-[var(--danger-text)] text-[12px] space-y-1.5 animate-fadeIn">
-                <div className="flex items-center gap-1.5 font-[500]">
-                  <IconAlertCircle size={16} />
+              <motion.div
+                key="critical-blocker-banner"
+                layout
+                initial={{ opacity: 0, x: 30, scale: 0.96 }}
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                  x: [30, 0, -3, 3, -1.5, 1.5, 0],
+                }}
+                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.18 } }}
+                transition={{
+                  duration: 0.58,
+                  times: [0, 0.45, 0.6, 0.75, 0.88, 0.95, 1],
+                  ease: 'easeOut',
+                }}
+                className="p-3 rounded-[8px] bg-[var(--danger-bg)] border border-[var(--danger-text)]/40 text-[var(--danger-text)] text-[12px] space-y-1.5 shadow-xs ring-1 ring-rose-500/20"
+              >
+                <div className="flex items-center gap-1.5 font-[600]">
+                  <IconAlertCircle size={16} className="text-rose-500 shrink-0" />
                   <span>Alerta Crítica: Protocolo no conforme</span>
                 </div>
                 <p className="text-[11px] opacity-90 leading-relaxed">
                   La estructura no alcanza los requerimientos mínimos de la literatura médica para el perfil del cliente.
                 </p>
-              </div>
+              </motion.div>
             ) : (
-              <div className="p-3 rounded-[8px] bg-[var(--success-bg)] border border-[var(--success-text)]/30 text-[var(--success-text)] text-[12px] space-y-1">
+              <motion.div
+                key="approved-banner"
+                layout
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.18 } }}
+                transition={{ duration: 0.25 }}
+                className="p-3 rounded-[8px] bg-[var(--success-bg)] border border-[var(--success-text)]/30 text-[var(--success-text)] text-[12px] space-y-1"
+              >
                 <div className="flex items-center gap-1.5 font-[500]">
                   <IconShieldCheck size={16} />
                   <span>Dieta con respaldo clínico completo</span>
@@ -256,60 +332,82 @@ export const ClinicalAuditScorecard: React.FC = () => {
                 <p className="text-[11px] opacity-90 leading-relaxed">
                   Todos los umbrales de macronutrientes y micronutrientes se encuentran dentro de las directrices de la ISSN y OMS.
                 </p>
-              </div>
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
 
           {/* Alertas Fármaco-Nutriente (CDSS) */}
           {audit.drugNutrientAlerts && audit.drugNutrientAlerts.length > 0 && (
             <div className="space-y-2">
               <div className="text-[11px] font-[500] uppercase tracking-wider text-[var(--danger-text)] flex items-center justify-between">
-                <span>Alertas Fármaco-Nutriente ({audit.drugNutrientAlerts.length})</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                  </span>
+                  <span>Alertas Fármaco-Nutriente ({audit.drugNutrientAlerts.length})</span>
+                </span>
                 <IconPill size={14} />
               </div>
 
               <div className="space-y-2">
-                {audit.drugNutrientAlerts.map((alert) => (
-                  <motion.div
-                    key={alert.id}
-                    layout
-                    whileHover={{ scale: 1.015 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setSelectedAlert(alert)}
-                    data-testid={`cdss-alert-card-${alert.id}`}
-                    className={`p-2.5 rounded-[8px] border text-[12px] space-y-1.5 transition-colors cursor-pointer select-none ${
-                      alert.severity === 'critical'
-                        ? 'bg-[var(--danger-bg)] border-[var(--danger-text)]/30 text-[var(--danger-text)]'
-                        : 'bg-[var(--warning-bg)] border-[var(--warning-text)]/30 text-[var(--warning-text)]'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-1.5">
-                      <span className="font-[500] text-[12px] leading-tight">
-                        {alert.drugName} ↔ {alert.conflictingFoodName}
-                      </span>
-                      <Badge variant={alert.severity === 'critical' ? 'danger' : 'warning'}>
-                        {alert.conflictingSlot}
-                      </Badge>
-                    </div>
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {audit.drugNutrientAlerts.map((alert) => {
+                    const isCritical = alert.severity === 'critical';
+                    return (
+                      <motion.div
+                        key={alert.id}
+                        layout
+                        custom={isCritical}
+                        variants={alertCardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        whileHover={{ scale: 1.015 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setSelectedAlert(alert)}
+                        data-testid={`cdss-alert-card-${alert.id}`}
+                        className={`p-2.5 rounded-[8px] border text-[12px] space-y-1.5 transition-colors cursor-pointer select-none relative overflow-hidden ${
+                          isCritical
+                            ? 'bg-[var(--danger-bg)] border-[var(--danger-text)]/40 text-[var(--danger-text)] shadow-xs ring-1 ring-rose-500/25'
+                            : 'bg-[var(--warning-bg)] border-[var(--warning-text)]/30 text-[var(--warning-text)]'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-1.5">
+                          <span className="font-[600] text-[12px] leading-tight flex items-center gap-1.5">
+                            {isCritical && (
+                              <span className="relative flex h-2 w-2 shrink-0">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                              </span>
+                            )}
+                            <span>{alert.drugName} ↔ {alert.conflictingFoodName}</span>
+                          </span>
+                          <Badge variant={isCritical ? 'danger' : 'warning'}>
+                            {alert.conflictingSlot}
+                          </Badge>
+                        </div>
 
-                    <p className="text-[11px] leading-relaxed opacity-95">
-                      {alert.biologicalMechanism}
-                    </p>
+                        <p className="text-[11px] leading-relaxed opacity-95">
+                          {alert.biologicalMechanism}
+                        </p>
 
-                    <div className="text-[11px] font-[500] opacity-90">
-                      💡 {alert.clinicalRecommendation}
-                    </div>
+                        <div className="text-[11px] font-[500] opacity-90">
+                          💡 {alert.clinicalRecommendation}
+                        </div>
 
-                    <div className="pt-1 flex items-center justify-between text-[11px]">
-                      <span className="text-[10px] font-mono opacity-80 flex items-center gap-1">
-                        🔍 Clic para ampliar evidencia
-                      </span>
-                      <span className="text-[10px] underline opacity-80">
-                        DOI: {alert.doiReference.replace('https://doi.org/', '')}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                        <div className="pt-1 flex items-center justify-between text-[11px]">
+                          <span className="text-[10px] font-mono opacity-80 flex items-center gap-1">
+                            🔍 Clic para ampliar evidencia
+                          </span>
+                          <span className="text-[10px] underline opacity-80">
+                            DOI: {alert.doiReference.replace('https://doi.org/', '')}
+                          </span>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
             </div>
           )}
@@ -322,54 +420,65 @@ export const ClinicalAuditScorecard: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              {audit.evaluations.map((ev, idx) => (
-                <div
-                  key={idx}
-                  className={`p-2.5 rounded-[8px] border text-[12px] space-y-1.5 transition-colors ${
-                    ev.status === 'critical'
-                      ? 'bg-[var(--danger-bg)] border-[var(--danger-text)]/30 text-[var(--danger-text)]'
-                      : ev.status === 'warning'
-                      ? 'bg-[var(--warning-bg)] border-[var(--warning-text)]/30 text-[var(--warning-text)]'
-                      : 'bg-[var(--card-subtle)] border-[var(--border)] text-[var(--text)]'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-1.5">
-                    <span className="font-[500] text-[12px] leading-tight">
-                      {ev.guideline.title}
-                    </span>
-                    <Badge
-                      variant={
-                        ev.status === 'optimal' ? 'success' : ev.status === 'critical' ? 'danger' : 'warning'
-                      }
+              <AnimatePresence mode="popLayout" initial={false}>
+                {audit.evaluations.map((ev, idx) => {
+                  const isCritical = ev.status === 'critical';
+                  return (
+                    <motion.div
+                      key={ev.guideline.title || idx}
+                      layout
+                      custom={isCritical}
+                      variants={alertCardVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      className={`p-2.5 rounded-[8px] border text-[12px] space-y-1.5 transition-colors ${
+                        isCritical
+                          ? 'bg-[var(--danger-bg)] border-[var(--danger-text)]/30 text-[var(--danger-text)]'
+                          : ev.status === 'warning'
+                          ? 'bg-[var(--warning-bg)] border-[var(--warning-text)]/30 text-[var(--warning-text)]'
+                          : 'bg-[var(--card-subtle)] border-[var(--border)] text-[var(--text)]'
+                      }`}
                     >
-                      {ev.status === 'optimal' ? 'Conforme' : ev.status === 'critical' ? 'Bloqueo' : 'Aviso'}
-                    </Badge>
-                  </div>
+                      <div className="flex items-start justify-between gap-1.5">
+                        <span className="font-[500] text-[12px] leading-tight">
+                          {ev.guideline.title}
+                        </span>
+                        <Badge
+                          variant={
+                            ev.status === 'optimal' ? 'success' : isCritical ? 'danger' : 'warning'
+                          }
+                        >
+                          {ev.status === 'optimal' ? 'Conforme' : isCritical ? 'Bloqueo' : 'Aviso'}
+                        </Badge>
+                      </div>
 
-                  {!ev.passed && (
-                    <p className="text-[11px] leading-relaxed opacity-95">
-                      {ev.guideline.warning_message}
-                    </p>
-                  )}
+                      {!ev.passed && (
+                        <p className="text-[11px] leading-relaxed opacity-95">
+                          {ev.guideline.warning_message}
+                        </p>
+                      )}
 
-                  {/* Enlace al DOI */}
-                  <div className="pt-1 flex items-center justify-between text-[11px]">
-                    <a
-                      href={ev.guideline.doi_reference}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 underline font-[400] hover:opacity-80"
-                      title="Ver paper científico en repositorio oficial"
-                    >
-                      <span>DOI: {ev.guideline.doi_reference.replace('https://doi.org/', '')}</span>
-                      <IconExternalLink size={12} />
-                    </a>
-                    <span className="font-mono text-[10px] opacity-80">
-                      Actual: {ev.currentValue} {ev.guideline.unit}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                      {/* Enlace al DOI */}
+                      <div className="pt-1 flex items-center justify-between text-[11px]">
+                        <a
+                          href={ev.guideline.doi_reference}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 underline font-[400] hover:opacity-80"
+                          title="Ver paper científico en repositorio oficial"
+                        >
+                          <span>DOI: {ev.guideline.doi_reference.replace('https://doi.org/', '')}</span>
+                          <IconExternalLink size={12} />
+                        </a>
+                        <span className="font-mono text-[10px] opacity-80">
+                          Actual: {ev.currentValue} {ev.guideline.unit}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
           </div>
 
