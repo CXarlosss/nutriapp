@@ -1,8 +1,8 @@
 /**
  * Generador de Informe Médico y Plan Nutricional de Alta Precisión - NutriApp
- * Estándar de Impresión Hospitalaria Privada (A4 con Reglas CSS Puras @media print)
- * Tipografía Serif de Alta Legibilidad (Playfair Display + Source Serif 4)
- * Portada Automática Institucional + Saltos de Página Controlados
+ * Estándar de Impresión Hospitalaria y Carta de Presentación de Negocio (A4 con Reglas CSS Puras @media print)
+ * Tipografía Serif de Alta Distinción (Playfair Display para titulares/sello + EB Garamond para cuerpo clínico + Geist Mono)
+ * Portada Automática con Identidad de la Dra. Laura Martínez Castillo y Pie de Contacto Directo
  */
 
 export interface DietPdfData {
@@ -18,6 +18,10 @@ export interface DietPdfData {
   clinicalDiagnosis?: string;
   pharmacotherapyNotes?: string;
   notes?: string;
+  nutritionistPhone?: string;
+  nutritionistEmail?: string;
+  nutritionistWebsite?: string;
+  nutritionistAddress?: string;
   weeklySchedule: {
     mealSlot: string;
     days: {
@@ -40,10 +44,14 @@ export interface DietPdfData {
 export function generateDietPdfHtml(data: DietPdfData): string {
   const daysHeader = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   
-  const clinicName = data.clinicName || 'CENTRO MÉDICO UNIVERSITARIO & METABÓLICO SANITARIO';
-  const departmentName = 'DEPARTAMENTO DE ENDOCRINOLOGÍA, NUTRICIÓN CLÍNICA Y DIETÉTICA APLICADA';
-  const doctor = data.prescribedBy || 'Dra. Carmen Gómez Pardo · Especialista en Nutrición Clínica y Endocrinología';
-  const colNumber = data.doctorColNumber || 'Nº Col. MED-46089 (SEEN / ISSN Certified)';
+  const clinicName = data.clinicName || 'GABINETE DE NUTRICIÓN CLÍNICA & SALUD METABÓLICA';
+  const departmentName = 'UNIDAD DE DIETOTERAPIA PERSONALIZADA Y COMPOSICIÓN CORPORAL';
+  const doctor = data.prescribedBy || 'Dra. Laura Martínez Castillo · Dietista-Nutricionista Clínica';
+  const colNumber = data.doctorColNumber || 'Nº Col. AND-00482 (CODNAN / ISSN Certified)';
+  const phone = data.nutritionistPhone || '+34 612 345 678';
+  const email = data.nutritionistEmail || 'laura@nutriapp.es';
+  const website = data.nutritionistWebsite || 'www.nutriapp.es/laura';
+  const address = data.nutritionistAddress || 'Consulta Presencial & Videoconsulta';
   const patientId = data.clientId || 'HC-2026-0042';
   const diagnosis = data.clinicalDiagnosis || 'Recomposición Corporal, Optimización de Perfil Lipídico y Terapia de Regulación Metabólica';
 
@@ -56,7 +64,7 @@ export function generateDietPdfHtml(data: DietPdfData): string {
   <!-- Tipografías Serif de Prestigio Médico y Monoespaciada Tabular -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,400;1,600;1,700&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     /* ─────────────────────────────────────────────────────────────
@@ -78,8 +86,8 @@ export function generateDietPdfHtml(data: DietPdfData): string {
     html, body {
       background: #FFFFFF;
       color: #1A1A1A;
-      font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
-      font-size: 8.5pt;
+      font-family: 'EB Garamond', Garamond, 'Source Serif 4', Georgia, serif;
+      font-size: 8.8pt;
       line-height: 1.45;
       font-variant-numeric: tabular-nums;
       font-feature-settings: "tnum" 1;
@@ -134,7 +142,7 @@ export function generateDietPdfHtml(data: DietPdfData): string {
     }
 
     /* ─────────────────────────────────────────────────────────────
-       PORTADA AUTOMÁTICA DEL HOSPITAL (PÁGINA 1)
+       PORTADA AUTOMÁTICA INSTITUCIONAL (PÁGINA 1)
        ───────────────────────────────────────────────────────────── */
     .cover-page {
       width: 100%;
@@ -142,7 +150,7 @@ export function generateDietPdfHtml(data: DietPdfData): string {
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 8mm 6mm 6mm 6mm;
+      padding: 6mm 6mm 4mm 6mm;
       page-break-after: always;
       break-after: page;
       position: relative;
@@ -153,35 +161,37 @@ export function generateDietPdfHtml(data: DietPdfData): string {
       align-items: center;
       justify-content: space-between;
       border-bottom: 2pt solid #0F4C3A;
-      padding-bottom: 5mm;
-      margin-bottom: 8mm;
+      padding-bottom: 4mm;
+      margin-bottom: 6mm;
     }
 
     .clinic-brand-group {
       display: flex;
       align-items: center;
-      gap: 5mm;
+      gap: 4mm;
     }
 
     .hospital-seal {
-      width: 44px;
-      height: 44px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
-      border: 2pt solid #0F4C3A;
+      border: 2pt double #0F4C3A;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #0F4C3A;
-      font-size: 22pt;
-      font-family: 'Playfair Display', serif;
+      font-size: 16pt;
+      font-family: 'Playfair Display', Georgia, serif;
       background: #F4F8F6;
       font-weight: 700;
+      letter-spacing: 0.04em;
       flex-shrink: 0;
+      box-shadow: 0 0 0 1pt rgba(15, 76, 58, 0.15);
     }
 
     .hospital-titles h1 {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 14pt;
+      font-size: 13.5pt;
       font-weight: 700;
       color: #0F4C3A;
       letter-spacing: 0.04em;
@@ -202,43 +212,44 @@ export function generateDietPdfHtml(data: DietPdfData): string {
     .accreditation-badge {
       text-align: right;
       font-family: 'Geist Mono', monospace;
-      font-size: 7.5pt;
+      font-size: 7pt;
       color: #4B5563;
       border-left: 1pt solid #D1D5DB;
       padding-left: 4mm;
+      line-height: 1.45;
     }
 
     .cover-center {
       text-align: center;
-      margin: 4mm 0 8mm 0;
+      margin: 3mm 0 6mm 0;
     }
 
     .document-category {
       display: inline-block;
       font-family: system-ui, sans-serif;
-      font-size: 8pt;
+      font-size: 7.5pt;
       font-weight: 700;
       letter-spacing: 0.16em;
       text-transform: uppercase;
       color: #0F4C3A;
       background: #E8F3EE;
       border: 0.5pt solid #A7D3C3;
-      padding: 1.5mm 5mm;
+      padding: 1.2mm 4.5mm;
       border-radius: 20px;
-      margin-bottom: 4mm;
+      margin-bottom: 3mm;
     }
 
     .document-title {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 23pt;
+      font-size: 22pt;
       font-weight: 800;
       color: #111827;
       line-height: 1.2;
-      margin-bottom: 2mm;
+      margin-bottom: 1.5mm;
     }
 
     .document-subtitle {
-      font-size: 11pt;
+      font-size: 10.5pt;
       font-style: italic;
       color: #4B5563;
     }
@@ -249,18 +260,18 @@ export function generateDietPdfHtml(data: DietPdfData): string {
       border: 1pt solid #D1DFD8;
       border-top: 3pt solid #0F4C3A;
       border-radius: 4px;
-      padding: 5mm 6mm;
-      margin-bottom: 6mm;
+      padding: 4mm 5mm;
+      margin-bottom: 5mm;
     }
 
     .patient-card-header {
       font-family: 'Playfair Display', serif;
-      font-size: 11pt;
+      font-size: 10.5pt;
       font-weight: 700;
       color: #0F4C3A;
       border-bottom: 0.5pt solid #E5E7EB;
       padding-bottom: 2mm;
-      margin-bottom: 3.5mm;
+      margin-bottom: 3mm;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -268,8 +279,8 @@ export function generateDietPdfHtml(data: DietPdfData): string {
 
     .patient-grid {
       display: grid;
-      grid-template-columns: 2fr 1fr 1.5fr 1.5fr;
-      gap: 3.5mm;
+      grid-template-columns: 2fr 1fr 1.6fr 1.4fr;
+      gap: 3mm;
     }
 
     .patient-field-label {
@@ -284,7 +295,7 @@ export function generateDietPdfHtml(data: DietPdfData): string {
     }
 
     .patient-field-value {
-      font-size: 9.5pt;
+      font-size: 9pt;
       font-weight: 600;
       color: #111827;
     }
@@ -299,13 +310,13 @@ export function generateDietPdfHtml(data: DietPdfData): string {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 3mm;
-      margin-bottom: 6mm;
+      margin-bottom: 5mm;
     }
 
     .exec-metric-box {
       border: 0.75pt solid #E5E7EB;
       background: #FFFFFF;
-      padding: 3mm;
+      padding: 2.5mm 3mm;
       border-radius: 3px;
       text-align: center;
     }
@@ -321,7 +332,7 @@ export function generateDietPdfHtml(data: DietPdfData): string {
 
     .exec-metric-number {
       font-family: 'Geist Mono', monospace;
-      font-size: 13pt;
+      font-size: 12.5pt;
       font-weight: 700;
       color: #0F4C3A;
       margin: 1mm 0 0.5mm 0;
@@ -329,7 +340,7 @@ export function generateDietPdfHtml(data: DietPdfData): string {
     }
 
     .exec-metric-sub {
-      font-size: 7pt;
+      font-size: 6.8pt;
       color: #6B7280;
     }
 
@@ -338,45 +349,155 @@ export function generateDietPdfHtml(data: DietPdfData): string {
       background: #FEF3C7;
       border: 0.75pt solid #F59E0B;
       border-left: 3pt solid #D97706;
-      padding: 3mm 4mm;
+      padding: 2.5mm 3.5mm;
       border-radius: 3px;
-      font-size: 7.5pt;
+      font-size: 7.2pt;
       color: #92400E;
-      margin-bottom: 5mm;
+      margin-bottom: 4mm;
       line-height: 1.4;
     }
 
-    .cover-footer-signatures {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      border-top: 0.5pt solid #E5E7EB;
+    /* Tarjeta de Contacto / Carta de Presentación y Firma en Portada */
+    .cover-footer-container {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 4.5mm;
+      border-top: 1.5pt solid #0F4C3A;
       padding-top: 3mm;
     }
 
-    .signature-box {
-      text-align: left;
-      font-size: 7.5pt;
-      color: #4B5563;
+    .contact-card-box {
+      background: #F8FAF9;
+      border: 0.75pt solid #D1DFD8;
+      border-radius: 4px;
+      padding: 3mm 4mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
-    .signature-line {
-      width: 55mm;
-      height: 12mm;
-      border-bottom: 1pt dashed #9CA3AF;
-      margin-bottom: 1.5mm;
+    .contact-card-header {
+      font-family: system-ui, sans-serif;
+      font-size: 6.2pt;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: #0F4C3A;
+      margin-bottom: 2mm;
+      display: flex;
+      align-items: center;
+      gap: 1.5mm;
+      border-bottom: 0.5pt solid #D1DFD8;
+      padding-bottom: 1.2mm;
+    }
+
+    .contact-card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.8mm 3mm;
+      font-size: 7.2pt;
+    }
+
+    .contact-card-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.8mm;
+      color: #374151;
+      line-height: 1.3;
+    }
+
+    .contact-card-item .icon {
+      font-size: 8.5pt;
+      flex-shrink: 0;
+      line-height: 1;
+      margin-top: 0.5mm;
+    }
+
+    .contact-card-item .item-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .contact-card-item .item-label {
+      font-size: 5.8pt;
+      font-family: system-ui, sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #6B7280;
+      letter-spacing: 0.04em;
+    }
+
+    .contact-card-item .item-val {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .contact-card-item .item-val.mono {
+      font-family: 'Geist Mono', monospace;
+      font-size: 6.8pt;
+    }
+
+    .signature-card-box {
+      border: 0.75pt solid #E5E7EB;
+      background: #FFFFFF;
+      border-radius: 4px;
+      padding: 3mm 4mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       position: relative;
     }
 
-    .signature-stamp {
-      position: absolute;
-      top: 0;
-      left: 10mm;
-      font-family: 'Playfair Display', serif;
-      font-size: 8pt;
+    .signature-line-box {
+      border-bottom: 1pt dashed #9CA3AF;
+      height: 9.5mm;
+      display: flex;
+      align-items: flex-end;
+      padding-bottom: 1mm;
+      margin-bottom: 1.8mm;
+      position: relative;
+    }
+
+    .signature-handwritten {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 11pt;
       font-style: italic;
+      font-weight: 600;
       color: #0F4C3A;
-      opacity: 0.85;
+      letter-spacing: 0.02em;
+    }
+
+    .signature-seal-stamp {
+      position: absolute;
+      right: 0;
+      top: 0;
+      border: 0.75pt solid #0F4C3A;
+      color: #0F4C3A;
+      font-family: 'Geist Mono', monospace;
+      font-size: 5.5pt;
+      padding: 0.8mm 1.8mm;
+      border-radius: 2px;
+      background: #F4F8F6;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .signature-details {
+      font-size: 6.8pt;
+      color: #4B5563;
+      line-height: 1.35;
+    }
+
+    .cover-legal-strip {
+      margin-top: 2.5mm;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 6pt;
+      color: #6B7280;
+      border-top: 0.5pt solid #E5E7EB;
+      padding-top: 1.2mm;
     }
 
     /* ─────────────────────────────────────────────────────────────
@@ -394,7 +515,7 @@ export function generateDietPdfHtml(data: DietPdfData): string {
       justify-content: space-between;
       align-items: center;
       padding-bottom: 2mm;
-      border-bottom: 0.5pt solid #0F4C3A;
+      border-bottom: 0.75pt solid #0F4C3A;
       margin-bottom: 3mm;
       font-size: 7pt;
       color: #4B5563;
@@ -408,6 +529,21 @@ export function generateDietPdfHtml(data: DietPdfData): string {
       font-weight: 700;
       color: #0F4C3A;
       font-size: 8pt;
+    }
+
+    .header-seal-mini {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1pt solid #0F4C3A;
+      font-size: 7.5pt;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 700;
+      background: #F4F8F6;
+      color: #0F4C3A;
     }
 
     .running-header-right {
@@ -538,20 +674,50 @@ export function generateDietPdfHtml(data: DietPdfData): string {
       font-size: 6.2pt;
     }
 
-    /* Running Footer */
+    /* Running Footer Multi-Nivel */
     .running-footer {
       margin-top: 3mm;
       padding-top: 1.8mm;
-      border-top: 0.5pt solid #E5E7EB;
+      border-top: 0.75pt solid #0F4C3A;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2mm;
+      font-size: 6.5pt;
+      color: #4B5563;
+    }
+
+    .footer-top-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 6.5pt;
-      color: #6B7280;
     }
 
-    .legal-notice {
-      max-width: 80%;
+    .footer-contact-inline {
+      display: flex;
+      align-items: center;
+      gap: 3mm;
+      font-size: 6.8pt;
+    }
+
+    .footer-contact-inline .dr-name {
+      color: #0F4C3A;
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: 7.2pt;
+    }
+
+    .footer-contact-inline .separator {
+      color: #D1D5DB;
+    }
+
+    .footer-bottom-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 6pt;
+      color: #9CA3AF;
+      border-top: 0.5pt dashed #E5E7EB;
+      padding-top: 0.8mm;
     }
   </style>
 </head>
@@ -566,29 +732,29 @@ export function generateDietPdfHtml(data: DietPdfData): string {
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════
-       PÁGINA 1: PORTADA AUTOMÁTICA OFICIAL (HOSPITAL PRIVADO)
+       PÁGINA 1: PORTADA AUTOMÁTICA OFICIAL (DRA. LAURA MARTÍNEZ)
        ═══════════════════════════════════════════════════════════════ -->
   <div class="cover-page">
     <div>
-      <!-- Membrete y Sello del Hospital -->
+      <!-- Membrete y Sello Monograma Oficial -->
       <div class="cover-top-emblem">
         <div class="clinic-brand-group">
-          <div class="hospital-seal">⚕</div>
+          <div class="hospital-seal">LM</div>
           <div class="hospital-titles">
             <h1>${clinicName}</h1>
-            <h2>${departmentName}</h2>
+            <h2>${departmentName} · Dra. Laura Martínez Castillo</h2>
           </div>
         </div>
         <div class="accreditation-badge">
-          <div>Certificación ISO 9001 / JCI</div>
+          <div>Colegio Oficial de Dietistas-Nutricionistas</div>
+          <div>Colegiada Nº: AND-00482 (CODNAN)</div>
           <div>Historial Electrónico: ${patientId}</div>
-          <div>Ref: MED-TERAPIA-V2</div>
         </div>
       </div>
 
       <!-- Título Solemne del Informe -->
       <div class="cover-center">
-        <div class="document-category">Prescripción Terapéutica Oficial</div>
+        <div class="document-category">Prescripción Terapéutica y Plan Nutricional</div>
         <h2 class="document-title">${data.dietName}</h2>
         <p class="document-subtitle">Protocolo de Intervención Dietoterapéutica y Planificación Metabólica Individualizada</p>
       </div>
@@ -596,7 +762,7 @@ export function generateDietPdfHtml(data: DietPdfData): string {
       <!-- Ficha Clínica del Paciente -->
       <div class="patient-clinical-card">
         <div class="patient-card-header">
-          <span>Expediente de Prescripción Médica</span>
+          <span>Expediente de Prescripción Médica y Dietética</span>
           <span class="patient-field-value mono">ID: ${patientId}</span>
         </div>
         <div class="patient-grid">
@@ -609,15 +775,15 @@ export function generateDietPdfHtml(data: DietPdfData): string {
             <span class="patient-field-value mono">${data.dateRange}</span>
           </div>
           <div>
-            <span class="patient-field-label">Facultativo Prescriptor</span>
+            <span class="patient-field-label">Facultativa Prescriptora</span>
             <span class="patient-field-value">${doctor}</span>
           </div>
           <div>
-            <span class="patient-field-label">Registro Sanitario</span>
+            <span class="patient-field-label">Registro Sanitario Colegial</span>
             <span class="patient-field-value mono">${colNumber}</span>
           </div>
         </div>
-        <div style="margin-top: 3mm; padding-top: 2.5mm; border-top: 0.5pt dashed #E5E7EB;">
+        <div style="margin-top: 2.5mm; padding-top: 2mm; border-top: 0.5pt dashed #E5E7EB;">
           <span class="patient-field-label">Indicación y Criterio Clínico Principal</span>
           <span class="patient-field-value" style="font-size: 8.5pt; font-weight: 500; color: #374151;">
             ${diagnosis}
@@ -640,7 +806,7 @@ export function generateDietPdfHtml(data: DietPdfData): string {
         <div class="exec-metric-box">
           <div class="exec-metric-title">Carbohidratos Complejos</div>
           <div class="exec-metric-number">${data.dailyAverages.carbsG}g</div>
-          <div class="exec-metric-sub">Ciclado en días pesados</div>
+          <div class="exec-metric-sub">Ciclado en días de entrenamiento</div>
         </div>
         <div class="exec-metric-box">
           <div class="exec-metric-title">Grasas Esenciales</div>
@@ -655,18 +821,65 @@ export function generateDietPdfHtml(data: DietPdfData): string {
       </div>
     </div>
 
-    <!-- Pie y Firma Oficial en Portada -->
-    <div class="cover-footer-signatures">
-      <div class="signature-box">
-        <div class="signature-line">
-          <div class="signature-stamp">Dra. C. Gómez Pardo</div>
+    <!-- Carta de Presentación de Negocio y Firma Oficial en Portada -->
+    <div>
+      <div class="cover-footer-container">
+        <!-- Bloque Izquierdo: Tarjeta de Contacto Directo de Laura -->
+        <div class="contact-card-box">
+          <div class="contact-card-header">
+            <span>📞</span>
+            <span>Atención al Paciente & Contacto Directo</span>
+          </div>
+          <div class="contact-card-grid">
+            <div class="contact-card-item">
+              <span class="icon">💬</span>
+              <div class="item-text">
+                <span class="item-label">WhatsApp / Urgencias</span>
+                <span class="item-val mono">${phone}</span>
+              </div>
+            </div>
+            <div class="contact-card-item">
+              <span class="icon">✉️</span>
+              <div class="item-text">
+                <span class="item-label">Email de Consulta</span>
+                <span class="item-val">${email}</span>
+              </div>
+            </div>
+            <div class="contact-card-item">
+              <span class="icon">🌐</span>
+              <div class="item-text">
+                <span class="item-label">Portal del Paciente</span>
+                <span class="item-val">${website}</span>
+              </div>
+            </div>
+            <div class="contact-card-item">
+              <span class="icon">📍</span>
+              <div class="item-text">
+                <span class="item-label">Modalidad Clínica</span>
+                <span class="item-val">${address}</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div>Firma y Sello del Facultativo</div>
-        <div style="font-size: 6.5pt; color: #9CA3AF;">Firma digital con certificado médico colegial</div>
+
+        <!-- Bloque Derecho: Firma y Validación Digital de Laura -->
+        <div class="signature-card-box">
+          <div class="signature-seal-stamp">COL. AND-00482 · CODNAN</div>
+          <div class="signature-line-box">
+            <div class="signature-handwritten">Dra. Laura Martínez Castillo</div>
+          </div>
+          <div class="signature-details">
+            <div style="font-weight: 700; color: #111827;">Dra. Laura Martínez Castillo</div>
+            <div>Dietista-Nutricionista Clínica · Especialista en Nutrición Deportiva</div>
+            <div style="font-size: 5.8pt; color: #9CA3AF; margin-top: 0.5mm;">Firma digital emitida con certificado sanitario colegial</div>
+          </div>
+        </div>
       </div>
-      <div style="text-align: right; font-size: 7pt; color: #6B7280;">
-        <div>Emitido electrónicamente conforme a la Ley 41/2002 de Autonomía del Paciente</div>
-        <div>Validez clínica oficial en toda la red sanitaria</div>
+
+      <!-- Tira Legal de Portada -->
+      <div class="cover-legal-strip">
+        <div>Documento médico confidencial emitido conforme a la Ley 41/2002 de Autonomía del Paciente.</div>
+        <div style="font-family: 'Geist Mono', monospace;">CSV: CS-LM-${patientId}-2026 · Validez Oficial</div>
       </div>
     </div>
   </div>
@@ -678,10 +891,10 @@ export function generateDietPdfHtml(data: DietPdfData): string {
     <!-- Running Header Superior -->
     <div class="running-header">
       <div class="running-header-left">
-        <span>⚕</span>
-        <span>${clinicName}</span>
+        <span class="header-seal-mini">LM</span>
+        <span>Dra. Laura Martínez Castillo</span>
         <span style="font-weight: normal; color: #9CA3AF;">|</span>
-        <span style="font-family: system-ui; font-weight: normal; color: #4B5563;">Pauta Semanal: ${data.dietName}</span>
+        <span style="font-family: 'EB Garamond', Georgia, serif; font-style: italic; color: #4B5563;">Pauta Semanal: ${data.dietName}</span>
       </div>
       <div class="running-header-right">
         Paciente: ${data.clientName} · ${patientId}
@@ -756,14 +969,32 @@ export function generateDietPdfHtml(data: DietPdfData): string {
       </div>
     </div>
 
-    <!-- Running Footer Inferior -->
+    <!-- Running Footer Inferior Multi-Nivel -->
     <div class="running-footer">
-      <div class="legal-notice">
-        Documento confidencial para uso exclusivo del paciente ${data.clientName}. Prohibida su divulgación sin autorización médica.
-        ${data.notes ? ` · Indicaciones adicionales: ${data.notes}` : ''}
+      <div class="footer-top-row">
+        <div class="footer-contact-inline">
+          <span class="dr-name">Dra. Laura Martínez Castillo</span>
+          <span class="separator">•</span>
+          <span>📞 ${phone}</span>
+          <span class="separator">•</span>
+          <span>✉️ ${email}</span>
+          <span class="separator">•</span>
+          <span>🌐 ${website}</span>
+          <span class="separator">•</span>
+          <span>📍 ${address}</span>
+        </div>
+        <div style="font-family: 'Geist Mono', monospace; font-weight: 600; color: #0F4C3A;">
+          Página 2 de 2
+        </div>
       </div>
-      <div style="font-family: 'Geist Mono', monospace; font-weight: 500;">
-        Página 2 de 2
+      <div class="footer-bottom-row">
+        <div>
+          Documento confidencial para uso exclusivo del paciente ${data.clientName}. Prohibida su divulgación sin autorización facultativa.
+          ${data.notes ? ` · Indicaciones adicionales: ${data.notes}` : ''}
+        </div>
+        <div>
+          Validez legal Ley 41/2002
+        </div>
       </div>
     </div>
   </div>
