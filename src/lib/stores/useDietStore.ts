@@ -209,7 +209,12 @@ interface DietStoreState {
   generateAIVariantForDay: (dayIndex: number) => Promise<boolean>;
 
   // Carga e hidratación de plantillas
-  loadTemplateItems: (templateName: string, items: DietItem[], dayCyclingConfigs?: Record<number, DayCyclingConfig>) => void;
+  loadTemplateItems: (
+    templateName: string,
+    items: DietItem[],
+    dayCyclingConfigs?: Record<number, DayCyclingConfig>,
+    targetKcal?: number
+  ) => void;
 
   // Motor interno de guardado
   enqueueSaveMutation: (item: DietItem) => void;
@@ -227,9 +232,10 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
   items: INITIAL_ITEMS,
   targetKcal: 1900,
 
-  loadTemplateItems: (templateName, newItems, dayCyclingConfigs) => {
+  loadTemplateItems: (templateName, newItems, dayCyclingConfigs, targetKcal) => {
     set({
       dietName: templateName,
+      targetKcal: targetKcal || get().targetKcal,
       items: newItems && newItems.length > 0 ? newItems : INITIAL_ITEMS,
       dayCyclingConfigs: dayCyclingConfigs || getDefaultDayConfigs(),
       saveStatus: 'saved',

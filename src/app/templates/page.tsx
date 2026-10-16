@@ -15,6 +15,28 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Card, Badge, Button, Input, EmptyState } from '@/components/ui/nutri-ui';
 import { useTemplateStore, SavedTemplate } from '@/lib/stores/useTemplateStore';
 
+function getTagBadgeStyle(tag: string): string {
+  switch (tag) {
+    case 'Deportiva':
+    case 'Hipertrofia':
+      return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/40';
+    case 'Clínica':
+    case 'Salud Intestinal':
+    case 'SIBO':
+    case 'FODMAP':
+      return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40';
+    case 'Mujer':
+      return 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/40 dark:text-pink-300 dark:border-pink-800/40';
+    case 'Pérdida Grasa':
+    case 'Recomposición':
+      return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40';
+    case 'Ciclado Carbs':
+      return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/40';
+    default:
+      return 'bg-[var(--card-subtle)] text-[var(--text-secondary)] border-[var(--border)]';
+  }
+}
+
 export default function TemplatesPage() {
   const { templates, deleteTemplate } = useTemplateStore();
 
@@ -117,6 +139,7 @@ export default function TemplatesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]">
             {filtered.map((tmpl) => {
               const itemsCount = tmpl.items?.length || 0;
+              const calories = tmpl.targetKcal || tmpl.kcal || 1800;
 
               return (
                 <Card
@@ -128,7 +151,7 @@ export default function TemplatesPage() {
                       <h2 className="text-[14px] font-[600] text-[var(--text)] group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors leading-snug">
                         {tmpl.name}
                       </h2>
-                      <Badge variant="brand">{tmpl.targetKcal} kcal</Badge>
+                      <Badge variant="brand">{calories} kcal</Badge>
                     </div>
 
                     <p className="text-[12px] leading-relaxed line-clamp-2 text-[var(--text-secondary)]">
@@ -144,7 +167,9 @@ export default function TemplatesPage() {
                       {tmpl.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="px-2 py-[2px] rounded-[6px] bg-[var(--card-subtle)] border border-[var(--border)] text-[11px] text-[var(--text-secondary)] font-[400]"
+                          className={`px-2 py-[2px] rounded-[6px] border text-[11px] font-[500] transition-colors ${getTagBadgeStyle(
+                            tag
+                          )}`}
                         >
                           {tag}
                         </span>

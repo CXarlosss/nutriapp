@@ -43,8 +43,13 @@ function DietCreatorContent() {
   useEffect(() => {
     if (templateId) {
       const tmpl = getTemplateById(templateId);
-      if (tmpl && tmpl.items && tmpl.items.length > 0) {
-        loadTemplateItems(tmpl.name, tmpl.items, tmpl.dayCyclingConfigs);
+      if (tmpl) {
+        loadTemplateItems(
+          tmpl.name,
+          tmpl.items || [],
+          tmpl.dayCyclingConfigs,
+          tmpl.targetKcal || tmpl.kcal
+        );
       }
     }
   }, [templateId, getTemplateById, loadTemplateItems]);
