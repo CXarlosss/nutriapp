@@ -523,11 +523,6 @@ export const DietGrid: React.FC = () => {
                             const isEditingNote = editingPrepNoteItemId === item.id;
                             const isBeingDragged = draggingItemId === item.id;
 
-                            let chipStyle = 'bg-white border border-[var(--border)] text-[var(--text)]';
-                            if (isModified || isAdded) {
-                              chipStyle = 'bg-[var(--brand-bg)] text-[var(--brand-text)] border border-[var(--brand-border)]';
-                            }
-
                             return (
                               <motion.li
                                 key={item.id}
@@ -562,15 +557,25 @@ export const DietGrid: React.FC = () => {
                                 }}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                className={`space-y-1 cursor-grab active:cursor-grabbing select-none list-none ${
-                                  isBeingDragged ? 'opacity-35 scale-95' : ''
+                                className={`group relative bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] cursor-grab active:cursor-grabbing select-none list-none transition-shadow ${
+                                  isBeingDragged ? 'opacity-35 scale-95 shadow-none' : ''
+                                } ${
+                                  isModified
+                                    ? 'border-amber-200/80 dark:border-amber-800/60 bg-amber-50/20'
+                                    : isAdded
+                                    ? 'border-emerald-200/80 dark:border-emerald-800/60 bg-emerald-50/20'
+                                    : ''
                                 }`}
                               >
-                                <div
-                                  className={`group px-2 py-1 rounded-[6px] text-[12px] font-[400] flex items-center justify-between gap-1 transition-all ${chipStyle}`}
-                                >
-                                  <span className="truncate flex-1" title={`${item.foodName} (${item.quantity} ${item.unit || 'g'})`}>
-                                    <span className="clinical-reading">{item.foodName}</span> · <span className="tabular-nums font-mono font-medium">{item.quantity} {item.unit || 'g'}</span>
+                                <div className="flex items-center justify-between gap-1.5">
+                                  <span
+                                    className="truncate flex-1 text-[12px] font-medium text-slate-800 dark:text-slate-100 leading-snug"
+                                    title={`${item.foodName} (${item.quantity} ${item.unit || 'g'})`}
+                                  >
+                                    <span className="clinical-reading font-medium">{item.foodName}</span> ·{' '}
+                                    <span className="tabular-nums font-mono font-semibold text-slate-500 dark:text-slate-400">
+                                      {item.quantity} {item.unit || 'g'}
+                                    </span>
                                   </span>
 
                                   <div className="flex items-center gap-1 shrink-0">
@@ -588,10 +593,10 @@ export const DietGrid: React.FC = () => {
                                           setPrepNoteInput(item.mealPrepNotes || item.notes || '');
                                         }
                                       }}
-                                      className={`p-0.5 rounded transition-colors cursor-pointer ${
+                                      className={`p-1 rounded-md transition-colors cursor-pointer ${
                                         hasNotes
-                                          ? 'text-amber-500 hover:text-amber-600'
-                                          : 'opacity-0 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--text)]'
+                                          ? 'text-amber-500 hover:text-amber-600 bg-amber-50 dark:bg-amber-950/40'
+                                          : 'opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                                       }`}
                                       title={hasNotes ? `Meal Prep: ${item.mealPrepNotes || item.notes}` : 'Añadir nota de preparación (Meal Prep)'}
                                     >
@@ -607,7 +612,7 @@ export const DietGrid: React.FC = () => {
                                         e.stopPropagation();
                                         removeItem(item.id);
                                       }}
-                                      className="opacity-0 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--danger-text)] transition-opacity cursor-pointer"
+                                      className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1 rounded-md transition-all cursor-pointer"
                                       title="Eliminar alimento"
                                     >
                                       <IconTrash size={12} />
@@ -623,7 +628,7 @@ export const DietGrid: React.FC = () => {
                                       setEditingPrepNoteItemId(item.id);
                                       setPrepNoteInput(item.mealPrepNotes || item.notes || '');
                                     }}
-                                    className="text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-300/60 dark:border-amber-700/50 rounded px-1.5 py-0.5 flex items-center gap-1 cursor-pointer hover:bg-amber-100/60 dark:hover:bg-amber-900/40 transition-colors"
+                                    className="mt-1.5 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-300/60 dark:border-amber-700/50 rounded-lg px-2 py-0.5 flex items-center gap-1 cursor-pointer hover:bg-amber-100/60 dark:hover:bg-amber-900/40 transition-colors"
                                     title="Clic para editar instrucción de Meal Prep"
                                   >
                                     <span className="shrink-0 text-[11px]">🥣</span>
@@ -634,7 +639,7 @@ export const DietGrid: React.FC = () => {
                                 {/* Editor interactivo de Nota de Meal Prep */}
                                 {isEditingNote && (
                                   <div
-                                    className="p-1.5 rounded-[6px] bg-[var(--card)] border border-amber-400 shadow-md space-y-1 text-[11px] animate-fadeIn"
+                                    className="mt-1.5 p-1.5 rounded-[6px] bg-[var(--card)] border border-amber-400 shadow-md space-y-1 text-[11px] animate-fadeIn"
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <div className="flex items-center justify-between text-[10px] font-[500] text-amber-600 dark:text-amber-400">
