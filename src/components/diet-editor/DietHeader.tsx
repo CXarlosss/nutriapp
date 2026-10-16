@@ -95,20 +95,20 @@ export const DietHeader: React.FC = () => {
                 onBlur={() => setIsEditingName(false)}
                 onKeyDown={(e) => e.key === 'Enter' && setIsEditingName(false)}
                 autoFocus
-                className="text-[15px] font-[500] text-[var(--text)] bg-[var(--card-subtle)] border border-[var(--border)] rounded px-1.5 py-0.5 outline-none"
+                className="text-[16px] font-bold text-slate-950 bg-slate-100 border border-slate-300 rounded px-2 py-0.5 outline-none"
               />
             ) : (
               <span
                 onClick={() => setIsEditingName(true)}
-                className="text-[15px] font-[500] text-[var(--text)] truncate cursor-pointer hover:underline"
+                className="text-[16px] font-bold text-slate-950 truncate cursor-pointer hover:underline"
                 title="Clic para editar nombre"
               >
                 {localDietName}
               </span>
             )}
 
-            <span className="hidden sm:inline-flex px-2 py-0.5 rounded-[6px] bg-[var(--card-subtle)] border border-[var(--border)] text-[12px] font-[400] text-[var(--text-secondary)] truncate">
-              {clientName} (<span className="tabular-nums font-mono font-medium">{clientWeightKg} kg</span>)
+            <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-[6px] bg-slate-100 border border-slate-300 text-[12px] font-semibold text-slate-900 truncate">
+              {clientName} (<span className="tabular-nums font-mono font-bold text-slate-950">{clientWeightKg} kg</span>)
             </span>
 
             {/* Badge de conformidad CDSS */}

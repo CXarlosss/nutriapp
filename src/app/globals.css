@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* En Tailwind v4, restringir la variante dark: exclusivamente a la clase .dark (no media query automática del SO) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   /* Fondos y Superficies */
   --bg: #FFFFFF;

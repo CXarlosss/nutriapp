@@ -188,11 +188,11 @@ export const DietGrid: React.FC = () => {
         onScroll={handleContainerScroll}
         className="w-full overflow-x-auto snap-x snap-mandatory scroll-smooth touch-pan-x bg-[var(--card)] border border-[var(--border)] rounded-[12px] scrollbar-thin"
       >
-        <div className="min-w-[1990px] md:min-w-[1296px] select-none">
+        <div className="min-w-[1990px] md:min-w-[1316px] select-none">
           {/* ─────────────────────────────────────────────────────────────
-              CABECERA DEL GRID (Columna fija sticky 100/120px + 7 Días)
+              CABECERA DEL GRID (Columna fija sticky 100/140px + 7 Días)
               ───────────────────────────────────────────────────────────── */}
-          <div className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] border-b border-[var(--border)] bg-white">
+          <div className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[140px_repeat(7,minmax(168px,1fr))] border-b border-[var(--border)] bg-white">
             <div className="sticky left-0 z-20 bg-white p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center">
               Comida
             </div>
@@ -209,7 +209,7 @@ export const DietGrid: React.FC = () => {
                   className="snap-start scroll-ml-[100px] md:scroll-ml-0 p-[8px_10px] border-r border-[var(--border)] last:border-r-0 flex flex-col justify-between gap-1.5 relative"
                 >
                   <div className="flex items-center justify-between pb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-900">
                       {day.name}
                     </span>
                     <button
@@ -359,9 +359,9 @@ export const DietGrid: React.FC = () => {
           {MEAL_SLOTS.map((slot) => (
             <div
               key={slot.key}
-              className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] border-b border-[var(--border)] min-h-[72px]"
+              className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[140px_repeat(7,minmax(168px,1fr))] border-b border-[var(--border)] min-h-[72px]"
             >
-              {/* Columna fija sticky 100px / 120px limpia y simple */}
+              {/* Columna fija sticky 100px / 140px limpia y espaciosa para evitar cortes */}
               <div className="sticky left-0 z-20 bg-white p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] flex flex-col justify-center">
                 <div className="text-sm font-bold text-slate-950 bg-white pb-2 flex items-center gap-1.5">
                   <span className="text-slate-800 shrink-0">{slot.icon}</span>
@@ -569,11 +569,11 @@ export const DietGrid: React.FC = () => {
                               >
                                 <div className="flex items-center justify-between gap-1.5">
                                   <span
-                                    className="truncate flex-1 text-[12.5px] font-semibold text-slate-950 dark:text-slate-100 leading-snug"
+                                    className="truncate flex-1 text-[13px] font-semibold text-slate-950 leading-snug"
                                     title={`${item.foodName} (${item.quantity} ${item.unit || 'g'})`}
                                   >
-                                    <span className="clinical-reading font-bold text-slate-950 dark:text-slate-50">{item.foodName}</span> ·{' '}
-                                    <span className="tabular-nums font-mono font-bold text-slate-800 dark:text-slate-200">
+                                    <span className="clinical-reading font-bold text-slate-950">{item.foodName}</span> ·{' '}
+                                    <span className="tabular-nums font-mono font-bold text-slate-800">
                                       {item.quantity} {item.unit || 'g'}
                                     </span>
                                   </span>
@@ -595,8 +595,8 @@ export const DietGrid: React.FC = () => {
                                       }}
                                       className={`p-1 rounded-md transition-colors cursor-pointer ${
                                         hasNotes
-                                          ? 'text-amber-500 hover:text-amber-600 bg-amber-50 dark:bg-amber-950/40'
-                                          : 'opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                          ? 'text-amber-600 hover:text-amber-700 bg-amber-100/60'
+                                          : 'opacity-0 group-hover:opacity-100 text-slate-500 hover:text-slate-800 hover:bg-slate-100'
                                       }`}
                                       title={hasNotes ? `Meal Prep: ${item.mealPrepNotes || item.notes}` : 'Añadir nota de preparación (Meal Prep)'}
                                     >
@@ -612,7 +612,7 @@ export const DietGrid: React.FC = () => {
                                         e.stopPropagation();
                                         removeItem(item.id);
                                       }}
-                                      className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1 rounded-md transition-all cursor-pointer"
+                                      className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1 rounded-md transition-all cursor-pointer"
                                       title="Eliminar alimento"
                                     >
                                       <IconTrash size={12} />
@@ -628,7 +628,7 @@ export const DietGrid: React.FC = () => {
                                       setEditingPrepNoteItemId(item.id);
                                       setPrepNoteInput(item.mealPrepNotes || item.notes || '');
                                     }}
-                                    className="mt-1.5 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-300/60 dark:border-amber-700/50 rounded-lg px-2 py-0.5 flex items-center gap-1 cursor-pointer hover:bg-amber-100/60 dark:hover:bg-amber-900/40 transition-colors"
+                                    className="mt-1.5 text-[10.5px] font-medium text-amber-900 bg-amber-100/90 border border-amber-300 rounded-lg px-2 py-0.5 flex items-center gap-1 cursor-pointer hover:bg-amber-200/80 transition-colors"
                                     title="Clic para editar instrucción de Meal Prep"
                                   >
                                     <span className="shrink-0 text-[11px]">🥣</span>
@@ -769,7 +769,7 @@ export const DietGrid: React.FC = () => {
           {/* ─────────────────────────────────────────────────────────────
               FILA FINAL DE RESUMEN (Kcal y Macros P / C / G)
               ───────────────────────────────────────────────────────────── */}
-          <div className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] bg-white border-t border-[var(--border)]">
+          <div className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[140px_repeat(7,minmax(168px,1fr))] bg-white border-t border-[var(--border)]">
             <div className="sticky left-0 z-20 bg-white p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center">
               Total día
             </div>
