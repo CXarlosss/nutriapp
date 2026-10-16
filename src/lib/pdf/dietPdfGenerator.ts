@@ -2,7 +2,7 @@
  * Generador de Informe Médico y Plan Nutricional de Alta Precisión - NutriApp
  * Estándar de Impresión Hospitalaria y Carta de Presentación de Negocio (A4 con Reglas CSS Puras @media print)
  * Tipografía Serif de Alta Distinción (Playfair Display para titulares/sello + EB Garamond para cuerpo clínico + Geist Mono)
- * Portada Automática con Identidad de la Dra. Laura Martínez Castillo y Pie de Contacto Directo
+ * Portada Automática con Identidad de la Dra. Elena Pérez y Pie de Contacto Directo
  */
 
 export interface DietPdfData {
@@ -46,11 +46,11 @@ export function generateDietPdfHtml(data: DietPdfData): string {
   
   const clinicName = data.clinicName || 'GABINETE DE NUTRICIÓN CLÍNICA & SALUD METABÓLICA';
   const departmentName = 'UNIDAD DE DIETOTERAPIA PERSONALIZADA Y COMPOSICIÓN CORPORAL';
-  const doctor = data.prescribedBy || 'Dra. Laura Martínez Castillo · Dietista-Nutricionista Clínica';
+  const doctor = data.prescribedBy || 'Dra. Elena Pérez · Dietista-Nutricionista Clínica';
   const colNumber = data.doctorColNumber || 'Nº Col. AND-00482 (CODNAN / ISSN Certified)';
   const phone = data.nutritionistPhone || '+34 612 345 678';
-  const email = data.nutritionistEmail || 'laura@nutriapp.es';
-  const website = data.nutritionistWebsite || 'www.nutriapp.es/laura';
+  const email = data.nutritionistEmail || 'elenap.nutricionista@gmail.com';
+  const website = data.nutritionistWebsite || 'www.nutriapp.es/elena';
   const address = data.nutritionistAddress || 'Consulta Presencial & Videoconsulta';
   const patientId = data.clientId || 'HC-2026-0042';
   const diagnosis = data.clinicalDiagnosis || 'Recomposición Corporal, Optimización de Perfil Lipídico y Terapia de Regulación Metabólica';
@@ -732,17 +732,17 @@ export function generateDietPdfHtml(data: DietPdfData): string {
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════
-       PÁGINA 1: PORTADA AUTOMÁTICA OFICIAL (DRA. LAURA MARTÍNEZ)
+       PÁGINA 1: PORTADA AUTOMÁTICA OFICIAL (DRA. ELENA PÉREZ)
        ═══════════════════════════════════════════════════════════════ -->
   <div class="cover-page">
     <div>
       <!-- Membrete y Sello Monograma Oficial -->
       <div class="cover-top-emblem">
         <div class="clinic-brand-group">
-          <div class="hospital-seal">LM</div>
+          <div class="hospital-seal">EP</div>
           <div class="hospital-titles">
             <h1>${clinicName}</h1>
-            <h2>${departmentName} · Dra. Laura Martínez Castillo</h2>
+            <h2>${departmentName} · ${doctor}</h2>
           </div>
         </div>
         <div class="accreditation-badge">
@@ -824,7 +824,7 @@ export function generateDietPdfHtml(data: DietPdfData): string {
     <!-- Carta de Presentación de Negocio y Firma Oficial en Portada -->
     <div>
       <div class="cover-footer-container">
-        <!-- Bloque Izquierdo: Tarjeta de Contacto Directo de Laura -->
+        <!-- Bloque Izquierdo: Tarjeta de Contacto Directo de Elena -->
         <div class="contact-card-box">
           <div class="contact-card-header">
             <span>📞</span>
@@ -862,14 +862,14 @@ export function generateDietPdfHtml(data: DietPdfData): string {
           </div>
         </div>
 
-        <!-- Bloque Derecho: Firma y Validación Digital de Laura -->
+        <!-- Bloque Derecho: Firma y Validación Digital de Elena -->
         <div class="signature-card-box">
-          <div class="signature-seal-stamp">COL. AND-00482 · CODNAN</div>
+          <div class="signature-seal-stamp">COL. ${colNumber.replace(/Nº\s*Col\.\s*/i, '').split(' ')[0]} · CODNAN</div>
           <div class="signature-line-box">
-            <div class="signature-handwritten">Dra. Laura Martínez Castillo</div>
+            <div class="signature-handwritten">${doctor.split('·')[0].trim()}</div>
           </div>
           <div class="signature-details">
-            <div style="font-weight: 700; color: #111827;">Dra. Laura Martínez Castillo</div>
+            <div style="font-weight: 700; color: #111827;">${doctor.split('·')[0].trim()}</div>
             <div>Dietista-Nutricionista Clínica · Especialista en Nutrición Deportiva</div>
             <div style="font-size: 5.8pt; color: #9CA3AF; margin-top: 0.5mm;">Firma digital emitida con certificado sanitario colegial</div>
           </div>
@@ -891,8 +891,8 @@ export function generateDietPdfHtml(data: DietPdfData): string {
     <!-- Running Header Superior -->
     <div class="running-header">
       <div class="running-header-left">
-        <span class="header-seal-mini">LM</span>
-        <span>Dra. Laura Martínez Castillo</span>
+        <span class="header-seal-mini">EP</span>
+        <span>${doctor.split('·')[0].trim()}</span>
         <span style="font-weight: normal; color: #9CA3AF;">|</span>
         <span style="font-family: 'EB Garamond', Georgia, serif; font-style: italic; color: #4B5563;">Pauta Semanal: ${data.dietName}</span>
       </div>
@@ -973,7 +973,7 @@ export function generateDietPdfHtml(data: DietPdfData): string {
     <div class="running-footer">
       <div class="footer-top-row">
         <div class="footer-contact-inline">
-          <span class="dr-name">Dra. Laura Martínez Castillo</span>
+          <span class="dr-name">${doctor.split('·')[0].trim()}</span>
           <span class="separator">•</span>
           <span>📞 ${phone}</span>
           <span class="separator">•</span>

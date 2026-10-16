@@ -87,7 +87,7 @@ const initialDemoEvents: DietEvent[] = [
       ],
     },
     metadata: {
-      author: 'Dra. Laura M. (Nutricionista)',
+      author: 'Dra. Elena P. (Nutricionista)',
       role: 'nutricionista',
       reason: 'Asignación inicial tras primera consulta antropométrica',
     },
@@ -122,7 +122,7 @@ const initialDemoEvents: DietEvent[] = [
       reason: 'Preferencia del paciente para incrementar ingesta de ácidos grasos Omega-3',
     },
     metadata: {
-      author: 'Dra. Laura M. (Nutricionista)',
+      author: 'Dra. Elena P. (Nutricionista)',
       role: 'nutricionista',
       reason: 'Ajuste clínico por marcadores lipídicos',
     },
@@ -165,7 +165,7 @@ export async function appendDietEvent(params: AppendEventParams): Promise<Append
     eventType,
     payload,
     metadata: {
-      author: metadata?.author || 'Dra. Laura M.',
+      author: metadata?.author || 'Dra. Elena P.',
       role: metadata?.role || 'nutricionista',
       reason: metadata?.reason || 'Actualización clínica en Diet Builder',
       timestamp: now,

@@ -5,42 +5,24 @@ import { AppShell } from '@/components/layout/AppShell';
 import { Card, Button, Input } from '@/components/ui/nutri-ui';
 import { IconSettings, IconClock, IconBrandGoogleFilled, IconCheck, IconDeviceFloppy } from '@tabler/icons-react';
 
-import { safeLocalStorageGet, resilientSave } from '@/lib/storage/resilientStorage';
-
-interface ProfessionalSettings {
-  fullName: string;
-  licenseNumber: string;
-  email: string;
-  timezone: string;
-  sessionDuration: string;
-  bufferMargin: string;
-}
-
-const DEFAULT_SETTINGS: ProfessionalSettings = {
-  fullName: 'Laura Martínez Castillo',
-  licenseNumber: 'AND-00482',
-  email: 'laura@nutriapp.es',
-  timezone: 'Europe/Madrid (UTC+2)',
-  sessionDuration: '45 minutos',
-  bufferMargin: '15 minutos entre citas',
-};
-
-const STORAGE_KEY = 'nutriapp_professional_settings';
+import {
+  ProfessionalProfile,
+  DEFAULT_PROFESSIONAL_PROFILE,
+  getProfessionalProfile,
+  saveProfessionalProfile,
+} from '@/lib/stores/useProfessionalProfile';
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<ProfessionalSettings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<ProfessionalProfile>(DEFAULT_PROFESSIONAL_PROFILE);
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Cargar ajustes guardados del almacenamiento local en el navegador
   useEffect(() => {
-    const parsed = safeLocalStorageGet<Partial<ProfessionalSettings>>(STORAGE_KEY, {});
-    if (parsed && Object.keys(parsed).length > 0) {
-      setSettings((prev) => ({ ...prev, ...parsed }));
-    }
+    setSettings(getProfessionalProfile());
   }, []);
 
-  const handleChange = (field: keyof ProfessionalSettings, value: string) => {
+  const handleChange = (field: keyof ProfessionalProfile, value: string) => {
     setSettings((prev) => ({
       ...prev,
       [field]: value,
@@ -51,7 +33,7 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await resilientSave(STORAGE_KEY, settings);
+      await saveProfessionalProfile(settings);
       setIsSaved(true);
       setTimeout(() => {
         setIsSaved(false);

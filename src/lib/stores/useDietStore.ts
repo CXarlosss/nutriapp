@@ -441,7 +441,7 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
         reason: 'Intercambio clínico manual en Diet Builder',
       },
       metadata: {
-        author: 'Dra. Laura M.',
+        author: 'Dra. Elena P.',
         role: 'nutricionista',
         reason: 'Intercambio en cuadrícula',
       },

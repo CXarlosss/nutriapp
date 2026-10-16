@@ -24,7 +24,7 @@ export const PRESET_CONSULTATIONS: PresetConsultation[] = [
     tag: 'Control Quincenal',
     description: 'Carlos Gómez: -1.2 kg de peso, 90% adherencia, leve distensión vespertina y aversión al brócoli.',
     transcript: `Nutricionista: Hola Carlos, ¿cómo han ido estas dos semanas con la pauta de definición?
-Carlos: Hola Laura. Bastante bien en general, he pesado 75.2 kg esta mañana en ayunas. El hambre la he llevado muy bien, diría que he cumplido la pauta al 90%, solo me salté la cena del sábado porque teníamos una boda.
+Carlos: Hola Elena. Bastante bien en general, he pesado 75.2 kg esta mañana en ayunas. El hambre la he llevado muy bien, diría que he cumplido la pauta al 90%, solo me salté la cena del sábado porque teníamos una boda.
 Nutricionista: Estupendo Carlos, 75.2 kg supone una bajada limpia de 1.2 kg respecto a tus 76.4 kg de la última consulta. ¿Y a nivel digestivo cómo te has sentido?
 Carlos: En general ligero, aunque noto algo de inflamación y distensión por las tardes, sobre todo los días que como arroz blanco normal. Mis deposiciones son tipo 3 en la escala de Bristol, un poco pastosas pero voy a diario. Nada de reflujo ni acidez. Por cierto, ¿podemos quitar el brócoli hervido? Le he cogido bastante aversión y me gustaría cambiarlo por calabacín o espárragos.
 Nutricionista: Tomo nota, registramos el brócoli como alimento vetado, pautamos la técnica de enfriar el arroz 24 horas para generar almidón resistente y aliviar la fermentación, y mantenemos el plan de 1.900 kcal.`,

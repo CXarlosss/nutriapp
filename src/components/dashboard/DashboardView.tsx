@@ -25,6 +25,7 @@ import { requestPaymentForClientAction } from '@/app/actions/billingOutboxAction
 import { ManualPaymentModal } from '@/components/clients/ManualPaymentModal';
 import { RetentionBusinessDashboard } from './RetentionBusinessDashboard';
 import { useModeStore, findClientById, RealClient } from '@/lib/stores/useModeStore';
+import { useProfessionalProfile } from '@/lib/stores/useProfessionalProfile';
 
 interface AppointmentItem {
   id: string;
@@ -138,15 +139,16 @@ export function DashboardView() {
     }
   };
 
-  // Saludo dinámico y fecha calculados en useEffect para hidratación limpia
-  const [greeting, setGreeting] = useState('Buenos días, Laura');
-  const [formattedDate, setFormattedDate] = useState('martes, 13 de octubre');
+  // Saludo dinámico y fecha calculados con el perfil profesional de Elena
+  const { firstName } = useProfessionalProfile();
+  const [greeting, setGreeting] = useState('Buenos días, Elena');
+  const [formattedDate, setFormattedDate] = useState('viernes, 16 de octubre');
 
   useEffect(() => {
     const hour = new Date().getHours();
-    if (hour < 13) setGreeting('Buenos días, Laura');
-    else if (hour < 20) setGreeting('Buenas tardes, Laura');
-    else setGreeting('Buenas noches, Laura');
+    if (hour < 13) setGreeting(`Buenos días, ${firstName}`);
+    else if (hour < 20) setGreeting(`Buenas tardes, ${firstName}`);
+    else setGreeting(`Buenas noches, ${firstName}`);
 
     const formatter = new Intl.DateTimeFormat('es-ES', {
       weekday: 'long',
@@ -155,7 +157,7 @@ export function DashboardView() {
     });
     const parts = formatter.format(new Date());
     setFormattedDate(parts.charAt(0).toLowerCase() + parts.slice(1));
-  }, []);
+  }, [firstName]);
 
   // Filtrado y ordenación de clientes
   const filteredClients = useMemo(() => {

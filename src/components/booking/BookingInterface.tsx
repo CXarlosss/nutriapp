@@ -116,7 +116,7 @@ export function BookingInterface({ nutritionistId }: { nutritionistId: string })
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-indigo-500 focus:outline-none"
-              placeholder="Ej: Laura Martínez"
+              placeholder="Ej: Carmen Gómez"
             />
           </div>
 

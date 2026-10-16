@@ -53,7 +53,7 @@ export default function ReservaPublicaPage() {
           <IconAlertCircle size={36} className="mx-auto text-[var(--warning-text)]" stroke={1.5} />
           <h1 className="text-[18px] font-[500] text-[var(--text)]">El enlace ha caducado</h1>
           <p className="text-[13px] text-[var(--text-secondary)]">
-            Por favor, ponte en contacto con tu nutricionista para recibir una nueva invitación: <span className="text-[var(--text)] font-[500]">laura@nutriapp.es</span>.
+            Por favor, ponte en contacto con tu nutricionista para recibir una nueva invitación: <span className="text-[var(--text)] font-[500]">elenap.nutricionista@gmail.com</span>.
           </p>
         </div>
       </main>

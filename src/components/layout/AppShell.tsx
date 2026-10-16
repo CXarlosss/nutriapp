@@ -17,6 +17,7 @@ import {
 } from '@tabler/icons-react';
 import { Avatar } from '@/components/ui/nutri-ui';
 import { ModeToggle, DemoNoticeBanner } from './ModeToggle';
+import { useProfessionalProfile } from '@/lib/stores/useProfessionalProfile';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -98,6 +99,7 @@ function MobileNavLinks() {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const { profile, initials } = useProfessionalProfile();
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [quotaWarning, setQuotaWarning] = useState<string | null>(null);
   const pathname = usePathname();
@@ -219,13 +221,13 @@ export function AppShell({ children }: AppShellProps) {
             {/* Perfil en el pie del Drawer */}
             <div className="pt-4 border-t border-[var(--border)] flex items-center justify-between">
               <div className="flex items-center gap-2.5 min-w-0">
-                <Avatar initials="LN" size={36} />
+                <Avatar initials={initials} size={36} />
                 <div className="min-w-0">
                   <div className="text-[13px] font-[600] text-[var(--text)] truncate leading-tight">
-                    Laura Nutricionista
+                    {profile.fullName || 'Elena Pérez'}
                   </div>
                   <div className="text-[11px] text-[var(--text-muted)] truncate">
-                    laura@nutriapp.es
+                    {profile.email || 'elenap.nutricionista@gmail.com'}
                   </div>
                 </div>
               </div>
@@ -271,13 +273,13 @@ export function AppShell({ children }: AppShellProps) {
         {/* Anclado abajo: Perfil Nutricionista + Cerrar sesión */}
         <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
-            <Avatar initials="LN" size={32} />
+            <Avatar initials={initials} size={32} />
             <div className="hidden lg:block min-w-0">
               <div className="text-[13px] font-[500] text-[var(--text)] truncate leading-none mb-1">
-                Laura Nutricionista
+                {profile.fullName || 'Elena Pérez'}
               </div>
               <div className="text-[12px] text-[var(--text-muted)] truncate leading-none">
-                laura@nutriapp.es
+                {profile.email || 'elenap.nutricionista@gmail.com'}
               </div>
             </div>
           </div>
