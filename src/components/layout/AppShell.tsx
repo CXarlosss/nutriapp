@@ -119,7 +119,7 @@ export function AppShell({ children }: AppShellProps) {
   }, []);
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col md:flex-row bg-[var(--bg)] font-sans antialiased text-[var(--text)]">
+    <div className="h-screen w-screen overflow-hidden flex flex-col md:flex-row bg-slate-50/75 dark:bg-[#1A1A18] font-sans antialiased text-[var(--text)]">
       {/* ─────────────────────────────────────────────────────────────
           BARRA SUPERIOR MÓVIL (< 768px) CON LOGO Y BOTÓN HAMBURGUESA (☰)
           ───────────────────────────────────────────────────────────── */}
@@ -296,7 +296,7 @@ export function AppShell({ children }: AppShellProps) {
       {/* ─────────────────────────────────────────────────────────────
           ÁREA DE CONTENIDO (Scroll vertical independiente)
           ───────────────────────────────────────────────────────────── */}
-      <main className="flex-1 h-full overflow-y-auto pb-20 md:pb-0">
+      <main className="flex-1 h-full overflow-y-auto pb-20 md:pb-0 bg-slate-50/60 dark:bg-[#161614]">
         <div className="p-[16px_12px] sm:p-[24px_32px] max-w-[1200px] mx-auto min-h-full">
           {/* Banner informativo de modo demostración */}
           <DemoNoticeBanner />
