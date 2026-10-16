@@ -192,8 +192,8 @@ export const DietGrid: React.FC = () => {
           {/* ─────────────────────────────────────────────────────────────
               CABECERA DEL GRID (Columna fija sticky 100/120px + 7 Días)
               ───────────────────────────────────────────────────────────── */}
-          <div className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] border-b border-[var(--border)] bg-[var(--card-subtle)]">
-            <div className="sticky left-0 z-20 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)] text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center">
+          <div className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] border-b border-[var(--border)] bg-white">
+            <div className="sticky left-0 z-20 bg-white p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center">
               Comida
             </div>
 
@@ -361,10 +361,10 @@ export const DietGrid: React.FC = () => {
               key={slot.key}
               className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] border-b border-[var(--border)] min-h-[72px]"
             >
-              {/* Columna fija sticky 100px / 120px con efecto cristal iOS */}
-              <div className="sticky left-0 z-20 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)] flex flex-col justify-center">
-                <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  <span className="text-slate-500 dark:text-slate-400 shrink-0">{slot.icon}</span>
+              {/* Columna fija sticky 100px / 120px limpia y simple */}
+              <div className="sticky left-0 z-20 bg-white p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] flex flex-col justify-center">
+                <div className="text-sm font-semibold text-slate-700 bg-white pb-2 flex items-center gap-1.5">
+                  <span className="text-slate-500 shrink-0">{slot.icon}</span>
                   <span className="truncate">{slot.label}</span>
                 </div>
               </div>
@@ -557,13 +557,13 @@ export const DietGrid: React.FC = () => {
                                 }}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                className={`group relative bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] cursor-grab active:cursor-grabbing select-none list-none transition-shadow ${
+                                className={`group relative bg-white border border-slate-200 rounded-md p-2 shadow-sm cursor-grab active:cursor-grabbing select-none list-none transition-colors hover:border-slate-300 ${
                                   isBeingDragged ? 'opacity-35 scale-95 shadow-none' : ''
                                 } ${
                                   isModified
-                                    ? 'border-amber-200/80 dark:border-amber-800/60 bg-amber-50/20'
+                                    ? 'border-amber-300 bg-amber-50/30'
                                     : isAdded
-                                    ? 'border-emerald-200/80 dark:border-emerald-800/60 bg-emerald-50/20'
+                                    ? 'border-emerald-300 bg-emerald-50/30'
                                     : ''
                                 }`}
                               >
@@ -769,8 +769,8 @@ export const DietGrid: React.FC = () => {
           {/* ─────────────────────────────────────────────────────────────
               FILA FINAL DE RESUMEN (Kcal y Macros P / C / G)
               ───────────────────────────────────────────────────────────── */}
-          <div className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] bg-[var(--card-subtle)] border-t border-[var(--border)]">
-            <div className="sticky left-0 z-20 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)] text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center">
+          <div className="grid grid-cols-[100px_repeat(7,minmax(270px,1fr))] md:grid-cols-[120px_repeat(7,minmax(168px,1fr))] bg-white border-t border-[var(--border)]">
+            <div className="sticky left-0 z-20 bg-white p-[8px_10px] md:p-[8px_12px] border-r border-[var(--border)] text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center">
               Total día
             </div>
 
