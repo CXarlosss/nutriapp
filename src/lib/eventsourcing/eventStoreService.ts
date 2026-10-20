@@ -1,6 +1,7 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import type { DietEvent, DietEventType } from './dietEventTypes.ts';
 import { projectDietState, type ProjectedDietState } from './dietProjector.ts';
+import { DEMO_CLINIC_UUID, isValidUUID } from '@/lib/utils/uuid';
 
 export interface AppendEventParams {
   streamId: string;
@@ -13,6 +14,7 @@ export interface AppendEventParams {
     reason?: string;
     timestamp?: string;
   };
+  clinicId?: string;
 }
 
 export interface AppendEventResult {
@@ -179,6 +181,8 @@ export async function appendDietEvent(params: AppendEventParams): Promise<Append
 
   // 2. Intentar inserción en PostgreSQL (RPC append_diet_event con SECURITY DEFINER)
   const supabase = getSupabaseClient();
+  const clinicId = params.clinicId && isValidUUID(params.clinicId) ? params.clinicId : DEMO_CLINIC_UUID;
+
   if (supabase) {
     try {
       const { data: rpcData, error: rpcError } = await supabase.rpc('append_diet_event', {
@@ -187,6 +191,7 @@ export async function appendDietEvent(params: AppendEventParams): Promise<Append
         p_event_type: eventType,
         p_payload: payload,
         p_metadata: newEvent.metadata,
+        p_clinic_id: clinicId,
       });
 
       if (!rpcError && rpcData?.success) {
@@ -199,8 +204,24 @@ export async function appendDietEvent(params: AppendEventParams): Promise<Append
           createdAt: rpcData.created_at || now,
         };
       }
-    } catch {
-      // Si la base de datos remota está en mantenimiento, la capa en memoria absorbe el cambio
+
+      if (rpcError) {
+        console.warn('[eventStoreService.appendDietEvent] Error en RPC append_diet_event:', rpcError.message);
+      } else if (rpcData && !rpcData.success) {
+        console.warn('[eventStoreService.appendDietEvent] Fallo devuelto por RPC:', rpcData.error);
+        if (rpcData.error && String(rpcData.error).includes('ConcurrencyConflict')) {
+          return {
+            success: false,
+            streamId,
+            version: rpcData.current_version ?? currentVersion,
+            eventType,
+            createdAt: now,
+            error: rpcData.error,
+          };
+        }
+      }
+    } catch (err: any) {
+      console.warn('[eventStoreService.appendDietEvent] Excepción invocando Supabase:', err?.message || err);
     }
   }
 

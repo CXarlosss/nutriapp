@@ -7,6 +7,7 @@ import {
 } from '@/lib/services/clinicalDictationService';
 import { ClinicalStructuredExtraction } from '@/types/clinicalVoice';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { isValidUUID, DEMO_CLIENT_UUID } from '@/lib/utils/uuid';
 
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -92,6 +93,7 @@ export async function commitClinicalExtractionAction(
   }
 
   try {
+    const safeClientId = isValidUUID(clientId) ? clientId : DEMO_CLIENT_UUID;
     const supabase = getSupabaseAdmin();
     if (supabase) {
       try {
@@ -99,7 +101,7 @@ export async function commitClinicalExtractionAction(
         const { data: existingClient } = await supabase
           .from('clients')
           .select('pathologies, food_aversions, notes')
-          .eq('id', clientId)
+          .eq('id', safeClientId)
           .maybeSingle();
 
         const existingPathologies: string[] = existingClient?.pathologies || [];
@@ -138,7 +140,7 @@ export async function commitClinicalExtractionAction(
               digestionNotes: extraction.digestiveReport.transitSummary,
             },
           })
-          .eq('id', clientId);
+          .eq('id', safeClientId);
       } catch (dbErr) {
         console.warn('[commitClinicalExtractionAction] Aviso Supabase (offline/mock):', dbErr);
       }

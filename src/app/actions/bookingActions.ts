@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { dispatchN8nWebhook, N8nAppointmentPayload } from '@/lib/n8n/webhook';
+import { resolveCurrentClinicId } from '@/lib/services/tenantResolver';
+import { isValidUUID, DEMO_CLIENT_UUID } from '@/lib/utils/uuid';
 
 export interface BookingInput {
   nutritionistId: string;
@@ -45,8 +47,10 @@ export interface BookingResult {
  */
 export async function bookAppointmentAction(input: BookingInput): Promise<BookingResult> {
   const supabase = await createClient();
+  const clinicId = await resolveCurrentClinicId();
 
-  let resolvedClientId = input.clientId;
+  let resolvedClientId = input.clientId && isValidUUID(input.clientId) ? input.clientId : undefined;
+  const safeNutritionistId = isValidUUID(input.nutritionistId) ? input.nutritionistId : '171d4ec5-d675-43b7-a89f-a0ee7e2e28e1';
 
   // 1. Si no se pasa clientId, buscar o crear el registro en 'clients'
   if (!resolvedClientId) {
@@ -54,11 +58,11 @@ export async function bookAppointmentAction(input: BookingInput): Promise<Bookin
       const { data: existingClient } = await supabase
         .from('clients')
         .select('id')
-        .eq('nutritionist_id', input.nutritionistId)
+        .eq('nutritionist_id', safeNutritionistId)
         .eq('email', input.clientEmail)
         .maybeSingle();
 
-      if (existingClient?.id) {
+      if (existingClient?.id && isValidUUID(existingClient.id)) {
         resolvedClientId = existingClient.id;
       }
     }
@@ -67,7 +71,8 @@ export async function bookAppointmentAction(input: BookingInput): Promise<Bookin
       const { data: newClient, error: clientErr } = await supabase
         .from('clients')
         .insert({
-          nutritionist_id: input.nutritionistId,
+          clinic_id: clinicId,
+          nutritionist_id: safeNutritionistId,
           full_name: input.clientName || 'Paciente General',
           email: input.clientEmail || null,
           phone: input.clientPhone || null,
@@ -77,8 +82,13 @@ export async function bookAppointmentAction(input: BookingInput): Promise<Bookin
         .single();
 
       if (clientErr || !newClient) {
-        // Si no se puede insertar por RLS o clave foránea, usar un UUID determinista de fallback
-        resolvedClientId = 'a0000000-0000-0000-0000-000000000001';
+        console.error('[bookingActions.scheduleAppointmentAction] Error creando cliente:', clientErr?.message);
+        return {
+          success: false,
+          error: clientErr?.message || 'Error registrando el paciente en la base de datos.',
+          pgCode: clientErr?.code,
+          message: 'No se pudo crear el expediente del paciente.',
+        };
       } else {
         resolvedClientId = newClient.id;
       }
@@ -89,7 +99,8 @@ export async function bookAppointmentAction(input: BookingInput): Promise<Bookin
   const { data: appointment, error: apptError } = await supabase
     .from('appointments')
     .insert({
-      nutritionist_id: input.nutritionistId,
+      clinic_id: clinicId,
+      nutritionist_id: safeNutritionistId,
       client_id: resolvedClientId,
       starts_at: input.startsAt,
       ends_at: input.endsAt,

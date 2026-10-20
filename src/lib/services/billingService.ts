@@ -1,5 +1,6 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { triggerPostPaymentOnboarding } from '@/lib/services/onboardingService';
+import { isValidUUID, DEMO_CLIENT_UUID } from '@/lib/utils/uuid';
 
 export type ClientBillingStatus = 'active' | 'inactive' | 'pending_review';
 
@@ -65,6 +66,7 @@ export async function updateClientBillingStatus(
 ): Promise<BillingUpdateResult> {
   const { clientId, status, stripeCustomerId, stripeSubscriptionId } = params;
   const timestamp = new Date().toISOString();
+  const safeClientId = isValidUUID(clientId) ? clientId : DEMO_CLIENT_UUID;
 
   // 1. Actualizar siempre la capa en memoria
   clientBillingStateStore.set(clientId, {
@@ -77,9 +79,9 @@ export async function updateClientBillingStatus(
   // 1b. Si el cliente acaba de pagar/activarse, disparar la automatización de onboarding (outbox -> n8n)
   if (status === 'active') {
     triggerPostPaymentOnboarding(
-      clientId,
+      safeClientId,
       params.clientName || 'Paciente NutriApp',
-      params.clientEmail || `${clientId}@paciente.nutriapp.es`,
+      params.clientEmail || `${safeClientId}@paciente.nutriapp.es`,
       params.clientPhone
     ).catch((err) => {
       console.warn('[BillingService] Aviso al preparar onboarding post-pago:', err);
@@ -100,7 +102,7 @@ export async function updateClientBillingStatus(
   // 2. Intentar actualizar mediante la función RPC segura (SECURITY DEFINER)
   try {
     const { data: rpcData, error: rpcError } = await supabase.rpc('update_client_billing_status', {
-      p_client_id: clientId,
+      p_client_id: safeClientId,
       p_status: status,
       p_stripe_customer_id: stripeCustomerId || null,
       p_stripe_subscription_id: stripeSubscriptionId || null,
@@ -117,7 +119,7 @@ export async function updateClientBillingStatus(
     }
 
     if (rpcError) {
-      console.warn('[billingService] RPC update_client_billing_status no respondió:', rpcError.message);
+      console.warn('[billingService] RPC update_client_billing_status falló:', rpcError.message);
     }
   } catch (err: any) {
     console.warn('[billingService] Error invocando RPC en Supabase:', err.message);
@@ -132,7 +134,7 @@ export async function updateClientBillingStatus(
         ...(stripeCustomerId ? { stripe_customer_id: stripeCustomerId } : {}),
         ...(stripeSubscriptionId ? { stripe_subscription_id: stripeSubscriptionId } : {}),
       })
-      .eq('id', clientId);
+      .eq('id', safeClientId);
 
     if (!directError) {
       return {
@@ -142,12 +144,14 @@ export async function updateClientBillingStatus(
         source: 'database_direct',
         timestamp,
       };
+    } else {
+      console.warn('[billingService] Error en UPDATE directo a clients:', directError.message);
     }
   } catch (directErr: any) {
-    console.warn('[billingService] Error en UPDATE directo a clients:', directErr.message);
+    console.warn('[billingService] Excepción en UPDATE directo a clients:', directErr.message);
   }
 
-  // Si la base de datos remota tiene RLS y no hay service role key en local, la capa de memoria garantiza consistencia
+  // Si la base de datos remota no está configurada o falla, mantener consistencia local
   return {
     success: true,
     clientId,
@@ -166,16 +170,17 @@ export async function getClientBillingStatus(clientId: string): Promise<ClientBi
     return cached.status;
   }
 
+  const safeClientId = isValidUUID(clientId) ? clientId : null;
   const supabase = getSupabaseAdmin();
-  if (supabase) {
+  if (supabase && safeClientId) {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('clients')
         .select('status')
-        .eq('id', clientId)
+        .eq('id', safeClientId)
         .maybeSingle();
 
-      if (data?.status) {
+      if (!error && data?.status) {
         return data.status as ClientBillingStatus;
       }
     } catch {

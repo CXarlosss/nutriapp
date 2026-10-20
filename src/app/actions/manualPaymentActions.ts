@@ -3,7 +3,10 @@
 import { revalidatePath } from 'next/cache';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { enqueueOutboxEvent } from '@/lib/outbox/outboxService';
+import { processPendingOutboxEvents } from '@/lib/outbox/outboxDispatcher';
 import { updateClientBillingStatus } from '@/lib/services/billingService';
+import { resolveCurrentClinicId } from '@/lib/services/tenantResolver';
+import { isValidUUID, DEMO_CLIENT_UUID, DEMO_CLINIC_UUID } from '@/lib/utils/uuid';
 
 export interface RecordManualPaymentInput {
   clientId: string;
@@ -79,12 +82,15 @@ export async function recordManualPaymentAction(
       eventType: `manual_payment.${paymentMethod}`,
     });
 
+    const safeClientId = isValidUUID(clientId) ? clientId : DEMO_CLIENT_UUID;
+    const clinicId = await resolveCurrentClinicId();
+
     const supabase = getSupabaseAdmin();
     if (supabase) {
       // 2. Intentar llamar a la RPC atómica 'register_manual_payment'
       try {
         const { data: rpcData, error: rpcErr } = await supabase.rpc('register_manual_payment', {
-          p_client_id: clientId,
+          p_client_id: safeClientId,
           p_payment_method: paymentMethod,
           p_amount_eur: amountEur,
           p_period_days: periodDays,
@@ -92,10 +98,11 @@ export async function recordManualPaymentAction(
         });
 
         if (!rpcErr && rpcData?.success) {
-          console.log(`✅ [ManualPayment] RPC Supabase completada para cliente ${clientId}`);
+          console.log(`✅ [ManualPayment] RPC Supabase completada para cliente ${safeClientId}`);
         } else if (rpcErr) {
+          console.warn('[ManualPayment] RPC no disponible, ejecutando fallback directo:', rpcErr.message);
           // Fallback a UPDATE directo sobre 'clients' si la RPC no existe aún
-          await supabase
+          const { error: updateErr } = await supabase
             .from('clients')
             .update({
               status: 'active',
@@ -104,13 +111,18 @@ export async function recordManualPaymentAction(
               payment_method: paymentMethod,
               last_payment_amount_eur: amountEur,
             })
-            .eq('id', clientId);
+            .eq('id', safeClientId);
 
-          // Intentar insertar en la tabla de pagos manuales
-          await supabase
+          if (updateErr) {
+            console.error('[ManualPayment] Error en UPDATE a clients:', updateErr.message);
+          }
+
+          // Intentar insertar en la tabla de pagos manuales con clinic_id
+          const { error: insertErr } = await supabase
             .from('manual_payments')
             .insert({
-              client_id: clientId,
+              clinic_id: clinicId,
+              client_id: safeClientId,
               payment_method: paymentMethod,
               amount_eur: amountEur,
               period_days: periodDays,
@@ -119,9 +131,13 @@ export async function recordManualPaymentAction(
             })
             .select()
             .maybeSingle();
+
+          if (insertErr) {
+            console.error('[ManualPayment] Error en INSERT a manual_payments:', insertErr.message);
+          }
         }
       } catch (dbErr: any) {
-        console.warn('[ManualPayment] Aviso al persistir en Supabase:', dbErr?.message);
+        console.error('[ManualPayment] Excepción al persistir en Supabase:', dbErr?.message);
       }
     }
 
@@ -132,8 +148,9 @@ export async function recordManualPaymentAction(
         aggregateType: 'client',
         aggregateId: clientId,
         payload: {
+          clinic_id: clinicId,
           payment_id: paymentId,
-          client_id: clientId,
+          client_id: safeClientId,
           client_name: clientName,
           client_email: clientEmail,
           client_phone: clientPhone,
@@ -146,11 +163,10 @@ export async function recordManualPaymentAction(
         },
       });
 
-      // Notificar al worker sin bloquear
-      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/outbox/dispatch`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      }).catch(() => {});
+      // Notificar al worker directamente sin bloqueo y sin fallos por fetch circular
+      processPendingOutboxEvents(5).catch((err) => {
+        console.warn('[ManualPayment] Aviso en despacho asíncrono de evento:', err);
+      });
     } catch {
       // Ignorar de forma segura si la tabla Outbox no está disponible
     }

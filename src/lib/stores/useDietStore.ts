@@ -14,6 +14,7 @@ import {
   RecipeDragPayload,
 } from '@/types/diet';
 import { persistDietItemsBatch } from '@/lib/services/dietService';
+import { generateUUID } from '@/lib/utils/uuid';
 import { evaluateClinicalRules } from '@/lib/clinical/clinicalDecisionEngine';
 import { appendDietEvent } from '@/lib/eventsourcing/eventStoreService';
 import { MOCK_MEDICATIONS } from '@/lib/services/clinicalRecordsService';
@@ -461,7 +462,7 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
     );
 
     const newItem: DietItem = {
-      id: `temp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      id: generateUUID(),
       dietId: get().dietId,
       dayIndex,
       mealSlot,
@@ -509,7 +510,7 @@ export const useDietStore = create<DietStoreState>((set, get) => ({
       const foodName = ingredient.foodName || `Ingrediente ${idx + 1}`;
 
       return {
-        id: `rec-item-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+        id: generateUUID(),
         dietId: get().dietId,
         dayIndex,
         mealSlot,

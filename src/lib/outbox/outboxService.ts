@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { DEMO_CLINIC_UUID } from '@/lib/utils/uuid';
 
 export type OutboxEventStatus = 'pending' | 'processing' | 'published' | 'failed';
 
@@ -103,12 +104,15 @@ export async function enqueueOutboxEvent(
 
   // 2. Intentar inserción atómica vía RPC 'enqueue_outbox_event' (SECURITY DEFINER)
   try {
+    const clinicId = input.payload?.clinic_id || DEMO_CLINIC_UUID;
+
     const { data: rpcData, error: rpcError } = await supabase.rpc('enqueue_outbox_event', {
       p_event_type: input.eventType,
       p_aggregate_type: input.aggregateType,
       p_aggregate_id: input.aggregateId,
       p_payload: input.payload,
       p_max_attempts: maxAttempts,
+      p_clinic_id: clinicId,
     });
 
     if (!rpcError && rpcData?.success) {
@@ -131,9 +135,11 @@ export async function enqueueOutboxEvent(
 
   // 3. Fallback a inserción directa en tabla outbox_events
   try {
+    const clinicId = input.payload?.clinic_id || DEMO_CLINIC_UUID;
     const { data: insertData, error: insertError } = await supabase
       .from('outbox_events')
       .insert({
+        clinic_id: clinicId,
         event_type: input.eventType,
         aggregate_type: input.aggregateType,
         aggregate_id: input.aggregateId,

@@ -3,7 +3,9 @@
 import { revalidatePath } from 'next/cache';
 import { createCheckoutSessionAction } from '@/app/actions/stripeCheckout';
 import { enqueueOutboxEvent } from '@/lib/outbox/outboxService';
+import { processPendingOutboxEvents } from '@/lib/outbox/outboxDispatcher';
 import { STRIPE_PRODUCTS, getProductByPriceId } from '@/lib/stripe/products';
+import { resolveCurrentClinicId } from '@/lib/services/tenantResolver';
 
 export interface RequestPaymentInput {
   clientId: string;
@@ -63,6 +65,8 @@ export async function requestPaymentForClientAction(
     const targetEmail = clientEmail || `${clientId}@paciente.nutriapp.es`;
     const targetName = clientName || 'Paciente';
 
+    const clinicId = await resolveCurrentClinicId();
+
     // 2. Inserción atómica en la tabla 'outbox_events' (Patrón Transactional Outbox)
     // Se persiste el evento con el payload exacto para la automatización en n8n
     const outboxResult = await enqueueOutboxEvent({
@@ -70,6 +74,7 @@ export async function requestPaymentForClientAction(
       aggregateType: 'client',
       aggregateId: clientId,
       payload: {
+        clinic_id: clinicId,
         client_id: clientId,
         client_name: targetName,
         email: targetEmail,
@@ -88,12 +93,9 @@ export async function requestPaymentForClientAction(
     });
 
     // 3. Despacho no bloqueante al canal de notificación asíncrona
-    // Se ejecuta en segundo plano sin ralentizar la respuesta de la interfaz de usuario
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/outbox/dispatch`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    }).catch(() => {
-      // Ignorar de forma segura: el worker programado lo procesará en el siguiente ciclo
+    // Invocación directa in-process que evita fallos por fetch circular en serverless
+    processPendingOutboxEvents(5).catch((err) => {
+      console.warn('[BillingOutbox] Aviso en despacho asíncrono de evento:', err);
     });
 
     revalidatePath('/dashboard');
@@ -110,6 +112,29 @@ export async function requestPaymentForClientAction(
     return {
       success: false,
       error: `Error procesando la solicitud de pago: ${err.message}`,
+    };
+  }
+}
+
+/**
+ * Server Action: Despacha manualmente o bajo demanda los eventos pendientes en el Outbox
+ * Ejecuta el relayer de forma directa sin requerir un bucle HTTP loopback.
+ */
+export async function dispatchBillingOutboxAction() {
+  try {
+    const result = await processPendingOutboxEvents(25);
+    return {
+      success: true,
+      processed: result.processedCount,
+      succeeded: result.succeededCount,
+      failed: result.failedCount,
+      errors: result.errors,
+    };
+  } catch (error: any) {
+    console.error('[dispatchBillingOutboxAction] Error procesando outbox:', error);
+    return {
+      success: false,
+      error: error.message || 'Error desconocido al despachar la bandeja de salida de facturación',
     };
   }
 }

@@ -5,6 +5,7 @@ import {
   resilientSave,
   resilientSyncWithIndexedDb,
 } from '@/lib/storage/resilientStorage';
+import { generateUUID } from '@/lib/utils/uuid';
 
 export type AppMode = 'real' | 'demo';
 export type PaymentMethod = 'cash' | 'bizum' | 'transfer' | 'stripe';
@@ -292,7 +293,7 @@ export const useModeStore = create<ModeState>((set, get) => ({
 
   addRealClient: (clientData) => {
     const newClient: RealClient = {
-      id: `client_${Date.now()}`,
+      id: generateUUID(),
       name: clientData.name,
       email: clientData.email,
       phone: clientData.phone,

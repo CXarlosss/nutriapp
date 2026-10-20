@@ -4,6 +4,7 @@ import type {
   ClientOnboardingProfile,
 } from '@/types/diet';
 import { enqueueOutboxEvent } from '@/lib/outbox/outboxService';
+import { isValidUUID, generateUUID, DEMO_CLIENT_UUID, DEMO_CLINIC_UUID } from '@/lib/utils/uuid';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REGISTRO EN MEMORIA SINCRONIZADO (Para desarrollo local y tests sin red)
@@ -274,7 +275,7 @@ export async function submitPreConsultationForm(
   const supabase = getSupabaseAdmin();
   if (supabase) {
     try {
-      await supabase.rpc('complete_client_preconsultation', {
+      const { error: rpcError } = await supabase.rpc('complete_client_preconsultation', {
         p_token: token,
         p_weight_kg: formData.currentWeightKg,
         p_height_cm: formData.heightCm,
@@ -287,32 +288,45 @@ export async function submitPreConsultationForm(
         p_notes: formData.generalNotes,
       });
 
+      if (rpcError) {
+        console.error('[OnboardingService] Error en RPC complete_client_preconsultation:', rpcError.message);
+      }
+
       // Insertar medicamentos comunicados en client_medications
       if (formData.medications && formData.medications.length > 0) {
+        const safeMedClientId = isValidUUID(profile.id) ? profile.id : DEMO_CLIENT_UUID;
         for (const med of formData.medications) {
-          await supabase.from('client_medications').insert({
-            client_id: profile.id,
+          const { error: medError } = await supabase.from('client_medications').insert({
+            id: generateUUID(),
+            clinic_id: DEMO_CLINIC_UUID,
+            client_id: safeMedClientId,
             drug_name: med.drugName,
             dosage: med.dosage,
             timing_slot: med.timingSlot,
             indication: med.indication,
             active: true,
           }).maybeSingle();
+
+          if (medError) {
+            console.error('[OnboardingService] Error al insertar medicación:', medError.message);
+          }
         }
       }
-    } catch (err) {
-      console.warn('[OnboardingService] Error persistiendo en Supabase RPC, guardado en memoria:', err);
+    } catch (err: any) {
+      console.error('[OnboardingService] Excepción persistiendo en Supabase:', err?.message);
     }
   }
 
   // 3. Encolar evento Outbox para n8n ('onboarding.completed')
   try {
+    const safeClientId = isValidUUID(profile.id) ? profile.id : DEMO_CLIENT_UUID;
     await enqueueOutboxEvent({
       eventType: 'onboarding.completed',
       aggregateType: 'client',
-      aggregateId: profile.id,
+      aggregateId: safeClientId,
       payload: {
-        client_id: profile.id,
+        clinic_id: DEMO_CLINIC_UUID,
+        client_id: safeClientId,
         client_name: profile.fullName,
         email: profile.email,
         phone: profile.phone,

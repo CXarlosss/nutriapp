@@ -8,6 +8,7 @@ import {
   AppendEventParams,
   AppendEventResult,
 } from '@/lib/eventsourcing/eventStoreService';
+import { resolveCurrentClinicId } from '@/lib/services/tenantResolver';
 import { ProjectedDietState } from '@/lib/eventsourcing/dietProjector';
 import { DietEvent } from '@/lib/eventsourcing/dietEventTypes';
 
@@ -18,7 +19,8 @@ import { DietEvent } from '@/lib/eventsourcing/dietEventTypes';
 export async function appendDietEventAction(
   params: AppendEventParams
 ): Promise<AppendEventResult> {
-  const result = await appendDietEvent(params);
+  const clinicId = await resolveCurrentClinicId();
+  const result = await appendDietEvent({ ...params, clinicId });
 
   if (result.success) {
     revalidatePath(`/dietas/${params.streamId}`);
